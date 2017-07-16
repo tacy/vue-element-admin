@@ -71,9 +71,9 @@
 
       <el-table-column align="center" label="操作" width="68">
         <template scope="scope">
-          <el-button v-if="scope.row.status=='待处理'" size="small" type="success" @click="handleFetchStock(scope.row)">分配
+          <el-button v-if="scope.row.status=='待处理'" size="small" type="success" @click="handleFetchStock(scope.row)">派 单
           </el-button>
-	  <el-button v-if="scope.row.status!='待处理'" size="small" type="success" @click="handleFetchStock(scope.row)">重分
+          <el-button v-if="scope.row.status!='待处理'" size="small" type="danger" @click="handleFetchStock(scope.row)">重 派
           </el-button>
         </template>
       </el-table-column>
@@ -87,16 +87,16 @@
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
-	<el-form-item label="商品编码">
+        <el-form-item label="商品编码">
           <el-input v-model="temp.jancode"></el-input>
         </el-form-item>
-	<el-form-item label="收件人">
+        <el-form-item label="收件人">
           <el-input v-model="temp.receiver_name"></el-input>
         </el-form-item>
-	<el-form-item label="收件人电话">
+        <el-form-item label="收件人电话">
           <el-input v-model="temp.receiver_mobile"></el-input>
         </el-form-item>
-	<el-form-item label="收件人地址">
+        <el-form-item label="收件人地址">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.receiver_address"></el-input>
         </el-form-item>
       </el-form>
@@ -109,22 +109,22 @@
 
     <el-dialog title="订单分配" :visible.sync="dialogAllocationVisible" size="small">
       <div class="filter-container">
-	<el-select clearable style="width: 90px" class="filter-item" v-model="temp.order_inventory" v-on:change="getShipping()" placeholder="仓库">
-	  <el-option v-for="item in inventoryOptions" :key="item" :label="item" :value="item">
-	  </el-option>
-	</el-select>
+        <el-select clearable style="width: 90px" class="filter-item" v-model="temp.order_inventory" v-on:change="getShipping()" placeholder="仓库">
+          <el-option v-for="item in inventoryOptions" :key="item" :label="item" :value="item">
+          </el-option>
+        </el-select>
 
-	<el-select clearable class="filter-item" style="width: 130px" v-model="temp.order_shipping_name" placeholder="发货方式">
-	  <el-option v-for="item in  shippingOptions" :key="item.name" :label="item.name" :value="item.name">
-	  </el-option>
-	</el-select>
+        <el-select clearable class="filter-item" style="width: 130px" v-model="temp.order_shipping_name" placeholder="发货方式">
+          <el-option v-for="item in  shippingOptions" :key="item.name" :label="item.name" :value="item.name">
+          </el-option>
+        </el-select>
       </div>
 
       <el-table :data="stockData" border fit highlight-current-row style="width: 100%">
         <el-table-column prop="inventory_name" label="仓库"> </el-table-column>
-	<el-table-column prop="quantity" label="在库"> </el-table-column>
-	<el-table-column prop="inflight" label="在途"> </el-table-column>
-	<el-table-column prop="preallocation" label="占用"> </el-table-column>
+        <el-table-column prop="quantity" label="在库"> </el-table-column>
+        <el-table-column prop="inflight" label="在途"> </el-table-column>
+        <el-table-column prop="preallocation" label="占用"> </el-table-column>
       </el-table>
 
       <span slot="footer" class="dialog-footer">
@@ -136,7 +136,7 @@
 </template>
 
 <script>
-    import { fetchList, fetchStock, fetchShipping, updateOrder, allocateOrder, fetchPv } from 'api/orders';
+  import { fetchList, fetchStock, fetchShipping, updateOrder, allocateOrder, fetchPv } from 'api/orders';
   import { parseTime } from 'utils';
 
   export default {
@@ -157,23 +157,23 @@
         temp: {
           id: undefined,
           order_inventory: '',
-	  order_shipping_name: '',
-	  jancode: '',
-	  status: ''
+          order_shipping_name: '',
+          jancode: '',
+          status: ''
         },
-	allocateOrderData: {
+        allocateOrderData: {
           order: [],
-	  stock: []
-	},
-	listStockQuery: {
-	  jancode: ''
-	},
-	listShippingQuery: {
-	  shipping_inventory: ''
-	},
-        channelnameOptions: ["洋码头", "天狗"],
-        inventoryOptions: ["东京", "贝海", "UEX", "广州"],
-	shippingOptions: [],
+          stock: []
+        },
+        listStockQuery: {
+          jancode: ''
+        },
+        listShippingQuery: {
+          shipping_inventory: ''
+        },
+        channelnameOptions: ['洋码头', '天狗'],
+        inventoryOptions: ['东京', '贝海', 'UEX', '广州'],
+        shippingOptions: [],
         sortOptions: [{ label: '按ID升序列', key: '+id' }, { label: '按ID降序', key: '-id' }],
         dialogFormVisible: false,
         dialogStatus: '',
@@ -183,8 +183,8 @@
         },
         dialogPvVisible: false,
         pvData: [],
-	dialogAllocationVisible: false,
-	stockData: [],
+        dialogAllocationVisible: false,
+        stockData: [],
         showAuditor: false,
         tableKey: 0
       }
@@ -202,10 +202,10 @@
         })
       },
       getShipping() {
-	this.listShippingQuery.shipping_inventory = this.temp.order_inventory;
-	fetchShipping(this.listShippingQuery).then(response => {
-	  this.shippingOptions = response.data.results;
-	})
+        this.listShippingQuery.shipping_inventory = this.temp.order_inventory;
+        fetchShipping(this.listShippingQuery).then(response => {
+          this.shippingOptions = response.data.results;
+        })
       },
       handleFilter() {
         this.getList();
@@ -276,7 +276,7 @@
             break;
           }
         }
-	updateOrder(this.temp, '/order/'+this.temp.id+'/').then(response => {
+        updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
           this.dialogFormVisible = false;
           this.$notify({
             title: '成功',
@@ -284,17 +284,17 @@
             type: 'success',
             duration: 2000
           });
-	});
+        });
       },
       allocate() {
         this.allocateOrderData.order = this.temp;
-	this.temp.status = '已分配';
+        this.temp.status = '已分配';
         for (const v of this.stockData) {
           if (this.temp.order_inventory === v.inventory_name) {
             this.allocateOrderData.stock = v;
             break;
           }
-	}
+        }
         allocateOrder(this.allocateOrderData).then(response => {
           this.dialogAllocationVisible = false;
         })
@@ -318,7 +318,7 @@
       },
       handleFetchStock(row) {
         this.temp = Object.assign({}, row);
-	this.listStockQuery.jancode = this.temp.jancode;
+        this.listStockQuery.jancode = this.temp.jancode;
         fetchStock(this.listStockQuery).then(response => {
           this.stockData = response.data.results;
           this.dialogAllocationVisible = true;

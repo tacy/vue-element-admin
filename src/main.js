@@ -18,7 +18,7 @@ import Sticky from 'components/Sticky'; // 粘性header组件
 import IconSvg from 'components/Icon-svg';// svg 组件
 import vueWaves from './directive/waves';// 水波纹指令
 import errLog from 'store/errLog';// error log组件
-//import './mock/index.js';  // 该项目所有请求使用mockjs模拟
+// import './mock/index.js';  // 该项目所有请求使用mockjs模拟
 
 // register globally
 Vue.component('multiselect', Multiselect);
@@ -49,7 +49,7 @@ router.beforeEach((to, from, next) => {
     } else {
       if (store.getters.roles.length === 0) { // 判断当前用户是否已拉取完user_info信息
         store.dispatch('GetInfo').then(res => { // 拉取user_info
-            const roles = [res.data.results[0].role,];
+          const roles = [res.data.results[0].role];
           store.dispatch('GenerateRoutes', { roles }).then(() => { // 生成可访问的路由表
             router.addRoutes(store.getters.addRouters) // 动态添加可访问路由表
             next({ ...to }); // hack方法 确保addRoutes已完成
