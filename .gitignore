@@ -1,4 +1,6 @@
 .DS_Store
+stock/migrations
+stock/__pycache__
 node_modules/
 dist/
 static/ckeditor

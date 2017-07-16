@@ -70,10 +70,10 @@ const user = {
       return new Promise((resolve, reject) => {
         getInfo(state.token).then(response => {
           const data = response.data;
-          commit('SET_ROLES', data.role);
-          commit('SET_NAME', data.name);
-          commit('SET_AVATAR', data.avatar);
-          commit('SET_INTRODUCTION', data.introduction);
+            commit('SET_ROLES', [data.results[0].group]);
+          commit('SET_NAME', 'tacy');
+          commit('SET_AVATAR', '');
+          commit('SET_INTRODUCTION', '测试');
           resolve(response);
         }).catch(error => {
           reject(error);

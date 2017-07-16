@@ -16,6 +16,10 @@ const dashboard = _import('dashboard/index');
 /* Introduction */
 const Introduction = _import('introduction/index');
 
+/* order */
+const preOrders = _import('orders/preOrders');
+
+
 /* components */
 const componentsIndex = _import('components/index');
 const Tinymce = _import('components/tinymce');
@@ -111,6 +115,16 @@ export const asyncRouterMap = [
     meta: { role: ['admin'] },
     noDropdown: true,
     children: [{ path: 'index', component: Permission, name: '权限测试页', meta: { role: ['admin'] } }]
+  },
+  {
+    path: '/orders',
+    component: Layout,
+    redirect: '/orders/index',
+    name: '订单',
+    icon: 'zujian',
+    children: [
+      { path: 'preorders', component: preOrders, name: '预处理订单 ' }
+    ]
   },
   {
     path: '/components',

@@ -2,13 +2,13 @@
 	<el-menu class="navbar" mode="horizontal">
 		<hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
 		<levelbar></levelbar>
-		<tabs-view></tabs-view>
+		<!--tabs-view></tabs-view-->
 		<error-log v-if="log.length>0" class="errLog-container" :logsList="log"></error-log>
-		<screenfull class='screenfull'></screenfull>
+		<!--screenfull class='screenfull'></screenfull-->
 		<el-dropdown class="avatar-container" trigger="click">
 			<div class="avatar-wrapper">
-				<img class="user-avatar" :src="avatar+'?imageView2/1/w/80/h/80'">
-				<i class="el-icon-caret-bottom"></i>
+				<!--img class="user-avatar" :src="avatar+'?imageView2/1/w/80/h/80'"-->
+				<i class="el-icon-close"></i>
 			</div>
 			<el-dropdown-menu class="user-dropdown" slot="dropdown">
 				<router-link class='inlineBlock' to="/">
@@ -16,11 +16,6 @@
 						首页
 					</el-dropdown-item>
 				</router-link>
-				<a target='_blank' href="https://github.com/PanJiaChen/vue-element-admin/">
-					<el-dropdown-item>
-						项目地址
-					</el-dropdown-item>
-				</a>
 				<el-dropdown-item divided><span @click="logout" style="display:block;">退出登录</span></el-dropdown-item>
 			</el-dropdown-menu>
 		</el-dropdown>
@@ -61,7 +56,7 @@
         this.$store.dispatch('ToggleSideBar')
       },
       logout() {
-        this.$store.dispatch('LogOut').then(() => {
+        this.$store.dispatch('FedLogOut').then(() => {
           location.reload();// 为了重新实例化vue-router对象 避免bug
         });
       }
@@ -115,6 +110,3 @@
 			}
 	}
 </style>
-
-
-

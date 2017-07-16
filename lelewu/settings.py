@@ -32,7 +32,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 # CSRF_COOKIE_SECURE = True
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -42,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',  # DRF
+    'rest_framework.authtoken',
+    'django_filters',
     'stock',
 ]
 
@@ -59,6 +60,11 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'lelewu.urls'
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES':
+    ('rest_framework.authentication.TokenAuthentication',
+     'rest_framework.authentication.SessionAuthentication', ),
+    'DEFAULT_PERMISSION_CLASSES':
+    ('rest_framework.permissions.IsAuthenticated', ),  # AllowAny
     'DEFAULT_PAGINATION_CLASS':
     'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE':
@@ -142,8 +148,33 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 # Add for vuejs
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "docs/static"),
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, "docs/static"),
+# ]
 
 STATIC_URL = '/static/'
+
+if DEBUG:
+    INTERNAL_IPS = ('127.0.0.1', )
+    MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+
+    INSTALLED_APPS += ('debug_toolbar', )
+
+    # DEBUG_TOOLBAR_PANELS = [
+    #     'debug_toolbar.panels.versions.VersionsPanel',
+    #     'debug_toolbar.panels.timer.TimerPanel',
+    #     'debug_toolbar.panels.settings.SettingsPanel',
+    #     'debug_toolbar.panels.headers.HeadersPanel',
+    #     'debug_toolbar.panels.request.RequestPanel',
+    #     'debug_toolbar.panels.sql.SQLPanel',
+    #     'debug_toolbar.panels.staticfiles.StaticFilesPanel',
+    #     'debug_toolbar.panels.templates.TemplatesPanel',
+    #     'debug_toolbar.panels.cache.CachePanel',
+    #     'debug_toolbar.panels.signals.SignalsPanel',
+    #     'debug_toolbar.panels.logging.LoggingPanel',
+    #     'debug_toolbar.panels.redirects.RedirectsPanel',
+    # ]
+
+    DEBUG_TOOLBAR_CONFIG = {
+        'INTERCEPT_REDIRECTS': False,
+    }

@@ -1,4 +1,14 @@
 from django.db import models
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
 
 
 # Create your models here.
@@ -38,6 +48,7 @@ class Product(models.Model):
 
 class Stock(models.Model):
     inventory_name = models.ForeignKey(Inventory, to_field='name')
+    # inventory_name = models.CharField(max_length=8, null=False)
     # product_jancode = models.ForeignKey(Product, to_field='jancode')
     jancode = models.CharField(max_length=24, null=False)
     product_name = models.CharField(max_length=255, null=False)
@@ -85,6 +96,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=3, null=True, default='待处理')  # 待处理/待发货/已发货
 
+    # Todo:订单需要拆分
     # 订单状态:
     # 1. 待处理: 完成订单调整, 比如没有jancode需要补充, 客户留言需要处理, 需要编辑订单.
     #            订单处理人员点击分配仓库, 弹出页面显示该商品在库状态, 然后选择仓库, 如果仓库没有库存, 标记待采购.
@@ -109,8 +121,8 @@ class Order(models.Model):
     #       9. 补采购单(漏采)
     # 流程: 订单导入, 如果没有jancode, 补jancode,
 
-    class Meta:
-        unique_together = ('channel_name', 'orderid', 'jancode')
+    # class Meta:
+    #     unique_together = ('channel_name', 'orderid', 'jancode')
 
 
 class PurchaseOrder(models.Model):
