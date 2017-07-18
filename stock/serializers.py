@@ -1,7 +1,7 @@
 from rest_framework import serializers
 # from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-from .models import PurchaseOrder, Product, Order, Stock, Shipping
+from .models import PurchaseOrder, Product, Order, Stock, Shipping, Inventory
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -15,6 +15,8 @@ class TokenSerializer(serializers.ModelSerializer):
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
+    supplier_name = serializers.ReadOnlyField(source='supplier.name')
+    inventory_name = serializers.ReadOnlyField(source='inventory.name')
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
@@ -35,8 +37,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
-    order_shipping_name = serializers.ReadOnlyField(
-        source='order_shipping.name')
+    shipping_name = serializers.ReadOnlyField(source='shipping.name')
+    inventory_name = serializers.ReadOnlyField(source='inventory.name')
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
@@ -47,6 +49,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class StockSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
+    inventory_name = serializers.ReadOnlyField(source='inventory.name')
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
@@ -57,9 +60,20 @@ class StockSerializer(serializers.ModelSerializer):
 
 class ShippingSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
+    inventory_name = serializers.ReadOnlyField(source='inventory.name')
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = Shipping
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class InventorySerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = Inventory
         # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
         fields = '__all__'

@@ -1,8 +1,16 @@
 import fetch from 'utils/fetch';
 
-export function fetchList(query) {
+export function fetchOrder(query) {
   return fetch({
     url: '/order',
+    method: 'get',
+    params: query
+  });
+}
+
+export function fetchInventory(query) {
+  return fetch({
+    url: '/inventory',
     method: 'get',
     params: query
   });

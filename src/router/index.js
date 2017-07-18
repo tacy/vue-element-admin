@@ -17,7 +17,8 @@ const dashboard = _import('dashboard/index');
 const Introduction = _import('introduction/index');
 
 /* order */
-const preOrders = _import('orders/preOrders');
+const ordersAllocate = _import('orders/allocate');
+const ordersPurchase = _import('orders/purchase');
 
 
 /* components */
@@ -123,7 +124,8 @@ export const asyncRouterMap = [
     name: '订单',
     icon: 'zujian',
     children: [
-      { path: 'preorders', component: preOrders, name: '预处理订单 ' }
+      { path: 'allocate', component: ordersAllocate, name: '订单预处理' },
+      { path: 'purchase', component: ordersPurchase, name: '订单采购' }
     ]
   },
   {

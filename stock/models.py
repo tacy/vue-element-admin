@@ -47,7 +47,7 @@ class Product(models.Model):
 
 
 class Stock(models.Model):
-    inventory_name = models.ForeignKey(Inventory, to_field='name')
+    inventory = models.ForeignKey(Inventory, related_name='stock')
     # inventory_name = models.CharField(max_length=8, null=False)
     # product_jancode = models.ForeignKey(Product, to_field='jancode')
     jancode = models.CharField(max_length=24, null=False)
@@ -56,6 +56,9 @@ class Stock(models.Model):
     inflight = models.IntegerField(null=True, default=0)  # 在途数量
     preallocation = models.IntegerField(null=True, default=0)  # 分配到该仓库商品的订单
     location = models.CharField(max_length=8, null=True)  # 库存位置
+
+    class Meta:
+        unique_together = ('inventory', 'jancode')
 
 
 class outStock(models.Model):
@@ -67,8 +70,8 @@ class inStock(models.Model):
 
 
 class Shipping(models.Model):
-    shipping_inventory = models.ForeignKey(
-        Inventory, to_field='name', null=False)
+    inventory = models.ForeignKey(
+        Inventory, related_name='shipping', null=False)
     name = models.CharField(max_length=16, null=False)
     pass
 
@@ -85,16 +88,21 @@ class Order(models.Model):
     buyer_remark = models.CharField(max_length=255, null=True, default='')
     jancode = models.CharField(max_length=24, null=True, default='')
     quantity = models.IntegerField(null=False)
+    need_purchase = models.IntegerField(null=True, default=0)
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
     delivery_type = models.CharField(max_length=32, null=False)
     piad_time = models.DateTimeField()
     product_title = models.CharField(max_length=255, null=False)
     sku_properties_name = models.CharField(
         max_length=64, null=True, default='')
-    order_inventory = models.ForeignKey(Inventory, to_field='name', null=True)
-    order_shipping = models.ForeignKey(Shipping, null=True)
+    inventory = models.ForeignKey(Inventory, related_name='order', null=True)
+    shipping = models.ForeignKey(Shipping, related_name='order', null=True)
     status = models.CharField(
         max_length=3, null=True, default='待处理')  # 待处理/待发货/已发货
+
+    class Meta:
+        # unique_together = ('channel_name', 'orderid', 'jancode')
+        ordering = ['id', 'receiver_mobile']
 
     # Todo:订单需要拆分
     # 订单状态:
@@ -121,14 +129,11 @@ class Order(models.Model):
     #       9. 补采购单(漏采)
     # 流程: 订单导入, 如果没有jancode, 补jancode,
 
-    # class Meta:
-    #     unique_together = ('channel_name', 'orderid', 'jancode')
-
 
 class PurchaseOrder(models.Model):
     order_id = models.CharField(max_length=255, blank=False)
-    po_supplier = models.ForeignKey(Supplier, to_field='name')
-    po_inventory = models.ForeignKey(Inventory, to_field='name')
+    supplier = models.ForeignKey(Supplier, related_name='purchaseorder')
+    inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
     delivery_id = models.CharField(max_length=255, blank=True)
     cost = models.IntegerField(blank=False)
     discount = models.IntegerField()
