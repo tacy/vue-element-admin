@@ -30,27 +30,36 @@ class Inventory(models.Model):
         return self.name
 
 
+# mysql> select a.category_id, a.category_cn_name, b.category_id, b.category_cn_name,
+# a.category_version from stock_category a join stock_category b on (a.category_id=b.category_parent_id);
+class Category(models.Model):
+    category_id = models.CharField(max_length=18, null=False)
+    category_cn_name = models.CharField(max_length=64, null=False)
+    category_en_name = models.CharField(max_length=64, null=True)
+    category_level = models.IntegerField(null=False)
+    category_parent_id = models.CharField(max_length=18, null=False)
+    category_version = models.CharField(max_length=18, null=False)
+
+
 class Product(models.Model):
     name = models.CharField(max_length=255, null=False)
     jancode = models.CharField(max_length=24, null=False, unique=True)
-    category = models.CharField(max_length=32, null=True)
-    band = models.CharField(max_length=32, null=True)
-    origin = models.CharField(max_length=64, null=True)
-    catalog = models.CharField(max_length=64, null=True)
-    color = models.CharField(max_length=8, null=True)
+    category = models.ForeignKey(Category, related_name='product')
+    brand = models.CharField(max_length=128, null=True)  # 品牌
+    origin = models.CharField(max_length=64, null=True)  # 产地
+    model = models.CharField(max_length=128, null=True)  # 型号
+    specification = models.CharField(max_length=128, null=True)  # 规格
+    size = models.CharField(max_length=128, null=True)  # 材质
     proddesc = models.CharField(max_length=255, null=True)
     unit = models.CharField(max_length=2, null=True)
     expired = models.CharField(max_length=8, null=True)
     weight = models.IntegerField(null=True)
-    purchaseprice = models.DecimalField(
-        max_digits=7, null=True, decimal_places=2)
 
 
 class Stock(models.Model):
     inventory = models.ForeignKey(Inventory, related_name='stock')
-    # inventory_name = models.CharField(max_length=8, null=False)
-    # product_jancode = models.ForeignKey(Product, to_field='jancode')
-    jancode = models.CharField(max_length=24, null=False)
+    jancode = models.ForeignKey(
+        Product, to_field='jancode', related_name='stock', db_column='jancode')
     product_name = models.CharField(max_length=255, null=False)
     quantity = models.IntegerField(null=True, default=0)  # 库存
     inflight = models.IntegerField(null=True, default=0)  # 在途数量
@@ -61,19 +70,66 @@ class Stock(models.Model):
         unique_together = ('inventory', 'jancode')
 
 
-class outStock(models.Model):
-    pass
-
-
-class inStock(models.Model):
-    pass
-
-
 class Shipping(models.Model):
     inventory = models.ForeignKey(
         Inventory, related_name='shipping', null=False)
     name = models.CharField(max_length=16, null=False)
-    pass
+    delivery_company = models.CharField(max_length=4, null=True)
+    tiangou_company = models.CharField(max_length=4, null=True, default='')
+
+    def __str__(self):
+        return '{}:{}'.format(self.inventory.name, self.name)
+
+
+class ShippingDB(models.Model):
+    db_number = models.CharField(
+        max_length=32, null=True)  # xloboDBNumber, uexDBNumber, EMSNumber
+    channel_name = models.CharField(max_length=16, null=False)
+    shipping = models.ForeignKey(
+        Shipping, related_name='shippingdb', null=False)
+    inventory = models.ForeignKey(
+        Inventory, related_name='shippingdb', null=False)
+    status = models.CharField(max_length=8, null=True)  # 待处理/已删除/已出库
+    ymatou = models.CharField(max_length=8, null=True)  # 已发货
+
+
+class PurchaseOrder(models.Model):
+    # 采购单状态: 在途/删除/入库
+    # 按单采购流程:
+    # 1. 进入订单/待采购页面, 在采购渠道采购, 填入采购信息, 保存采购单, 采购单进入在途状态
+    # 2. 包裹到库, 仓库进行入库操作, 采购单状态变更为入库
+    # 3. 如果采购单被Cancel, 采购人员进入采购/采购单, 标记该采购单为删除.
+    orderid = models.CharField(max_length=255, blank=False)
+    supplier = models.ForeignKey(Supplier, related_name='purchaseorder')
+    inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
+    delivery_id = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=255, default='create')
+    create_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        """Return a human readable representation of the model instance."""
+        return "{}".format(self.orderid)
+
+    class Meta:
+        unique_together = ('orderid', 'supplier')
+
+
+class PurchaseOrderItem(models.Model):
+    purchaseorder = models.ForeignKey(
+        PurchaseOrder, related_name='purchaseorderitem')
+    jancode = models.ForeignKey(
+        Product,
+        to_field='jancode',
+        related_name='purchaseorderitem',
+        db_column='jancode')
+    quantity = models.IntegerField(null=False)
+    price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+
+    def __str__(self):
+        """Return a human readable representation of the model instance."""
+        return "{},{},{},{},{}".format(self.jancode.jancode, self.jancode.name,
+                                       self.jancode.specification,
+                                       self.quantity, self.price)
 
 
 class Order(models.Model):
@@ -84,12 +140,15 @@ class Order(models.Model):
     receiver_address = models.CharField(max_length=64, null=False)
     receiver_zip = models.CharField(max_length=6, null=True, default='')
     receiver_mobile = models.CharField(max_length=11, null=False)
+    receiver_idcard = models.CharField(max_length=18, null=True)
     seller_memo = models.CharField(max_length=255, null=True, default='')
     buyer_remark = models.CharField(max_length=255, null=True, default='')
     jancode = models.CharField(max_length=24, null=True, default='')
     quantity = models.IntegerField(null=False)
     need_purchase = models.IntegerField(null=True, default=0)
+    allocate_time = models.DateTimeField(null=True)  # 需要根据派单时间, 判断采购单是否能关联该订单
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    payment = models.DecimalField(max_digits=7, null=True, decimal_places=2)
     delivery_type = models.CharField(max_length=32, null=False)
     piad_time = models.DateTimeField()
     product_title = models.CharField(max_length=255, null=False)
@@ -97,12 +156,24 @@ class Order(models.Model):
         max_length=64, null=True, default='')
     inventory = models.ForeignKey(Inventory, related_name='order', null=True)
     shipping = models.ForeignKey(Shipping, related_name='order', null=True)
+    purchaseorder = models.ForeignKey(
+        PurchaseOrder, related_name='order', null=True)
     status = models.CharField(
         max_length=3, null=True, default='待处理')  # 待处理/待发货/已发货
+    importstatus = models.CharField(max_length=3, null=True)  # 是否已经导入贝海后台
+    conflict = models.CharField(max_length=8, null=True)  # 换货/退款
+    conflict_memo = models.CharField(max_length=128, null=True)
+    conflict_feedback = models.CharField(max_length=128, null=True)
+    shippingdb = models.ForeignKey(ShippingDB, related_name='order', null=True)
 
     class Meta:
         # unique_together = ('channel_name', 'orderid', 'jancode')
-        ordering = ['id', 'receiver_mobile']
+        ordering = ['piad_time', 'receiver_mobile']
+
+    def __str__(self):
+        return '%d,%s,%s,%s' % (self.id, self.orderid, self.status,
+                                self.purchaseorder.orderid
+                                if self.purchaseorder else 'none')
 
     # Todo:订单需要拆分
     # 订单状态:
@@ -117,7 +188,6 @@ class Order(models.Model):
     # 4. 生成渠道信息: 显示待发货列表(包括在库和已采购订单), 获取DB单号(或者手填发货单号), 后台生成DB单号记录(里面包括配货信息).
     # 5. 发货: 显示发货列表(分为在库和已采购). 打印DB面单, 根据面单关联配货信息分拣包裹.
     # 6. 入库: 扫描采购单, 自动匹配采购单信息, 核对包裹商品, 销采购单, 同时显示关联到这个采购单的订单, 进行发货操作.
-
     # Todo: 1. 需要db单号, 需要生成发货信息(db单号对应的商品库位号),
     #       2. 订单金额超过2000, 需分开包裹发
     #       3. 订单导入时, 如果发现产品不在产品表, 自动插入简单产品信息到产品表(前提是jancode不为空)
@@ -128,34 +198,18 @@ class Order(models.Model):
     #       8. 补发/重发订单
     #       9. 补采购单(漏采)
     # 流程: 订单导入, 如果没有jancode, 补jancode,
+    # Task: 用来存放后台任务, 一条记录代表一个后台任务.
+    #       1. 后台任务进程会读取这个表, 获取任务的执行间隔.
+    #       2. 后台进程会定时获取该表的内容, 进行hash对比, 如果发现表的内容发生变化,
+    #          进程自动退出, 然后systemd会自动把后台任务重新启动, 完成配置刷新工作.
 
 
-class PurchaseOrder(models.Model):
-    order_id = models.CharField(max_length=255, blank=False)
-    supplier = models.ForeignKey(Supplier, related_name='purchaseorder')
-    inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
-    delivery_id = models.CharField(max_length=255, blank=True)
-    cost = models.IntegerField(blank=False)
-    discount = models.IntegerField()
-    status = models.CharField(max_length=255, default='create')
-    create_time = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        """Return a human readable representation of the model instance."""
-        return "{}".format(self.name)
-
-
-class PurchaseOrderItem(models.Model):
-    pass
-
-
-# Task: 用来存放后台任务, 一条记录代表一个后台任务.
-#       1. 后台任务进程会读取这个表, 获取任务的执行间隔.
-#       2. 后台进程会定时获取该表的内容, 进行hash对比, 如果发现表的内容发生变化,
-#          进程自动退出, 然后systemd会自动把后台任务重新启动, 完成配置刷新工作.
 class Task(models.Model):
     name = models.CharField(max_length=16, null=False)
     interval = models.IntegerField(null=False)
+
+    def __str__(self):
+        return 'TaskName: {} / Inteval:{}'.format(self.name, self.interval)
 
 
 # ExportOrderLog 记录订单导出日志, 定时任务会从这个表中找到最近的订单导出时间, 用
@@ -164,6 +218,10 @@ class ExportOrderLog(models.Model):
     sellerName = models.CharField(max_length=32, null=False)
     export_time = models.DateTimeField(null=False)
     count = models.IntegerField(null=True, default=0)
+
+    def __str__(self):
+        return 'SellerName: {}  /  ExportTime: {}  /  Count: {}'.format(
+            self.sellerName, self.export_time, self.count)
 
     class Meta:
         unique_together = ('sellerName', 'export_time')

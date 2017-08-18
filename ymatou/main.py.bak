@@ -1,0 +1,45 @@
+import asyncio
+import aiohttp
+import aiomysql
+
+from ymatouapi import XloboAPI
+
+
+async def getCategory(xloboapi):
+    rs = await xloboapi.getCategory()
+    pool = await aiomysql.create_pool(
+        host='127.0.0.1',
+        port=3306,
+        user='root',
+        password='12345678',
+        db='ymatou',
+        charset='utf8',
+        loop=loop)
+    cs = []
+    version = rs['Result']['Version']
+    categorys = rs['Result']['Categorys']
+    for o in categorys:
+        it = (o['CategoryID'], o['CategoryCnName'], o['CategoryEnName'],
+              o['CategoryLevel'], o['CategoryParentId'], version)
+        cs.append(it)
+    # print(cs)
+    insertCategorySQL = 'INSERT INTO stock_category (category_id, category_cn_name, category_en_name, category_level, category_parent_id, category_version) VALUES (%s, %s, %s, %s, %s, %s)'
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.executemany(insertCategorySQL, cs)
+            await conn.commit()
+
+
+if __name__ == '__main__':
+    access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
+    client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
+    )
+    client_id = '8417db83-360c-4275-974f-cf9a2734d8f8'
+    loop = asyncio.get_event_loop()
+    sess = aiohttp.ClientSession(loop=loop)
+    xloboapi = XloboAPI(sess, access_token, client_secret, client_id)
+    loop.run_until_complete(getCategory(xloboapi))
+
+    # Let's also finish all running tasks:
+    pending = asyncio.Task.all_tasks()
+    loop.run_until_complete(asyncio.gather(*pending))

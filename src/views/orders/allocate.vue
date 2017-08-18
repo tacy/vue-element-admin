@@ -1,3 +1,4 @@
+<!-- TODO 派单页面需要显示购买数量 -->
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
@@ -33,7 +34,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column width="150px" align="center" label="商品编码" show-overflow-tooltip>
+      <el-table-column width="140px" align="center" label="条码" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.jancode}}</span>
         </template>
@@ -51,19 +52,25 @@
         </template>
       </el-table-column>
 
-      <el-table-column width="200px" label="收件人地址" align="center" show-overflow-tooltip>
+      <el-table-column label="地址" align="center" show-overflow-tooltip>
         <template scope="scope">
           <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.receiver_address}}</span>
         </template>
       </el-table-column>
 
-      <el-table-column width="130px" align="center" label="备注" show-overflow-tooltip>
+      <el-table-column align="center" label="备注" show-overflow-tooltip>
         <template scope="scope">
           <span>卖:{{scope.row.seller_memo}}|买:{{scope.row.buyer_remark}}</span>
         </template>
       </el-table-column>
 
-      <el-table-column width="110px" align="center" label="运输" show-overflow-tooltip>
+      <el-table-column width="160px" align="center" label="支付时间">
+        <template scope="scope">
+          <span>{{scope.row.piad_time}}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" label="运输" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.delivery_type}}</span>
         </template>
@@ -75,11 +82,13 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="操作" width="68">
+      <el-table-column align="center" label="操作" width="150">
         <template scope="scope">
-          <el-button v-if="scope.row.inventory === null && scope.row.jancode != ''" size="small" type="success" @click="handleFetchStock(scope.row)">派 单
+          <el-button v-if="scope.row.inventory===null" :disabled="scope.row.jancode===''?true:false" size="small" type="success" @click="handleFetchStock(scope.row)">派单
           </el-button>
-          <el-button v-if="scope.row.inventory != null" size="small" type="danger" @click="handleFetchStock(scope.row)">重 派
+          <el-button v-if="scope.row.inventory != null" size="small" type="danger" @click="handleFetchStock(scope.row)">重派
+          </el-button>
+          <el-button size="small" type="primary" @click="handleProduct(scope.row)">新产品
           </el-button>
         </template>
       </el-table-column>
@@ -93,16 +102,16 @@
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
-        <el-form-item label="商品编码">
+        <el-form-item label="条码">
           <el-input v-model="temp.jancode"></el-input>
         </el-form-item>
         <el-form-item label="收件人">
           <el-input v-model="temp.receiver_name"></el-input>
         </el-form-item>
-        <el-form-item label="收件人电话">
+        <el-form-item label="电话">
           <el-input v-model="temp.receiver_mobile"></el-input>
         </el-form-item>
-        <el-form-item label="收件人地址">
+        <el-form-item label="地址">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.receiver_address"></el-input>
         </el-form-item>
       </el-form>
@@ -113,10 +122,36 @@
       </div>
     </el-dialog>
 
+    <el-dialog title="产品资料" :visible.sync="dialogProductVisible">
+      <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
+        <el-form-item label="商品编码">
+          <el-input v-model="temp.jancode"></el-input>
+        </el-form-item>
+        <el-form-item label="名称">
+          <el-input v-model="temp.product_title"></el-input>
+        </el-form-item>
+        <el-form-item label="品牌">
+          <el-input v-model="temp.brand"></el-input>
+        </el-form-item>
+        <el-form-item label="类目">
+	  <el-cascader :options="categoryOptions" v-model="temp.category" style='width: 330px;' filterable show-all-levels clearable placeholder="请选择产品类目">
+          </el-cascader>
+          <!--el-input v-model="temp.category"></el-input-->
+        </el-form-item>
+        <el-form-item label="规格">
+          <el-input v-model="temp.sku_properties_name"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogProductVisible = false">取 消</el-button>
+        <el-button type="primary" @click="createProduct">新 建</el-button>
+      </div>
+    </el-dialog>
+
     <el-dialog title="订单分配" :visible.sync="dialogAllocationVisible" size="small">
       <div class="filter-container">
         <el-select clearable style="width: 90px" class="filter-item" v-model="temp.inventory" v-on:change="getShipping()" placeholder="仓库">
-          <el-option v-for="item in inventoryOptions" :key="item.inventory_name" :label="item.inventory_name" :value="item.inventory">
+          <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
           </el-option>
         </el-select>
 
@@ -142,7 +177,7 @@
 </template>
 
 <script>
-  import { fetchOrder, fetchInventory, fetchStock, fetchShipping, updateOrder, allocateOrder, fetchPv } from 'api/orders';
+  import { fetchOrder, fetchInventory, fetchCategory, fetchStock, fetchShipping, updateOrder, orderAllocate, productcreate, fetchPv } from 'api/orders';
   import { parseTime } from 'utils';
 
   export default {
@@ -166,23 +201,31 @@
           inventory: 0,
           shipping: 0,
           jancode: '',
-          status: ''
+          status: '',
+	  brand: undefined,
+	  category: undefined,
+	  sku_properties_name: undefined
         },
-        allocateOrderData: {
-          order: [],
-          stock: []
-        },
+	tempProduct: {
+	  name: undefined,
+	  jancode: undefined,
+	  category: undefined,
+	  brand: undefined,
+	  specification: undefined
+	},
         listStockQuery: {
           jancode: ''
         },
         listShippingQuery: {
           inventory: ''
         },
-        channelnameOptions: ['洋码头', '天狗'],
+        channelnameOptions: ['洋码头', '京东'],
         inventoryOptions: [],
         shippingOptions: [],
+	categoryOptions: [],
         sortOptions: [{ label: '按ID升序列', key: '+id' }, { label: '按ID降序', key: '-id' }],
         dialogFormVisible: false,
+	dialogProductVisible: false,
         dialogStatus: '',
         textMap: {
           update: '编辑',
@@ -198,6 +241,8 @@
     },
     created() {
       this.getList();
+      this.getInventory();
+      this.getCategory();
     },
     methods: {
       getList() {
@@ -207,6 +252,11 @@
           this.total = response.data.count;
           this.listLoading = false;
         })
+      },
+      getCategory() {
+        fetchCategory().then(response => {
+	  this.categoryOptions = response.data.results;
+	})
       },
       getInventory() {
         fetchInventory().then(response => {
@@ -252,8 +302,36 @@
       },
       handleCreate() {
         this.resetTemp();
+	this.tempProduct = {
+	  name: undefined,
+	  jancode: undefined,
+	  category: undefined,
+	  brand: undefined,
+	  specification: undefined
+	};
         this.dialogStatus = 'create';
         this.dialogFormVisible = true;
+      },
+      handleProduct(row) {
+        this.temp = Object.assign({}, row);
+        this.dialogProductVisible = true
+      },
+      createProduct() {
+        this.tempProduct.name = this.temp.product_title,
+	this.tempProduct.jancode = this.temp.jancode,
+	this.tempProduct.brand = this.temp.brand,
+	this.tempProduct.category = this.temp.category[1],
+	this.tempProduct.specification = this.temp.sku_properties_name,
+	productcreate(this.tempProduct).then(response => {
+	  this.dialogProductVisible = false;
+	  this.$notify({
+	    title: '成功',
+	    message: '创建成功',
+	    type: 'success',
+	    duration: 2000
+	  });
+        })
+
       },
       handleUpdate(row) {
         this.temp = Object.assign({}, row);
@@ -303,14 +381,7 @@
         });
       },
       allocate() {
-        this.allocateOrderData.order = this.temp;
-        for (const v of this.stockData) {
-          if (this.temp.inventory === v.inventory) {
-            this.allocateOrderData.stock = v;
-            break;
-          }
-        }
-        allocateOrder(this.allocateOrderData).then(response => {
+        orderAllocate(this.temp).then(response => {
           // 刷新列表数据
           for (const v of this.list) {
             if (v.id === this.temp.id) {
@@ -352,7 +423,7 @@
         this.getShipping();
         fetchStock(this.listStockQuery).then(response => {
           this.stockData = response.data.results;
-          this.inventoryOptions = response.data.results;  // 需要优化, 构造{id,name}结构
+          // this.inventoryOptions = response.data.results;  // 需要优化, 构造{id,name}结构
           this.dialogAllocationVisible = true;
         })
       },

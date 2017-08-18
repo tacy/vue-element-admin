@@ -1,11 +1,12 @@
+import base64
 import hashlib
 import json
 import random
 import string
 import sys
 
-import arrow
 import async_timeout
+import arrow
 
 REQUEST_TIMEOUT = 30
 
@@ -73,3 +74,116 @@ class YmatouAPI():
             biz_content['page_no'] = page_no
 
         return orders
+
+    async def deliver(self,
+                      orderid,
+                      dbnumber,
+                      develivery_company,
+                      domestic=False):
+        method = 'ymatou.order.deliver'
+        deliver_orders = {
+            'order_id': orderid,
+            'logistics_company_id': develivery_company,
+            'tracking_number': dbnumber,
+            # 'is_domestic_delivery': 'false'  # default
+        }
+        if domestic:
+            deliver_orders['is_domestic_delivery'] = 'true'
+
+        biz_content = {'deliver_orders': [deliver_orders]}
+        result = await self.callAPI(method, biz_content)
+        return result
+
+
+class XloboAPI():
+    def __init__(self, session, access_token, client_secret, client_id):
+        self.url = 'http://bill.open.xlobo.com/api/router/rest'
+        # self.url = 'http://114.80.87.216:8082/api/router/rest'
+        self.access_token = access_token
+        self.client_secret = client_secret
+        self.client_id = client_id
+        self.session = session
+
+    async def callAPI(self, method, msg_param):
+        enc_msg = self.client_secret + msg_param.lower() + self.client_secret
+        # print(enc_msg)
+        sign_str = hashlib.md5(
+            base64.b64encode(enc_msg.encode('utf-8'))).hexdigest()
+
+        payload = {
+            'method': method,
+            'v': '1.0',
+            'msg_param': msg_param,
+            'client_id': self.client_id,
+            'access_token': self.access_token,
+            'sign': sign_str,
+        }
+
+        h = {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+
+        with async_timeout.timeout(REQUEST_TIMEOUT):
+            async with self.session.post(
+                self.url, data=payload, headers=h) as response:
+                return await response.json()
+
+    async def getCategory(self):
+        method = 'xlobo.catalogue.get'
+        BusinessNo = str(random.randint(10000000, 99999999))
+        msg = {'BusinessNo': BusinessNo}
+        msg_param = json.dumps(msg)
+
+        result = await self.callAPI(method, msg_param)
+
+        print(result)
+        return result
+
+    async def getLogistic(self):
+        method = 'xlobo.hub.get'
+        BusinessNo = str(random.randint(10000000, 99999999))
+        msg = {'BusinessNo': BusinessNo}
+        msg_param = json.dumps(msg)
+
+        result = await self.callAPI(method, msg_param)
+
+        print(result)
+        return result
+
+    async def createNoVerification(self, msg):
+        method = 'xlobo.labels.createNoVerification'
+        BusinessNo = str(random.randint(10000000, 99999999))
+        msg['BusinessNo'] = BusinessNo
+        print(msg)
+        msg_param = json.dumps(msg)
+        result = await self.callAPI(method, msg_param)
+        return result
+
+    async def createFBXBill(self, msg):
+        method = 'xlobo.fbx.createfbxbill'
+        BusinessNo = str(random.randint(10000000, 99999999))
+        msg['BusinessNo'] = BusinessNo
+        print(msg)
+        msg_param = json.dumps(msg)
+        result = await self.callAPI(method, msg_param)
+        return result
+
+    async def importOrder(self, msg):
+        method = 'xlobo.labels.importorder'
+        BusinessNo = str(random.randint(10000000, 99999999))
+        msg['BusinessNo'] = BusinessNo
+        msg_param = json.dumps(msg)
+        result = await self.callAPI(method, msg_param)
+        print(msg_param)
+        return result
+
+    # msg: {"BillCodes":["DB543200315US","DB543200315US"]}
+    async def getPDF(self, msg):
+        method = 'xlobo.labels.file.getFile10x15'
+        BusinessNo = str(random.randint(10000000, 99999999))
+        msg['BusinessNo'] = BusinessNo
+        msg_param = json.dumps(msg)
+        result = await self.callAPI(method, msg_param)
+        print(msg_param)
+        return result
