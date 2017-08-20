@@ -79,7 +79,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         # 'DIRS': [],
-        'DIRS': ['docs'],
+        'DIRS': ['dist'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,9 +149,9 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 # Add for vuejs
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, "docs/static"),
-# ]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "dist/static"),
+]
 
 STATIC_URL = '/static/'
 
