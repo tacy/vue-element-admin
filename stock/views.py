@@ -1,10 +1,11 @@
 import asyncio
-import string
+import json
 import random
+import string
 
 import arrow.arrow
-import django_filters.rest_framework
 import aiohttp
+import django_filters.rest_framework
 from django.db import connection, transaction
 from django.db.models import F
 from rest_framework import generics, status, views
@@ -18,12 +19,14 @@ from .serializers import (
     InventorySerializer, OrderSerializer, ProductSerializer,
     PurchaseOrderItemSerializer, PurchaseOrderSerializer, ShippingDBSerializer,
     ShippingSerializer, StockSerializer, SupplierSerializer, TokenSerializer)
-from ymatou import ymatouapi
+from ymatou import uex, ymatouapi
 
 access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
 client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
 )
 client_id = '8417db83-360c-4275-974f-cf9a2734d8f8'
+uex_user = '2830020@qq.com'
+uex_passwd = '20162017'
 
 # debug
 # access_token = 'ACiYUZ6aKC48faYFD6MpvbOf73BdE9OV5g15q1A6Ghs+i/XIawq/9RHJCzc6Y3UNxA=='
@@ -217,16 +220,16 @@ class XloboGetPDF(views.APIView):
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         # construct api msg
-        # data = {
-        #     'BillCodes': [
-        #         request.query_params.get('BillCode'),
-        #     ]
-        # }
         data = {
             'BillCodes': [
-                'DB273208811JP',
+                request.query_params.get('BillCode'),
             ]
         }
+        # data = {
+        #     'BillCodes': [
+        #         'DB273208811JP',
+        #     ]
+        # }
         print(data)
 
         sess = aiohttp.ClientSession(loop=loop)
@@ -258,6 +261,66 @@ class LogisticGet(views.APIView):
         } for i in result['Result']['LogisticInfoList']
                 if i['iCountryId'] == 6]
         return Response(data=data, status=status.HTTP_200_OK)
+
+
+class UexStockOut(views.APIView):
+    def post(self, request, format=None):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        data = request.data
+        ords = data['orders']
+        channel_name = ords[0]['channel_name']
+        address = ords[0]['receiver_address'].split(',')
+        # construct api msg
+        payload = {
+            'ship_id': data['ship_id'],
+            'add_server[0]': 1,
+            'user_order_no': ords[0]['orderid'],
+            'send_user': ords[0]['seller_name'],
+            'address[consignee]': ords[0]['receiver_name'],
+            'address[phone]': ords[0]['receiver_mobile'],
+            'address[card]': ords[0]['receiver_idcard'],
+            'address[province]': address[0],
+            'address[city]': address[1],
+            'address[district]': address[2],
+            'address[address]': address[3],
+        }
+        for i, v in enumerate(ords):
+            payload['goods[' + str(i) + '][jan_code]'] = v['jancode']
+            payload['goods[' + str(i) + '][num]'] = v['quantity']
+
+        sess = aiohttp.ClientSession(loop=loop)
+        uexapi = uex.UexAPI(sess, uex_user, uex_passwd)
+        result = loop.run_until_complete(uexapi.login())
+        result = loop.run_until_complete(uexapi.stockOut(payload))
+        loop.close()
+        print(result)
+        result = json.loads(result)
+        if not result['code']:
+            errmsg = {'errmsg': result['msg']}
+            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
+            inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
+            shippingdbObj = ShippingDB(
+                db_number=result['order_sn'],
+                status='已出库',
+                channel_name=channel_name,
+                shipping=shippingObj,
+                inventory=inventoryObj)
+            shippingdbObj.save()
+            for o in ords:
+                orderObj = Order.objects.get(id=o['id'])
+                orderObj.shippingdb = shippingdbObj
+                orderObj.status = '已发货'  # 订单直接进入已发货状态
+                orderObj.save()
+                stockObj = Stock.objects.get(
+                    jancode=orderObj.jancode, inventory=orderObj.inventory)
+                stockObj.quantity = F('quantity') - orderObj.quantity  # 扣减库存
+                stockObj.preallocation = F('preallocation') - orderObj.quantity
+                stockObj.save()
+        return Response(data=result, status=status.HTTP_200_OK)
 
 
 class ManualAllocateDBNumber(views.APIView):

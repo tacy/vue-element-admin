@@ -9,7 +9,7 @@ from .views import (
     OrderConflict, NoOrderPurchase, PurchaseOrderDelete, OrderDelete,
     CategoryGet, LogisticGet, XloboCreateNoVerification, ShippingDBList,
     XloboCreateFBXBill, XloboGetPDF, ManualAllocateDBNumber, OrderItemGet,
-    StockOut, OrderTPRCreate, PurchaseOrderClear)
+    StockOut, OrderTPRCreate, PurchaseOrderClear, UexStockOut)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -71,6 +71,7 @@ urlpatterns = {
     url(r'^xlobo/createfbxbill/$',
         XloboCreateFBXBill.as_view(),
         name="createFBXBill"),
+    url(r'^uex/stockout/$', UexStockOut.as_view(), name="createUexDB"),
 }
 
 urlpatterns = format_suffix_patterns(urlpatterns)

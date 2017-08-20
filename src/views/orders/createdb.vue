@@ -143,6 +143,25 @@
       </div>
     </el-dialog>
 
+
+    <el-dialog title="生成面单" size="small" :visible.sync="dialogUEXVisible">
+      <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
+	<el-form-item label="线路:">
+	  <el-select clearable style="width: 180px" v-model="uexData.ship_id" placeholder="线路选择">
+	    <el-option v-for="item in shipTypeOptions" :key="item.key" :label="item.key" :value="item.value">
+	    </el-option>
+	  </el-select>
+	</el-form-item>
+        <el-form-item label="面单备注">
+          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="uexData.Comment"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogUEXVisible=false">取 消</el-button>
+        <el-button type="primary" @click="createUexShippingDB()">确 定</el-button>
+      </div>
+    </el-dialog>
+
     <el-dialog title="面单回填" size="small" :visible.sync="dialogDBInputVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
         <el-form-item label="面单号">
@@ -160,7 +179,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchSupplier, fetchOrder, fetchLogistic, createNoVerification, createfbxbill, manualallocatedb} from 'api/orders';
+  import { fetchInventory, fetchSupplier, fetchOrder, fetchLogistic, createNoVerification, createfbxbill, manualallocatedb, createUexDB} from 'api/orders';
   import { fetchPurchaseOrderItem, purchaseOrderDelete } from 'api/purchases';
 
   export default {
@@ -171,10 +190,16 @@
         total: null,
         dialogItemVisible: false,
 	dialogFormVisible: false,
+	dialogUEXVisible: false,
 	dialogDBInputVisible: false,
         inventoryOptions: [],
 	channelOptions: ['洋码头', '京东'],
+	shipTypeOptions: [
+	  {key:'跨境空运杂货线路', value:24},
+	  {key:'空运关税补贴线', value:26}
+	],
 	selectRow: [],
+	isUEX: false,
 	logisticOptions: [],
 	rePackingOptions: [
 	  {key: '无需', value: 0},
@@ -219,6 +244,11 @@
 	  LogisticVersion: "2017-08-04 20:00:00",
 	  LineTypeId: 3,
 	  IsContainTax: 1,
+	  orders: []
+	},
+	uexData: {
+	  ship_id: undefined,
+	  Comment: undefined,
 	  orders: []
 	},
 	temp: {
@@ -285,20 +315,20 @@
       },
       getItem(row) {
         this.dialogItemVisible = true;
-	this.listItem.purchaseorder = row.id,
+        this.listItem.purchaseorder = row.id,
         fetchPurchaseOrderItem(this.listItem).then(response => {
           this.itemData = response.data.results;
         })
       },
       handleCreate() {
-	if (this.selectRow.length===0) {
-	  this.$message({
-	    type: 'error',
-	    message: '请选择发货订单',
-	    duration: 2000
-	  });
-	  return
-	};
+        if (this.selectRow.length===0) {
+          this.$message({
+            type: 'error',
+            message: '请选择发货订单',
+            duration: 2000
+          });
+          return
+        };
         if ( this.selectRow.length>1 & !!this.selectRow.reduce(function(a, b){ return (a.shipping !== b.shipping | a.inventory !== b.inventory | a.receiver_address !== b.receiver_address) ? a : NaN; })) {
           this.$message({
             type: 'error',
@@ -307,21 +337,26 @@
           });
           return
         };
-	this.xloboData.Comment = '';
-	for ( const i of this.selectRow ) {
-	  this.xloboData.Comment += i.product_title+', '
-	};
+        if ( this.selectRow[0].shipping_name.includes("UEX") ) {
+          this.isUEX = true;
+          this.dialogUEXVisible = true;
+          return
+        }
+        this.xloboData.Comment = '';
+        for ( const i of this.selectRow ) {
+          this.xloboData.Comment += i.product_title+', '
+        };
         this.dialogFormVisible = true;
       },
       handleDBInput() {
-	if (this.selectRow.length===0) {
-	  this.$message({
-	    type: 'error',
-	    message: '请选择面单对应订单',
-	    duration: 2000
-	  });
-	  return
-	};
+        if (this.selectRow.length===0) {
+          this.$message({
+            type: 'error',
+            message: '请选择面单对应订单',
+            duration: 2000
+          });
+          return
+        };
         if ( this.selectRow.length>1 & !!this.selectRow.reduce(function(a, b){ return (a.shipping !== b.shipping | a.inventory !== b.inventory | a.receiver_address !== b.receiver_address) ? a : NaN; })) {
           this.$message({
             type: 'error',
@@ -330,29 +365,36 @@
           });
           return
         };
-	this.xloboData.Comment = '';
+        this.xloboData.Comment = '';
         this.dialogDBInputVisible = true;
       },
       createShippingDB() {
         this.xloboData.orders = this.selectRow;
-	let shipping_type = this.selectRow[0].shipping_name;
-	if ( shipping_type==='直邮电商' ) {
+        let shipping_type = this.selectRow[0].shipping_name;
+        if ( shipping_type==='直邮电商' ) {
           createNoVerification(this.xloboData).then(response => {
-	    this.dialogFormVisible = false
-	    this.getOrder();
+            this.dialogFormVisible = false
+            this.getOrder();
           })
-	} else {
-	  createfbxbill(this.xloboData).then(response => {
-	    this.dialogFormVisible = false;
-	    this.getOrder();
-	  })
-	}
+        } else {
+          createfbxbill(this.xloboData).then(response => {
+            this.dialogFormVisible = false;
+            this.getOrder();
+          })
+        }
+      },
+      createUexShippingDB() {
+        this.uexData.orders = this.selectRow;
+        createUexDB(this.uexData).then(response => {
+          this.dialogUEXVisible = false;
+          this.getOrder();
+        })
       },
       manualShippingDB() {
         this.xloboData.orders = this.selectRow;
         manualallocatedb(this.xloboData).then(response => {
           this.dialogDBInputVisible = false
-	  this.getOrder();
+          this.getOrder();
         })
       }
     }

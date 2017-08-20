@@ -97,6 +97,14 @@ export function productcreate(data) {
   });
 }
 
+export function createUexDB(data) {
+  return fetch({
+    url: '/uex/stockout/',
+    method: 'post',
+    data
+  });
+}
+
 export function stockOut(data) {
   return fetch({
     url: '/stock/out/',
