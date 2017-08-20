@@ -3,8 +3,13 @@ import { Message } from 'element-ui';
 import store from '../store';
 // import router from '../router';
 
+// axios.defaults.xsrfCookieName = 'csrftoken'
+// axios.defaults.xsrfHeaderName = 'X-CSRFToken'
+
 // 创建axios实例
 const service = axios.create({
+  xsrfCookieName: 'csrftoken',
+  xsrfHeaderName: 'X-CSRFToken',
   baseURL: process.env.BASE_API, // api的base_url
   // baseURL: "http://127.0.0.1:8000/stock",
   timeout: 30000                  // 请求超时时间
