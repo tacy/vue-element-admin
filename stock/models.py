@@ -13,7 +13,7 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 # Create your models here.
 class Supplier(models.Model):
-    name = models.CharField(max_length=255, null=False, unique=True)
+    name = models.CharField(max_length=16, null=False, unique=True)
     address = models.CharField(max_length=255)
     phone = models.CharField(max_length=255)
 
