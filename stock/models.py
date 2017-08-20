@@ -99,7 +99,7 @@ class PurchaseOrder(models.Model):
     # 1. 进入订单/待采购页面, 在采购渠道采购, 填入采购信息, 保存采购单, 采购单进入在途状态
     # 2. 包裹到库, 仓库进行入库操作, 采购单状态变更为入库
     # 3. 如果采购单被Cancel, 采购人员进入采购/采购单, 标记该采购单为删除.
-    orderid = models.CharField(max_length=255, blank=False)
+    orderid = models.CharField(max_length=64, blank=False)
     supplier = models.ForeignKey(Supplier, related_name='purchaseorder')
     inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
     delivery_id = models.CharField(max_length=255, blank=True)
