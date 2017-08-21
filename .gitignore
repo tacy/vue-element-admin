@@ -6,6 +6,5 @@ ymatou/__pycache__
 ymatou/migrations/__pycache__
 frontend/node_modules/
 frontend/dist/
-static/
 gifs/
 frontend/npm-debug.log
