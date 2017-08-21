@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',  # DRF
     'rest_framework.authtoken',
     'django_filters',
+    'explorer',
     'stock',
 ]
 
@@ -156,6 +157,9 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 STATIC_URL = '/static/'
+
+EXPLORER_CONNECTIONS = { 'default': 'readonly' }
+EXPLORER_DEFAULT_CONNECTION = 'readonly'
 
 if DEBUG:
     INTERNAL_IPS = ('127.0.0.1', )

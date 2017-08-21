@@ -8,11 +8,5 @@ frontend/node_modules/
 frontend/dist/
 static/
 gifs/
-<<<<<<< HEAD
-npm-debug.log
-test/unit/coverage
-test/e2e/reports
-selenium-debug.log
-.idea
-venv/
 frontend/npm-debug.log
+venv/
