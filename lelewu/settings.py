@@ -79,7 +79,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         # 'DIRS': [],
-        'DIRS': ['dist'],
+        'DIRS': ['frontend/dist'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -150,8 +150,10 @@ USE_TZ = False
 
 # Add for vuejs
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "dist/static"),
+    os.path.join(BASE_DIR, "frontend/dist/static"),
 ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 STATIC_URL = '/static/'
 
