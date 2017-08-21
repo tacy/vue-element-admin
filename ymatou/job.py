@@ -16,6 +16,7 @@ access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k
 client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
 )
 client_id = '8417db83-360c-4275-974f-cf9a2734d8f8'
+db_password = '12345678'
 
 # debug
 # access_token = 'ACiYUZ6aKC48faYFD6MpvbOf73BdE9OV5g15q1A6Ghs+i/XIawq/9RHJCzc6Y3UNxA=='
@@ -386,9 +387,9 @@ async def main(loop):
         host='127.0.0.1',
         port=3306,
         user='root',
-        password='12345678',
+        password=db_password,
         db='ymatou',
-        charset='utf8',
+        charset='utf8mb4',
         loop=loop)
 
     # get task info

@@ -9,7 +9,9 @@ import click
 from bs4 import BeautifulSoup
 from tiangouAPI import TiangouAPI
 from ymatouapi import XloboAPI
+
 REQUEST_TIMEOUT = 120
+db_password = '12345678'
 
 
 async def fetch(session, url, payload):
@@ -32,9 +34,9 @@ async def fetch_all(session, url, payloads, loop):
         host='127.0.0.1',
         port=3306,
         user='root',
-        password='12345678',
+        password=db_password,
         db='ymatou',
-        charset='utf8',
+        charset='utf8mb4',
         loop=loop)
     for a in results:
         d = None
@@ -80,9 +82,9 @@ async def getCategory(xloboapi, loop):
         host='127.0.0.1',
         port=3306,
         user='root',
-        password='12345678',
+        password=db_password,
         db='ymatou',
-        charset='utf8',
+        charset='utf8mb4',
         loop=loop)
     cs = []
     version = rs['Result']['Version']
@@ -211,9 +213,9 @@ async def importThirdPartyOrderToXlobo(loop):
         host='127.0.0.1',
         port=3306,
         user='root',
-        password='12345678',
+        password=db_password,
         db='ymatou',
-        charset='utf8',
+        charset='utf8mb4',
         loop=loop)
     msg_param = {}
     async with pool.acquire() as conn:
