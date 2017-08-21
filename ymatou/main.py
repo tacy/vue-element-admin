@@ -11,7 +11,7 @@ from tiangouAPI import TiangouAPI
 from ymatouapi import XloboAPI
 
 REQUEST_TIMEOUT = 120
-db_password = '12345678'
+db_password = 'asd12288'
 
 
 async def fetch(session, url, payload):
