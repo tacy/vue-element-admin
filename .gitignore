@@ -1,6 +1,9 @@
 .DS_Store
-stock/migrations
 stock/__pycache__/
+stock/migrations/__pycache__
+lelewu/__pycache__
+ymatou/__pycache__
+ymatou/migrations/__pycache__
 node_modules/
 dist/
 static/ckeditor

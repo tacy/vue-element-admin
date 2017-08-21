@@ -137,12 +137,13 @@ async def syncTGOrder(tgapi, sellerName, pool):
     if not rs.get('data'):
         return
     for o in rs['data']['rows']:
+        print(o)
         delty = o['deliveryAddress']
         orderid = o['id']
         receiver_name = delty['receiver']
         receiver_address = ','.join([
-            delty['province'], delty['city'], delty['district'],
-            delty['address']
+            delty['province'], delty['city'],
+            delty.get('district', '无'), delty['address']
         ])
         receiver_mobile = delty['phone']
         receiver_idcard = delty['cardNumber']
