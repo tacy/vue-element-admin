@@ -596,7 +596,7 @@ class OrderPurchaseList(views.APIView):
     # 需要返回查询时间, 创建采购单的时候, 我们需要用这个时间来和订单的派单时间做对比, 看看是否能关联相关订单
     #
     def get(self, request, format=None):
-        sql = "select s.jancode, s.name product_name, s.specification sku_properties_name, sum(o.need_purchase) qty from stock_product s inner join stock_order o on o.jancode=s.jancode and o.status='待采购' and o.inventory_id=%s"
+        sql = "select s.jancode, s.name product_name, s.specification sku_properties_name, sum(o.need_purchase) qty from stock_product s inner join stock_order o on o.jancode=s.jancode and o.status='待采购' and o.inventory_id=%s group by jancode"
 
         def dictfetchall(cursor):
             "Return all rows from a cursor as a dict"
