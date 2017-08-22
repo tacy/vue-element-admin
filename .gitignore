@@ -1,6 +1,6 @@
 .DS_Store
 stock/__pycache__/
-stock/migrations/__pycache__
+stock/migrations/
 lelewu/__pycache__
 ymatou/__pycache__
 ymatou/migrations/__pycache__

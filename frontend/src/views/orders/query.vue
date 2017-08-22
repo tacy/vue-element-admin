@@ -1,10 +1,13 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
       </el-input>
 
-      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
+      </el-input>
+
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="条码" v-model="listQuery.jancode">
       </el-input>
 
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
@@ -227,6 +230,7 @@
           inventory: undefined,
 	  channel_name: undefined,
 	  receiver_name: undefined,
+	  jancode: undefined,
 	  orderid: undefined
         },
 	orderData: {

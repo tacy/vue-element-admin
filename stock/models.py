@@ -60,7 +60,6 @@ class Stock(models.Model):
     inventory = models.ForeignKey(Inventory, related_name='stock')
     jancode = models.ForeignKey(
         Product, to_field='jancode', related_name='stock', db_column='jancode')
-    product_name = models.CharField(max_length=255, null=False)
     quantity = models.IntegerField(null=True, default=0)  # 库存
     inflight = models.IntegerField(null=True, default=0)  # 在途数量
     preallocation = models.IntegerField(null=True, default=0)  # 分配到该仓库商品的订单
@@ -142,7 +141,7 @@ class Order(models.Model):
     receiver_mobile = models.CharField(max_length=11, null=False)
     receiver_idcard = models.CharField(max_length=18, null=True)
     seller_memo = models.CharField(max_length=255, null=True, default='')
-    buyer_remark = models.CharField(max_length=255, null=True, default='')
+    buyer_remark = models.CharField(max_length=255, null=True)
     jancode = models.CharField(max_length=24, null=True, default='')
     quantity = models.IntegerField(null=False)
     need_purchase = models.IntegerField(null=True, default=0)

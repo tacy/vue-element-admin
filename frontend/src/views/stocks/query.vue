@@ -20,17 +20,21 @@
 	</template>
       </el-table-column>
 
-      <el-table-column align="center" label="仓库" width="100px">
+      <el-table-column align="center" label="仓库" width="80px">
 	<template scope="scope">
 	  <span>{{scope.row.inventory_name}}</span>
 	</template>
       </el-table-column>
 
-      <el-table-column align="center" label="名称" show-overflow-tooltip>
+      <el-table-column align="center" label="名称" width="280px" show-overflow-tooltip>
 	<template scope="scope">
-	  <!--span>{{scope.row.product_name}}</span-->
-          <el-input v-show="scope.row.edit" size="small" v-model="scope.row.product_name"></el-input>
-          <span v-show="!scope.row.edit">{{ scope.row.product_name }}</span>
+	  <span>{{scope.row.product_name}}</span>
+	</template>
+      </el-table-column>
+
+      <el-table-column align="center" label="规格" show-overflow-tooltip>
+	<template scope="scope">
+	  <span>{{scope.row.product_specification}}</span>
 	</template>
       </el-table-column>
 
