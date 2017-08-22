@@ -112,7 +112,7 @@ class XloboCreateNoVerification(views.APIView):
             for o in ords:
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
-                orderObj.save()
+                orderObj.save(update_fields=['shippingdb'])
 
         return Response(data=result, status=status.HTTP_200_OK)
 
@@ -204,7 +204,7 @@ class XloboCreateFBXBill(views.APIView):
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
                 orderObj.status = '已发货'  # 订单直接进入已发货状态
-                orderObj.save()
+                orderObj.save(update_fields=['status', 'shippingdb'])
                 stockObj = Stock.objects.get(
                     jancode=orderObj.jancode, inventory=orderObj.inventory)
                 stockObj.quantity = F('quantity') - orderObj.quantity  # 扣减库存
@@ -314,7 +314,7 @@ class UexStockOut(views.APIView):
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
                 orderObj.status = '已发货'  # 订单直接进入已发货状态
-                orderObj.save()
+                orderObj.save(update_fields=['status', 'shippingdb'])
                 stockObj = Stock.objects.get(
                     jancode=orderObj.jancode, inventory=orderObj.inventory)
                 stockObj.quantity = F('quantity') - orderObj.quantity  # 扣减库存
@@ -341,7 +341,7 @@ class ManualAllocateDBNumber(views.APIView):
             for o in ords:
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
-                orderObj.save()
+                orderObj.save(update_fields=['shippingdb'])
 
         return Response(status=status.HTTP_200_OK)
 
@@ -356,10 +356,10 @@ class StockOut(views.APIView):
         with transaction.atomic():
             shippingdbObj = ShippingDB.objects.get(id=shippingdb_id)
             shippingdbObj.status = '已出库'
-            shippingdbObj.save()
+            shippingdbObj.save(update_fields=['status'])
             for o in shippingdbObj.order.all():
                 o.status = '已发货'
-                o.save()
+                o.save(update_fields=['status'])
                 stockObj = Stock.objects.get(
                     jancode=o.jancode, inventory=o.inventory)
                 stockObj.quantity = F('quantity') - o.quantity
@@ -508,7 +508,12 @@ class OrderAllocate(views.APIView):
         relate_inventory = Inventory.objects.get(id=paramInventory)
         # if not paramInventory or not paramShipping:  # 传入参数为空, 无效
         #     return status.HTTP_400_BAD_REQUEST
-        productObj = Product.objects.get(jancode=orderInfo['jancode'])
+        productObj = None
+        try:
+            productObj = Product.objects.get(jancode=orderInfo['jancode'])
+        except Product.DoesNotExist:
+            results = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
+            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
         stockObj = None
         try:
             stockObj = Stock.objects.get(
@@ -549,11 +554,13 @@ class OrderAllocate(views.APIView):
             if isStockUpdate:
                 # if not stockInfo['inflight']:
                 #     stockInfo['inflight'] = 0
-                orderInfo[
-                    'allocate_time'] = allocate_time  # 如果更新库存表, 就需要更新派单时间
                 stockObj.save()
                 # 使用F操作models, save之后需要从数据库刷新, 否则值不能使用
                 stockObj.refresh_from_db()
+
+                orderInfo[
+                    'allocate_time'] = allocate_time  # 如果更新库存表, 就需要更新派单时间
+
                 purchaseQuantity = stockObj.preallocation - (
                     stockObj.quantity + stockObj.inflight)
                 if purchaseQuantity > 0:  # 订单需采购
@@ -589,7 +596,7 @@ class OrderPurchaseList(views.APIView):
     # 需要返回查询时间, 创建采购单的时候, 我们需要用这个时间来和订单的派单时间做对比, 看看是否能关联相关订单
     #
     def get(self, request, format=None):
-        sql = "select s.jancode, s.product_name product_name, o.sku_properties_name sku_properties_name, sum(o.need_purchase) qty from stock_stock s inner join stock_order o on o.jancode=s.jancode and o.status='待采购' and o.inventory_id=%s group by product_name, sku_properties_name"
+        sql = "select s.jancode, s.name product_name, s.specification sku_properties_name, sum(o.need_purchase) qty from stock_product s inner join stock_order o on o.jancode=s.jancode and o.status='待采购' and o.inventory_id=%s"
 
         def dictfetchall(cursor):
             "Return all rows from a cursor as a dict"
@@ -653,7 +660,7 @@ class OrderPurchase(views.APIView):
                     pos[po_id] = po
 
                 # add purchase item
-                price = i['price'] / i['quantity']
+                price = i['price']
                 poitem = PurchaseOrderItem(
                     jancode=Product.objects.get(jancode=jancode),
                     quantity=i['quantity'],
@@ -677,7 +684,7 @@ class OrderPurchase(views.APIView):
                         continue
                     o.purchaseorder = pos[po_id]
                     o.status = '已采购'
-                    o.save()
+                    o.save(update_fields=['status', 'purchaseorder'])
                     # orders_qty_sum += o.need_purchase
                     # if orders_qty_sum > int(i['quantity']):
                     #     break
@@ -746,7 +753,7 @@ class NoOrderPurchase(views.APIView):
                 for o in orders:
                     o.purchaseorder = poObj
                     o.status = '已采购'
-                    o.save()
+                    o.save(update_fields=['status', 'purchaseorder'])
 
             return Response(status=status.HTTP_201_CREATED)
 
@@ -777,7 +784,7 @@ class PurchaseOrderDelete(views.APIView):
                 if '已采购' in o.status:
                     o.status = '待采购'
                 o.purchaseorder = None  # clear relate po
-                o.save()
+                o.save(update_fields=['status', 'purchaseorder'])
 
             # rollback stock, set stock preallocation
             for poi in poitemObjs:
@@ -788,7 +795,7 @@ class PurchaseOrderDelete(views.APIView):
 
             # mark purchaseorder status as '删除'
             poObj.status = '删除'
-            poObj.save()
+            poObj.save(update_fields=['status'])
             return Response(status=status.HTTP_201_CREATED)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -806,12 +813,11 @@ class PurchaseOrderClear(views.APIView):
         inventory_id = request.data.get('inventory')
         pois = request.data.get('pois')
         poObj = PurchaseOrder.objects.get(id=id)  # 采购单
-        orderObjs = poObj.order.all()  # 关联订单
 
         with transaction.atomic():
             # mark purchaseorder
             poObj.status = '入库'
-            poObj.save()
+            poObj.save(update_fields=['status'])
 
             # stock in
             for poi in pois:
@@ -828,9 +834,12 @@ class PurchaseOrderClear(views.APIView):
                 stockObj.save()
 
             # mark order
-            for o in orderObjs:
-                if '已采购' in o.status:
-                    o.status = '待发货'
+            # orderObjs = poObj.order.all()  # 关联订单
+            # for o in orderObjs:
+            #     if '已采购' in o.status:
+            #         o.status = '待发货'
+            #         o.save()
+            poObj.order.filter(status='已采购').update(status='待发货')
 
             return Response(status=status.HTTP_200_OK)
 
@@ -869,7 +878,7 @@ class OrderMarkConflict(views.APIView):
 
 # 需介入处理(协调退换货)
 # 退款: 设置订单状态:已删除, 释放占用的库存. 换货: 释放占用的库存, 重新占用新库存.
-# 注意: 换货意味这重新派单, 需要设置派单时间
+# 注意: 换货意味着重新派单, 需要设置派单时间
 class OrderConflict(views.APIView):
     def put(self, request, format=None):
         print(request.data)
@@ -884,7 +893,7 @@ class OrderConflict(views.APIView):
                 stockObj.save()
                 orderObj = Order.objects.get(id=data['id'])
                 orderObj.status = '已删除'
-                orderObj.save()
+                orderObj.save(update_fields=['status'])
             else:  # 更换
                 orderObj = Order.objects.get(id=data['id'])
                 if orderObj.jancode != data['jancode']:
@@ -899,10 +908,11 @@ class OrderConflict(views.APIView):
                     stockObj = Stock.objects.get(
                         inventory=data['inventory'], jancode=data['jancode'])
                     real_stock_qty = stockObj.quantity + stockObj.inflight - stockObj.preallocation
-                    if data['quantity'] <= real_stock_qty:
+                    if data['quantity'] <= real_stock_qty:  # 库存足够, 记得取消采购标记(need_purchase=0)
                         stockObj.preallocation = F(
                             'preallocation') + data['quantity']
                         orderObj.status = '待发货'
+                        orderObj.need_purchase = 0
                         orderObj.jancode = data['jancode']
                     else:
                         need_purchase = (
@@ -916,7 +926,6 @@ class OrderConflict(views.APIView):
                     orderObj.allocate_time = arrow.now().format(
                         'YYYY-MM-DD HH:mm:ss')  # 需要更新订单分配时间
                     orderObj.save()
-                    rollbackStockObj.save()
                     stockObj.save()
 
             return Response(status=status.HTTP_200_OK)
