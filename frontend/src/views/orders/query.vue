@@ -25,9 +25,27 @@
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
+      <el-table-column type="expand" width="50px">
+	<template scope="scope">
+	  <el-form label-position="left" inline class="table-expand">
+	    <el-form-item label="商品:" label-width="50px">
+	      <span>{{ scope.row.product_title }}</span>
+	    </el-form-item>
+	    <el-form-item label="数量:" label-width="50px">
+	      <span>{{ scope.row.quantity }}</span>
+	    </el-form-item>
+	    <el-form-item label="规格:" label-width="50px">
+	      <span>{{ scope.row.sku_properties_name }}</span>
+	    </el-form-item>
+	    <el-form-item label="证件:" label-width="50px">
+	      <span>{{ scope.row.receiver_idcard }}</span>
+	    </el-form-item>
+	  </el-form>
+	</template>
+      </el-table-column>
       <el-table-column align="center" label="订单号" width="100px">
 	<template scope="scope">
-	  <span class="link-type" @click="getItem(scope.row)">{{scope.row.orderid}}</span>
+	  <span>{{scope.row.orderid}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="渠道" width="80px">
@@ -65,7 +83,7 @@
 	  <span>{{scope.row.receiver_address}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="商品编码" width="130px" show-overflow-tooltip>
+      <el-table-column align="center" label="条码" width="130px" show-overflow-tooltip>
 	<template scope="scope">
 	  <span>{{scope.row.jancode}}</span>
 	</template>
@@ -168,30 +186,6 @@
       </div>
     </el-dialog>
 
-    <el-dialog title="订单明细" :visible.sync="dialogItemVisible" size="small">
-      <el-table :data="itemData" border fit highlight-current-row style="width: 100%">
-	<el-table-column align="center" label="商品编码">
-	  <template scope="scope">
-	    <span>{{scope.row.jancode}}</span>
-	  </template>
-        </el-table-column>
-	<el-table-column align="center" label="数量">
-	  <template scope="scope">
-	    <span>{{scope.row.quantity}}</span>
-	  </template>
-        </el-table-column>
-	<el-table-column align="center" label="价格">
-	  <template scope="scope">
-	    <span>{{scope.row.price}}</span>
-	  </template>
-        </el-table-column>
-      </el-table>
-
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="dialogItemVisible=false">确 定</el-button>
-      </span>
-    </el-dialog>
-
     <el-dialog title="删除订单" :visible.sync="dialogFormVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
         <el-form-item label="原因">
@@ -207,10 +201,24 @@
   </div>
 </template>
 
+<style>
+  .table-expand {
+    font-size: 0;
+  }
+  .table-expand label {
+    width: 90px;
+    color: #99a9bf;
+  }
+  .table-expand .el-form-item {
+    margin-right: 0;
+    margin-bottom: 0;
+    width: 50%;
+  }
+</style>
+
 <script>
   import { parseTime } from 'utils';
   import { fetchInventory, fetchSupplier, fetchOrder, orderDelete, orderTPRCreate } from 'api/orders';
-  import { fetchPurchaseOrderItem, purchaseOrderDelete } from 'api/purchases';
 
   export default {
     data() {
@@ -218,7 +226,6 @@
         list: [],
         listLoading: true,
         total: null,
-        dialogItemVisible: false,
 	dialogFormVisible: false,
 	dialogCreateVisible: false,
         inventoryOptions: [],
@@ -256,11 +263,7 @@
           id: undefined,
 	  status: undefined,
 	  conflict_feedback: undefined
-        },
-	listItem: {
-	  purchaseorder: undefined
-	},
-        itemData: [],
+        }
       }
     },
     created() {
@@ -315,13 +318,6 @@
 	  product_title: undefined,
 	  sku_properties_name: undefined
         });
-      },
-      getItem(row) {
-        this.dialogItemVisible = true;
-	this.listItem.purchaseorder = row.id,
-        fetchPurchaseOrderItem(this.listItem).then(response => {
-          this.itemData = response.data.results;
-        })
       },
       handleDelete(row) {
         this.temp = Object.assign({}, row);

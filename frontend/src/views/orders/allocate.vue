@@ -16,9 +16,7 @@
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <el-button class="filter-item" style="margin-left: 10px;" @click="handleCreate" type="primary" icon="edit">添加</el-button>
       <el-button class="filter-item" type="primary" icon="document" @click="handleDownload">导出</el-button>
-      <el-checkbox class="filter-item" @change='tableKey=tableKey+1' v-model="showAuditor">显示审核人</el-checkbox>
     </div>
 
     <el-table :key='tableKey' :data="list" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
@@ -37,6 +35,12 @@
       <el-table-column width="140px" align="center" label="条码" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.jancode}}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column width="70px" align="center" label="数量" show-overflow-tooltip>
+        <template scope="scope">
+          <span>{{scope.row.quantity}}</span>
         </template>
       </el-table-column>
 
@@ -73,12 +77,6 @@
       <el-table-column align="center" label="运输" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.delivery_type}}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column width="110px" v-if='showAuditor' align="center" label="审核人">
-        <template scope="scope">
-          <span style='color:red;'>{{scope.row.auditor}}</span>
         </template>
       </el-table-column>
 
@@ -177,7 +175,7 @@
 </template>
 
 <script>
-  import { fetchOrder, fetchInventory, fetchCategory, fetchStock, fetchShipping, updateOrder, orderAllocate, productcreate, fetchPv } from 'api/orders';
+  import { fetchOrder, fetchInventory, fetchCategory, fetchStock, fetchShipping, updateOrder, orderAllocate, productcreate } from 'api/orders';
   import { parseTime } from 'utils';
 
   export default {
@@ -231,11 +229,8 @@
           update: '编辑',
           create: '创建'
         },
-        dialogPvVisible: false,
-        pvData: [],
         dialogAllocationVisible: false,
         stockData: [],
-        showAuditor: false,
         tableKey: 0
       }
     },
@@ -300,18 +295,6 @@
         });
         row.status = status;
       },
-      handleCreate() {
-        this.resetTemp();
-	this.tempProduct = {
-	  name: undefined,
-	  jancode: undefined,
-	  category: undefined,
-	  brand: undefined,
-	  specification: undefined
-	};
-        this.dialogStatus = 'create';
-        this.dialogFormVisible = true;
-      },
       handleProduct(row) {
         this.temp = Object.assign({}, row);
         this.dialogProductVisible = true
@@ -347,19 +330,6 @@
         });
         const index = this.list.indexOf(row);
         this.list.splice(index, 1);
-      },
-      create() {
-        this.temp.id = parseInt(Math.random() * 100) + 1024;
-        this.temp.timestamp = +new Date();
-        this.temp.author = '原创作者';
-        this.list.unshift(this.temp);
-        this.dialogFormVisible = false;
-        this.$notify({
-          title: '成功',
-          message: '创建成功',
-          type: 'success',
-          duration: 2000
-        });
       },
       update() {
         this.temp.timestamp = +this.temp.timestamp;
@@ -410,12 +380,6 @@
           status: 'published',
           type: ''
         };
-      },
-      handleFetchPv(pv) {
-        fetchPv(pv).then(response => {
-          this.pvData = response.data.pvData;
-          this.dialogPvVisible = true;
-        })
       },
       handleFetchStock(row) {
         this.temp = Object.assign({}, row);
