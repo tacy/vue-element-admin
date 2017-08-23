@@ -239,7 +239,10 @@ async def syncYmtOrdToXlobo(session):
             print(r)
 
 
-# 扫描订单表, 同步第三方订单到贝海
+# 扫描订单表, 同步第三方订单到贝海.
+# 订单预处理之后, 才进行订单导入工作, 主要考虑订单信息在预处理的时候,
+# 会进行更改, 并且有些订单没有经过预处理是无法导入的, 例如订单产品在
+# 产品表中不存在, 导致没有类目和规格等问题.
 async def syncTpoOrdToXlobo(xloboapi, pool):
     sql = (
         "select a.id, a.channel_name, a.orderid, a.receiver_name, a.receiver_address, "
@@ -247,9 +250,9 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
         "a.product_title, a.quantity, a.price, c.category_id, c.category_version, "
         "b.weight, b.brand, b.specification, a.jancode "
         "from stock_order as a inner join stock_product as b "
-        "on a.jancode=b.jancode and a.channel_name='京东' and a.importstatus is null "
+        "on a.jancode=b.jancode and a.channel_name='京东' and a.importstatus is null and a.status in ('待采购', '待发货', '已采购') "
         "inner join stock_category as c "
-        "on b.category_id=c.id ")
+        "on b.category_id=c.id")
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(sql)
