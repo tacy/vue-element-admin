@@ -49,7 +49,7 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(
-                'select max(export_time) from stock_exportorderlog where sellername=%s',
+                'select export_time from stock_exportorderlog where sellername=%s order by id desc limit 1',
                 (sellerName, ))
             r = await cur.fetchone()
             print(r)
@@ -114,6 +114,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
 
 
 async def syncTGOrder(tgapi, sellerName, pool):
+    result = await tgapi.login()
+    print('tiangou', result)
     et = arrow.now().to('local').format('YYYY-MM-DD HH:mm:ss')
 
     # get last export order time from stock_exportorderlog as st
@@ -121,7 +123,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(
-                'select max(export_time) from stock_exportorderlog where sellername=%s',
+                'select export_time from stock_exportorderlog where sellername=%s order by id desc limit 1',
                 (sellerName, ))
             r = await cur.fetchone()
             print(r)
@@ -235,7 +237,7 @@ async def syncYmtOrdToXlobo(session):
     with async_timeout.timeout(REQUEST_TIMEOUT):
         async with session.post(url, json=payload, headers=h) as response:
             r = await response.text()
-            print(r)
+            print('ymatou-xlobo', r)
 
 
 # 扫描订单表, 同步第三方订单到贝海.
@@ -289,7 +291,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                 }
                 # print(msg_param)
                 result = await xloboapi.importOrder(msg_param)
-                print(result)
+                print('tg-to-xlobo', result)
                 if result.get('Succeed'):
                     await cur.execute(
                         "update stock_order set importstatus='已导入' where id=%s",
@@ -326,6 +328,8 @@ async def deliveryYmtOrder(ymtapi, pool):
 # automatic process tiangou order delivery
 async def deliveryTgOrder(tgapi, pool):
     # 订单渠道是洋码头, 并且db单中的ymatou字段为空
+    result = await tgapi.login()
+    print('deliveryTg', result)
     sql = (
         "select a.orderid, c.tiangou_company, b.db_number from stock_order as a "
         "inner join stock_shippingdb as b on a.shippingdb_id=b.id "
@@ -345,12 +349,12 @@ async def deliveryTgOrder(tgapi, pool):
                     'deliveryId': i[1]
                 }
                 r = await tgapi.matchAndShip(payload)
-                print(r)
-
-                await cur.execute(
-                    "update stock_shippingdb set ymatou='已发货' where db_number=%s",
-                    (i[1], ))
-                await conn.commit()
+                print('deliveryTg', r)
+                if r['success']:
+                    await cur.execute(
+                        "update stock_shippingdb set ymatou='已发货' where db_number=%s",
+                        (i[1], ))
+                    await conn.commit()
 
 
 # https://stackoverflow.com/questions/37512182/how-can-i-periodically-execute-a-function-with-asyncio
@@ -406,7 +410,6 @@ async def main(loop):
     password = '1q2w3e4r5t'
     sessTG = aiohttp.ClientSession(loop=loop)
     tgapi = tiangouAPI.TiangouAPI(sessTG, username, password)
-    await tgapi.login()
     task.append(
         asyncio.ensure_future(
             periodic.start(syncTGOrder, interval['syncorder'], tgapi, '天狗',
