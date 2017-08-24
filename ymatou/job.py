@@ -61,7 +61,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
     print(sellerName, st, et)
 
     orders = await ymtapi.getOrderList(st, et)
-
+    if not orders:
+        return
     # insert order to db
     ords = []
     for o in orders:
@@ -115,6 +116,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
 
 async def syncTGOrder(tgapi, sellerName, pool):
     result = await tgapi.login()
+    if not result:
+        return
     print('tiangou', result)
     et = arrow.now().to('local').format('YYYY-MM-DD HH:mm:ss')
 
@@ -133,6 +136,8 @@ async def syncTGOrder(tgapi, sellerName, pool):
     print(sellerName, st, et)
 
     rs = await tgapi.queryOrder(1, st, et)
+    if not rs:
+        return
 
     # insert order to db
     ords = []
@@ -152,6 +157,8 @@ async def syncTGOrder(tgapi, sellerName, pool):
             o['createTime'] / 1000).format('YYYY-MM-DD HH:mm:ss')
 
         orderItems = await tgapi.orderItem(o['id'])
+        if not orderItems:
+            return
         for oi in orderItems['data']:
             # 柴单:
             #    1. jancode (jancode*1+jancode*1)
@@ -291,6 +298,8 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                 }
                 # print(msg_param)
                 result = await xloboapi.importOrder(msg_param)
+                if not result:
+                    return
                 print('tg-to-xlobo', result)
                 if result.get('Succeed'):
                     await cur.execute(
@@ -313,6 +322,8 @@ async def deliveryYmtOrder(ymtapi, pool):
             rs = await cur.fetchall()
             for i in rs:
                 r = await ymtapi.deliver(i[0], i[1], i[2])
+                if not r:
+                    return
                 print(r)
                 if '0000' in r.get('code') and r.get('content'):
                     info = r['content']['results']
@@ -329,6 +340,8 @@ async def deliveryYmtOrder(ymtapi, pool):
 async def deliveryTgOrder(tgapi, pool):
     # 订单渠道是洋码头, 并且db单中的ymatou字段为空
     result = await tgapi.login()
+    if not result:
+        return
     print('deliveryTg', result)
     sql = (
         "select a.orderid, c.tiangou_company, b.db_number from stock_order as a "
@@ -349,6 +362,8 @@ async def deliveryTgOrder(tgapi, pool):
                     'deliveryId': i[1]
                 }
                 r = await tgapi.matchAndShip(payload)
+                if not r:
+                    return
                 print('deliveryTg', r)
                 if r['success']:
                     await cur.execute(

@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import hashlib
 import json
@@ -5,8 +6,8 @@ import random
 import string
 import sys
 
-import async_timeout
 import arrow
+import async_timeout
 
 REQUEST_TIMEOUT = 30
 
@@ -40,9 +41,13 @@ class YmatouAPI():
         }
         payload['sign'] = self.getSign(payload)
         url = self.urltpl.format(self.appid, method)
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with self.session.post(url, json=payload) as response:
-                return await response.json()
+        try:
+            with async_timeout.timeout(REQUEST_TIMEOUT):
+                async with self.session.post(url, json=payload) as response:
+                    return await response.json()
+        except asyncio.TimeoutError as e:
+            print(e)
+            return None
 
     async def getOrderList(self, start, end):
         method = 'ymatou.order.list.get'
@@ -123,11 +128,14 @@ class XloboAPI():
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'X-Requested-With': 'XMLHttpRequest'
         }
-
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with self.session.post(
-                self.url, data=payload, headers=h) as response:
-                return await response.json()
+        try:
+            with async_timeout.timeout(REQUEST_TIMEOUT):
+                async with self.session.post(
+                    self.url, data=payload, headers=h) as response:
+                    return await response.json()
+        except asyncio.TimeoutError as e:
+            print(e)
+            return None
 
     async def getCategory(self):
         method = 'xlobo.catalogue.get'
