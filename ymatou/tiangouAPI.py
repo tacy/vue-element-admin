@@ -1,6 +1,10 @@
+import asyncio
+import logging
+
 import async_timeout
 
 REQUEST_TIMEOUT = 30
+log = logging.getLogger(__name__)
 
 
 class TiangouAPI():
@@ -10,6 +14,15 @@ class TiangouAPI():
         self.password = password
         self.session = session
 
+    async def callAPI(self, url, payload):
+        try:
+            with async_timeout.timeout(REQUEST_TIMEOUT):
+                async with self.session.post(url, data=payload) as response:
+                    return await response.json()
+        except asyncio.TimeoutError as e:
+            log.exception(url, payload)
+            return None
+
     async def login(self):
         url = 'http://base.51tiangou.com/privates/auth/seller/extLogin'
         payload = {
@@ -17,10 +30,7 @@ class TiangouAPI():
             'password': self.password,
             'domain': '.51tiangou.com'
         }
-
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with self.session.post(url, data=payload) as response:
-                return await response.json()
+        return await self.callAPI(url, payload)
 
     async def queryOrder(self, page, starttime, endtime):
         url = 'http://oserv.51tiangou.com/privates/seller/orderQuery/queryOrder'
@@ -35,16 +45,12 @@ class TiangouAPI():
             'rows': '200',
             'domain': '.51tiangou.com'
         }
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with self.session.post(url, data=payload) as response:
-                return await response.json()
+        return await self.callAPI(url, payload)
 
     async def orderItem(self, orderid):
         url = 'http://oserv.51tiangou.com/privates/seller/tgouOrder/orderItem'
         payload = {'orderId': orderid, 'domain': '.51tiangou.com'}
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with self.session.post(url, data=payload) as response:
-                return await response.json()
+        return await self.callAPI(url, payload)
 
     # Request URL:http://oserv.51tiangou.com/privates/seller/tgouPackage/matchAndShip
     # Request Method:POST
@@ -60,6 +66,4 @@ class TiangouAPI():
     async def matchAndShip(self, payload):
         url = 'http://oserv.51tiangou.com/privates/seller/tgouPackage/matchAndShip'
         payload['domain'] = '.51tiangou.com'
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with self.session.post(url, data=payload) as response:
-                return await response.json()
+        return await self.callAPI(url, payload)
