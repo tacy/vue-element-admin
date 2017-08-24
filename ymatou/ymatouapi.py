@@ -2,6 +2,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import logging
 import random
 import string
 import sys
@@ -10,6 +11,7 @@ import arrow
 import async_timeout
 
 REQUEST_TIMEOUT = 30
+log = logging.getLogger(__name__)
 
 
 class YmatouAPI():
@@ -46,7 +48,7 @@ class YmatouAPI():
                 async with self.session.post(url, json=payload) as response:
                     return await response.json()
         except asyncio.TimeoutError as e:
-            print(e)
+            log.exception(method)
             return None
 
     async def getOrderList(self, start, end):
@@ -134,7 +136,7 @@ class XloboAPI():
                     self.url, data=payload, headers=h) as response:
                     return await response.json()
         except asyncio.TimeoutError as e:
-            print(e)
+            log.exception(method, enc_msg)
             return None
 
     async def getCategory(self):
@@ -142,10 +144,7 @@ class XloboAPI():
         BusinessNo = str(random.randint(10000000, 99999999))
         msg = {'BusinessNo': BusinessNo}
         msg_param = json.dumps(msg)
-
         result = await self.callAPI(method, msg_param)
-
-        print(result)
         return result
 
     async def getLogistic(self):
@@ -153,17 +152,13 @@ class XloboAPI():
         BusinessNo = str(random.randint(10000000, 99999999))
         msg = {'BusinessNo': BusinessNo}
         msg_param = json.dumps(msg)
-
         result = await self.callAPI(method, msg_param)
-
-        print(result)
         return result
 
     async def createNoVerification(self, msg):
         method = 'xlobo.labels.createNoVerification'
         BusinessNo = str(random.randint(10000000, 99999999))
         msg['BusinessNo'] = BusinessNo
-        print(msg)
         msg_param = json.dumps(msg)
         result = await self.callAPI(method, msg_param)
         return result
@@ -172,7 +167,6 @@ class XloboAPI():
         method = 'xlobo.fbx.createfbxbill'
         BusinessNo = str(random.randint(10000000, 99999999))
         msg['BusinessNo'] = BusinessNo
-        print(msg)
         msg_param = json.dumps(msg)
         result = await self.callAPI(method, msg_param)
         return result
@@ -183,7 +177,6 @@ class XloboAPI():
         msg['BusinessNo'] = BusinessNo
         msg_param = json.dumps(msg)
         result = await self.callAPI(method, msg_param)
-        print(msg_param)
         return result
 
     # msg: {"BillCodes":["DB543200315US","DB543200315US"]}
@@ -193,5 +186,4 @@ class XloboAPI():
         msg['BusinessNo'] = BusinessNo
         msg_param = json.dumps(msg)
         result = await self.callAPI(method, msg_param)
-        print(msg_param)
         return result
