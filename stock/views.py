@@ -225,11 +225,11 @@ class XloboGetPDF(views.APIView):
                 request.query_params.get('BillCode'),
             ]
         }
-        # data = {
-        #     'BillCodes': [
-        #         'DB273208811JP',
-        #     ]
-        # }
+        data = {
+            'BillCodes': [
+                'DB283206898JP',
+            ]
+        }
         print(data)
 
         sess = aiohttp.ClientSession(loop=loop)

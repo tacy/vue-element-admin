@@ -58,17 +58,15 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
             offset_one_second = r[0] + datetime.timedelta(seconds=1)
             st = offset_one_second.strftime('%Y-%m-%d %H:%M:%S')
 
-    print(st, et)
+    print(sellerName, st, et)
 
     orders = await ymtapi.getOrderList(st, et)
 
     # insert order to db
     ords = []
     for o in orders:
-        print(o)
         for oi in o['order_items_info']:
-            print(oi)
-            # 柴单:
+            # 拆单:
             #    1. jancode (jancode*1+jancode*1)
             #    2. payment根据jancode数量平分
             #    3. price根据num平分
@@ -92,6 +90,7 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                       o['buyer_remark'], jancode, num, price, payment,
                       deliveryType[oi['delivery_type']], o['paid_time'],
                       oi['product_title'], oi['sku_properties_name'], '待处理')
+                print(it[0], it[2], it[3], it[9])
                 ords.append(it)
     # print(ords)
     insertOrderSQL = (
@@ -129,7 +128,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
             offset_one_second = r[0] + datetime.timedelta(seconds=1)
             st = offset_one_second.strftime('%Y-%m-%d %H:%M:%S')
 
-    print(st, et)
+    print(sellerName, st, et)
 
     rs = await tgapi.queryOrder(1, st, et)
 
@@ -138,7 +137,6 @@ async def syncTGOrder(tgapi, sellerName, pool):
     if not rs.get('data'):
         return
     for o in rs['data']['rows']:
-        print(o)
         delty = o['deliveryAddress']
         orderid = o['id']
         receiver_name = delty['receiver']
@@ -175,6 +173,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
                       receiver_address, '100101', receiver_mobile,
                       receiver_idcard, jancode, num, price, payment, '第三方',
                       createTime, product_title, '待处理')
+                print(it[0], it[2], it[3], it[8])
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
