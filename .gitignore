@@ -9,4 +9,4 @@ frontend/dist/
 gifs/
 frontend/npm-debug.log
 venv/
-ymatou/*.log
+*.log

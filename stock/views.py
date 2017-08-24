@@ -1,10 +1,11 @@
 import asyncio
 import json
+import logging
 import random
 import string
 
-import arrow.arrow
 import aiohttp
+import arrow.arrow
 import django_filters.rest_framework
 from django.db import connection, transaction
 from django.db.models import F
@@ -33,6 +34,8 @@ uex_passwd = '20162017'
 # client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
 # )
 # client_id = '68993573-E38D-4A8A-A263-055C401F9369'
+
+logger = logging.getLogger(__name__)
 
 
 class XloboCreateNoVerification(views.APIView):
@@ -90,7 +93,7 @@ class XloboCreateNoVerification(views.APIView):
         xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
                                       client_id)
         result = loop.run_until_complete(xloboapi.createNoVerification(data))
-        print(result)
+        logger.debug('XloboCreateNoVerification', result)
         if result['ErrorCount'] > 0:
             errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -176,12 +179,11 @@ class XloboCreateFBXBill(views.APIView):
         data['BillReceiverInfo'] = billReceiverInfo
         data['BillSupplyInfo'] = billSupplyInfo
         data['GoodsSkuInfos'] = billCategoryList
-        print(data)
         sess = aiohttp.ClientSession(loop=loop)
         xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
                                       client_id)
         result = loop.run_until_complete(xloboapi.createFBXBill(data))
-        print(result)
+        logger.debug('XloboCreateFBXBill', result)
         if result['ErrorCount'] > 0:
             errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -225,19 +227,27 @@ class XloboGetPDF(views.APIView):
                 request.query_params.get('BillCode'),
             ]
         }
+<<<<<<< HEAD
         data = {
             'BillCodes': [
                 'DB283206898JP',
             ]
         }
         print(data)
+=======
+        # data = {
+        #     'BillCodes': [
+        #         'DB273208811JP',
+        #     ]
+        # }
+>>>>>>> lelewu
 
         sess = aiohttp.ClientSession(loop=loop)
         xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
                                       client_id)
         result = loop.run_until_complete(xloboapi.getPDF(data))
         loop.close()
-        print(result)
+        logger.debug('XloboGetPDF', result)
         if result['ErrorCount'] > 0:
             errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -295,7 +305,7 @@ class UexStockOut(views.APIView):
         result = loop.run_until_complete(uexapi.login())
         result = loop.run_until_complete(uexapi.stockOut(payload))
         loop.close()
-        print(result)
+        logger.debug('UexStockOut', result)
         result = json.loads(result)
         if not result['code']:
             errmsg = {'errmsg': result['msg']}
