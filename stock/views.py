@@ -227,20 +227,11 @@ class XloboGetPDF(views.APIView):
                 request.query_params.get('BillCode'),
             ]
         }
-<<<<<<< HEAD
         data = {
             'BillCodes': [
-                'DB283206898JP',
+                'DB273208811JP',
             ]
         }
-        print(data)
-=======
-        # data = {
-        #     'BillCodes': [
-        #         'DB273208811JP',
-        #     ]
-        # }
->>>>>>> lelewu
 
         sess = aiohttp.ClientSession(loop=loop)
         xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
