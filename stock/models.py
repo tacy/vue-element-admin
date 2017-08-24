@@ -215,12 +215,13 @@ class Task(models.Model):
 # 它作为导出订单的起始时间.
 class ExportOrderLog(models.Model):
     sellerName = models.CharField(max_length=32, null=False)
+    start_time = models.DateTimeField(null=True)
     export_time = models.DateTimeField(null=False)
     count = models.IntegerField(null=True, default=0)
 
     def __str__(self):
-        return 'SellerName: {}  /  ExportTime: {}  /  Count: {}'.format(
-            self.sellerName, self.export_time, self.count)
+        return 'SellerName: {}  / StartTime: {} /  ExportTime: {}  /  Count: {}'.format(
+            self.sellerName, self.start_time, self.export_time, self.count)
 
     class Meta:
         unique_together = ('sellerName', 'export_time')

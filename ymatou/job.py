@@ -101,14 +101,14 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
         'sku_properties_name, status) '
         'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     )
-    insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, export_time, count) values (%s, %s, %s)'
+    insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, start_time, export_time, count) values (%s, %s, %s, %s)'
 
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.executemany(insertOrderSQL, ords)
 
             # insert sync order log
-            await cur.execute(insertExportOrderLog, (sellerName, et,
+            await cur.execute(insertExportOrderLog, (sellerName, st, et,
                                                      len(ords)))
             await conn.commit()
 
@@ -184,14 +184,14 @@ async def syncTGOrder(tgapi, sellerName, pool):
         'price, payment, delivery_type, piad_time, product_title, status) '
         'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     )
-    insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, export_time, count) values (%s, %s, %s)'
+    insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, start_time, export_time, count) values (%s, %s, %s, %s)'
 
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.executemany(insertOrderSQL, ords)
 
             # insert sync order log
-            await cur.execute(insertExportOrderLog, (sellerName, et,
+            await cur.execute(insertExportOrderLog, (sellerName, st, et,
                                                      len(ords)))
             await conn.commit()
 
@@ -396,6 +396,7 @@ async def main(loop):
         password=db_password,
         db='ymatou',
         charset='utf8mb4',
+        autocommit=True,
         loop=loop)
 
     # get task info
