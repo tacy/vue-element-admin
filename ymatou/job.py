@@ -82,21 +82,24 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                     jc = jinfo[1] if jinfo[1] else 1  # 可能写成"jancode*", 需要跳过
                     num = int(oi['num']) * int(jc)
                     price = price / int(jc)
-
+                dt = deliveryType[oi['delivery_type']]
+                receiver_idcard = ''
+                if u'第三方保税' in dt:
+                    receiver_idcard = o['id_cards'][0]['receiver_id_no']
                 it = (o['seller_id'], '洋码头', o['order_id'], o['receiver_name'],
                       o['receiver_address'], o['receiver_zip'],
-                      o['receiver_mobile'], o['seller_memo'],
-                      o['buyer_remark'], jancode, num, price, payment,
-                      deliveryType[oi['delivery_type']], o['paid_time'],
-                      oi['product_title'], oi['sku_properties_name'], '待处理')
+                      o['receiver_mobile'], receiver_idcard, o['seller_memo'],
+                      o['buyer_remark'], jancode, num, price, payment, dt,
+                      o['paid_time'], oi['product_title'],
+                      oi['sku_properties_name'], '待处理')
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
         '(seller_name, channel_name, orderid, receiver_name, receiver_address, '
-        'receiver_zip, receiver_mobile, seller_memo, buyer_remark, jancode, '
+        'receiver_zip, receiver_mobile, receiver_idcard, seller_memo, buyer_remark, jancode, '
         'quantity, price, payment, delivery_type, piad_time, product_title, '
         'sku_properties_name, status) '
-        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     )
     insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, start_time, export_time, count) values (%s, %s, %s, %s)'
 
