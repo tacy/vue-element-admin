@@ -3,10 +3,13 @@ import json
 import logging
 import random
 import string
+import base64
+from io import BytesIO
 
 import aiohttp
 import arrow.arrow
 import django_filters.rest_framework
+from PyPDF2 import PdfFileMerger
 from django.db import connection, transaction
 from django.db.models import F
 from rest_framework import generics, status, views
@@ -20,7 +23,7 @@ from .serializers import (
     InventorySerializer, OrderSerializer, ProductSerializer,
     PurchaseOrderItemSerializer, PurchaseOrderSerializer, ShippingDBSerializer,
     ShippingSerializer, StockSerializer, SupplierSerializer, TokenSerializer)
-from ymatou import uex, ymatouapi
+from ymatou import uex, ymatouapi, utils
 
 access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
 client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
@@ -222,11 +225,10 @@ class XloboGetPDF(views.APIView):
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         # construct api msg
-        data = {
-            'BillCodes': [
-                request.query_params.get('BillCode'),
-            ]
-        }
+        print(self.request.GET)
+        # drf can't get query list
+        # data = {'BillCodes': request.query_params.get('BillCodes[]')}
+        data = {'BillCodes': self.request.GET.getlist("BillCodes[]")}
         # data = {
         #     'BillCodes': [
         #         'DB273208811JP',
@@ -242,6 +244,42 @@ class XloboGetPDF(views.APIView):
         if result['ErrorCount'] > 0:
             errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+        merger = PdfFileMerger()
+        pdftool = utils.PDFTool()
+        sql = 'select o.product_title, o.sku_properties_name, o.quantity, s.location from stock_order o inner join stock_stock s on o.jancode=s.jancode and o.shippingdb_id=%s'
+        for i, b in enumerate(result['Result']):
+            db_bytes = base64.b64decode(b['BillPdfLabel'])
+            ordsData = None
+            shippingdb_id = ShippingDB.objects.get(db_number=b['BillCode']).id
+            with connection.cursor() as c:
+                c.execute(sql, (shippingdb_id, ))
+                # c.execute(sql, (8, ))
+                ordsData = c.cursor.fetchall()
+            # inp2 = BytesIO(pdftool.createShippingPDF(b['BillCode'], ordsData))
+            # inp2 = open(
+            #     '/home/tacy/workspace/python/lelewu/ymatou/simple_table.pdf',
+            #     'rb')
+            if not i:
+                merger.append(fileobj=BytesIO(db_bytes), pages=(0, 1))
+            else:
+                merger.merge(
+                    position=i * 2 + 1,
+                    fileobj=BytesIO(db_bytes),
+                    pages=(0, 1))
+            merger.merge(
+                position=2**(i + 1),
+                fileobj=BytesIO(
+                    pdftool.createShippingPDF(b['BillCode'], ordsData)),
+                pages=(0, 1))
+
+            # clear inp
+            # inp.close()
+            # inp2.close()
+
+        res = BytesIO()
+        merger.write(res)
+        result['Result'][0]['BillPdfLabel'] = base64.b64encode(res.getvalue())
+        res.close()
         return Response(data=result, status=status.HTTP_200_OK)
 
 
@@ -349,23 +387,26 @@ class ManualAllocateDBNumber(views.APIView):
 
 # 订单发货
 class StockOut(views.APIView):
-    # 1. 标记db面单状态;
+    # 1. 标记db面单状态, 设置运单号(delivery_no);
     # 2. 标记订单状态
     # 3. 扣减库存
     def post(self, request, format=None):
-        shippingdb_id = request.data['shippingdb_id']
+        delivery_no = request.data['delivery_no']
+        dbs = request.data['db_numbers'].split(',')
         with transaction.atomic():
-            shippingdbObj = ShippingDB.objects.get(id=shippingdb_id)
-            shippingdbObj.status = '已出库'
-            shippingdbObj.save(update_fields=['status'])
-            for o in shippingdbObj.order.all():
-                o.status = '已发货'
-                o.save(update_fields=['status'])
-                stockObj = Stock.objects.get(
-                    jancode=o.jancode, inventory=o.inventory)
-                stockObj.quantity = F('quantity') - o.quantity
-                stockObj.preallocation = F('preallocation') - o.quantity
-                stockObj.save()
+            for db in dbs:
+                shippingdbObj = ShippingDB.objects.get(db_number=db)
+                shippingdbObj.status = '已出库'
+                shippingdbObj.delivery_no = delivery_no
+                shippingdbObj.save(update_fields=['status', 'delivery_no'])
+                for o in shippingdbObj.order.all():
+                    o.status = '已发货'
+                    o.save(update_fields=['status'])
+                    stockObj = Stock.objects.get(
+                        jancode=o.jancode, inventory=o.inventory)
+                    stockObj.quantity = F('quantity') - o.quantity
+                    stockObj.preallocation = F('preallocation') - o.quantity
+                    stockObj.save()
 
         return Response(status=status.HTTP_200_OK)
 
@@ -1072,7 +1113,7 @@ class ShippingDBList(generics.ListAPIView):
     queryset = ShippingDB.objects.all()
     serializer_class = ShippingDBSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
-    filter_fields = ('inventory', 'status')
+    filter_fields = ('inventory', 'status', 'shipping')
 
 
 class InventoryList(generics.ListCreateAPIView):

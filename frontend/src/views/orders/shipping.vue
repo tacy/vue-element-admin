@@ -1,11 +1,13 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="面单号" v-model="listQuery.db_number">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="面单号" v-model="listQuery.db_number">
       </el-input>
 
-      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
-      </el-input>
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
+        <el-option v-for="item in shippingOptions" :key="item.id" :label="item.name" :value="item.id">
+        </el-option>
+      </el-select>
 
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="状态">
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
@@ -23,9 +25,13 @@
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleStockOut">出库</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleDBPrint">打印面单</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
+      <el-table-column type="selection" width="45" :selectable="checkSelectable">
+      </el-table-column>
       <el-table-column type="expand">
 	<template scope="scope">
           <el-form v-for="(p, index) in scope.row.info" label-position="left" inline class="table-expand">
@@ -86,18 +92,18 @@
 	  <!--el-tag :type="scope.row.status">{{scope.row.status}}</el-tag-->
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="打印" width="140">
+      <!--el-table-column align="center" label="打印" width="140">
         <template scope="scope">
           <el-button size="small" :disabled="scope.row.shipping_name==='直邮电商'?false:true" type="primary" @click="handlePDF(scope.row)">面单
           </el-button>
           <el-button size="small" type="primary" @click="handleOrderItems(scope.row)">明细
           </el-button>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="操作" width="140">
+        </template>p
+      </el-table-column-->
+      <el-table-column align="center" label="操作" width="100">
         <template scope="scope">
-          <el-button size="small" :disabled="scope.row.stockStatus==='在库'&&scope.row.status==='待处理'?false:true" type="success" @click="handleStockOut(scope.row)">出库
-          </el-button>
+          <!--el-button size="small" :disabled="scope.row.stockStatus==='在库'&&scope.row.status==='待处理'?false:true" type="success" @click="handleStockOut(scope.row)">出库
+          </el-button-->
           <el-button size="small" :disabled="scope.row.status==='待处理'?false:true" type="danger" @click="handleDelete(scope.row)">删除
           </el-button>
         </template>
@@ -109,6 +115,21 @@
         :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper" :total="total">
       </el-pagination>
     </div>
+
+    <el-dialog title="出库" :visible.sync="dialogStockOutVisible">
+      <el-form class="small-space" :model="stockOutData" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
+        <el-form-item label="运单号:">
+          <el-input v-model="stockOutData.delivery_no"></el-input>
+        </el-form-item>
+        <el-form-item label="面单号:">
+          <el-input type="textarea" :autosize="{minRows: 8, maxRows: 12}" v-model="stockOutData.db_numbers"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogStockOutVisible=false">取 消</el-button>
+        <el-button type="primary" @click="stockOut">提 交</el-button>
+      </div>
+    </el-dialog>
 
     <el-dialog title="发货明细" :visible.sync="dialogItemVisible" size="large">
       <el-table :data="itemData" border fit highlight-current-row style="width: 100%">
@@ -191,7 +212,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchShippingDB, fetchPDF, fetchOrderItems, stockOut } from 'api/orders';
+  import { fetchInventory, fetchShipping, fetchShippingDB, fetchPDF, fetchOrderItems, stockOut } from 'api/orders';
   import pdf from 'vue-pdf';
 
   export default {
@@ -206,15 +227,19 @@
         total: null,
 	pdfsrc: undefined,
         dialogItemVisible: false,
+	dialogStockOutVisible: false,
 	dialogFormVisible: false,
         inventoryOptions: [],
+        selectRow: [],
 	channelOptions: ['洋码头', '京东'],
+	shippingOptions: [],
 	statusOptions: ['待处理', '已出库', '已删除'],
         listQuery: {
           page: 1,
           limit: 10,
 	  status: "待处理",
           inventory: undefined,
+	  shipping: undefined,
 	  channel_name: undefined,
 	  receiver_name: undefined,
 	  db_number: undefined,
@@ -222,8 +247,12 @@
 	queryOrderItems: {
 	  shippingdb_id: undefined,
 	},
+	stockOutData: {
+	  delivery_no: undefined,
+	  db_numbers: undefined
+	},
 	xloboData: {
-	  BillCode: undefined
+	  BillCodes: []
 	}
       }
     },
@@ -238,6 +267,7 @@
     },
     created() {
       this.getInventory();
+      this.getShipping()
       this.getShippingDB();
     },
     methods: {
@@ -267,8 +297,19 @@
           this.inventoryOptions = response.data.results;
         })
       },
+      getShipping() {
+        fetchShipping().then(response => {
+          this.shippingOptions = response.data.results;
+        })
+      },
       handleFilter() {
         this.getShippingDB();
+      },
+      checkSelectable(row) {
+        return row.stockStatus !== '在途'
+      },
+      handleSelect(val) {
+        this.selectRow = val;
       },
       handleSizeChange(val) {
         this.listQuery.limit = val;
@@ -285,9 +326,15 @@
 	  this.dialogItemVisible = true;
 	});
       },
-      handleStockOut(row) {
-        this.queryOrderItems.shippingdb_id = row.id
-        stockOut(this.queryOrderItems).then(response => {
+      handleStockOut() {
+        this.stockOutData={
+	  delivery_no: undefined,
+	  db_numbers: undefined
+	}
+	this.dialogStockOutVisible=true;
+      },
+      stockOut() {
+        stockOut(this.stockOutData).then(response => {
 	  this.$notify({
 	    title: '成功',
 	    message: '出库完成',
@@ -298,8 +345,32 @@
       },
       handleDelete(row) {
       },
+      handleDBPrint() {
+        if (this.selectRow.length===0) {
+          this.$message({
+            type: 'error',
+            message: '请选择面单',
+            duration: 2000
+          });
+          return
+        };
+        if ( this.selectRow[0].shipping_name.includes("UEX") ) {
+          this.isUEX = true;
+          this.dialogUEXVisible = true;
+          return
+        }
+	this.pdfsrc = '';
+	this.xloboData.BillCodes=[]
+	for (const o in this.selectRow ) {
+	  this.xloboData.BillCodes.push(this.selectRow[o].db_number)
+	}
+        fetchPDF(this.xloboData).then(response => {
+	  this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
+          this.dialogFormVisible = true;
+	});
+      },
       handlePDF(row) {
-        this.xloboData.BillCode = row.db_number;
+        this.xloboData.BillCodes = row.db_number;
 	this.pdfsrc = '';
         fetchPDF(this.xloboData).then(response => {
 	  this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
