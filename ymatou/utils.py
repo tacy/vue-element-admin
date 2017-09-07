@@ -10,8 +10,8 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
 class PDFTool:
     def __init__(self):
         pdfmetrics.registerFont(
-            ttfonts.TTFont(
-                'wqy', '/usr/share/fonts/wenquanyi/wqy-zenhei/wqy-zenhei.ttc'))
+            ttfonts.TTFont('wqy',
+                           '/usr/share/fonts/wqy-zenhei/wqy-zenhei.ttc'))
 
     def createShippingPDF(self, db_number, orders):
         styles = getSampleStyleSheet()
