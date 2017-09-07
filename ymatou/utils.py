@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from reportlab.lib import colors, pagesizes
+from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics, ttfonts
@@ -23,10 +23,10 @@ class PDFTool:
             leftMargin=2,
             topMargin=2,
             bottomMargin=2,
-            pagesize=pagesizes.A6)
+            pagesize=(10 * cm, 15 * cm))
         elements = []
         title = 'DB Number: {}'.format(db_number)
-        elements.append(Paragraph(title, styles['title']))
+        elements.append(Paragraph(title, styles['h5']))
 
         data = [
             ['产品', '规格', '数量', '位置'],
@@ -53,7 +53,7 @@ class PDFTool:
                 4.5 * cm,
                 2.8 * cm,
                 1.0 * cm,
-                1.8 * cm,
+                1.4 * cm,
             ], )
         t.setStyle(
             TableStyle([

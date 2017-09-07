@@ -364,9 +364,36 @@
 	for (const o in this.selectRow ) {
 	  this.xloboData.BillCodes.push(this.selectRow[o].db_number)
 	}
+
+	const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
+	  const byteCharacters = atob(b64Data);
+	  const byteArrays = [];
+	  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+	    const slice = byteCharacters.slice(offset, offset + sliceSize);
+	    const byteNumbers = new Array(slice.length);
+	    for (let i = 0; i < slice.length; i++) {
+	      byteNumbers[i] = slice.charCodeAt(i);
+	    }
+	    const byteArray = new Uint8Array(byteNumbers);
+	    byteArrays.push(byteArray);
+	  }
+	  const blob = new Blob(byteArrays, {type: contentType});
+	  return blob;
+	};
+
         fetchPDF(this.xloboData).then(response => {
-	  this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
-          this.dialogFormVisible = true;
+	  // this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
+          // this.dialogFormVisible = true;
+
+          const blob = b64toBlob(response.data.Result[0].BillPdfLabel, "application/pdf");
+
+          // let blob = new Blob([response.data.Result[0].BillPdfLabel], { type: "application/pdf" } )
+	  const link = document.createElement('a')
+	  link.href = window.URL.createObjectURL(blob)
+	  link.target = "_blank";
+	  // link.download = "report.pdf"
+	  // link.click()
+	  window.open(link);
 	});
       },
       handlePDF(row) {

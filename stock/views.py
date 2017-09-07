@@ -1,9 +1,9 @@
-import asyncio
 import json
+import asyncio
+import base64
 import logging
 import random
 import string
-import base64
 from io import BytesIO
 
 import aiohttp
@@ -23,7 +23,7 @@ from .serializers import (
     InventorySerializer, OrderSerializer, ProductSerializer,
     PurchaseOrderItemSerializer, PurchaseOrderSerializer, ShippingDBSerializer,
     ShippingSerializer, StockSerializer, SupplierSerializer, TokenSerializer)
-from ymatou import uex, ymatouapi, utils
+from ymatou import uex, utils, ymatouapi
 
 access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
 client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
@@ -250,8 +250,10 @@ class XloboGetPDF(views.APIView):
         for i, b in enumerate(result['Result']):
             db_bytes = base64.b64decode(b['BillPdfLabel'])
             ordsData = None
-            shippingdb_id = ShippingDB.objects.get(db_number=b['BillCode']).id
+
             with connection.cursor() as c:
+                shippingdb_id = ShippingDB.objects.get(
+                    db_number=b['BillCode']).id
                 c.execute(sql, (shippingdb_id, ))
                 # c.execute(sql, (8, ))
                 ordsData = c.cursor.fetchall()
@@ -272,15 +274,23 @@ class XloboGetPDF(views.APIView):
                     pdftool.createShippingPDF(b['BillCode'], ordsData)),
                 pages=(0, 1))
 
-            # clear inp
-            # inp.close()
-            # inp2.close()
-
         res = BytesIO()
         merger.write(res)
-        result['Result'][0]['BillPdfLabel'] = base64.b64encode(res.getvalue())
+        result['Result'] = [
+            {
+                'BillPdfLabel': base64.b64encode(res.getvalue())
+            },
+        ]
         res.close()
         return Response(data=result, status=status.HTTP_200_OK)
+        # response = HttpResponse(content_type='application/pdf')
+        # # response[
+        # #     'Content-Disposition'] = 'attachment; filename="somefilename.pdf"'
+        # response['Content-Disposition'] = 'inline; filename="somefilename.pdf"'
+        # pdf = res.getvalue()
+        # res.close()
+        # response.write(pdf)
+        # return response
 
 
 class LogisticGet(views.APIView):
