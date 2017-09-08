@@ -6,6 +6,7 @@ import router from './router';
 import store from './store';
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-default/index.css';
+import 'es6-promise/auto';
 import 'assets/custom-theme/index.css'; // 换肤版本element-ui css
 import NProgress from 'nprogress'; // Progress 进度条
 import 'nprogress/nprogress.css';// Progress 进度条 样式
