@@ -3,6 +3,8 @@
     <div class="filter-container">
       <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="商品条码" v-model="listQuery.jancode">
       </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="名称" v-model="listQuery.name">
+      </el-input>
       <el-input style="width: 200px;" class="filter-item" placeholder="品牌" v-model="listQuery.brand">
       </el-input>
 
@@ -162,6 +164,7 @@
         listQuery: {
           page: 1,
           limit: 10,
+	  name: undefined,
 	  jancode: undefined,
 	  brand: undefined
         },

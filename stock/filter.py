@@ -1,5 +1,5 @@
 from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter
-from .models import Order
+from .models import Order, Product
 
 
 class CharInFilter(BaseInFilter, CharFilter):
@@ -24,4 +24,16 @@ class OrderFilter(FilterSet):
             'status',
             'shippingdb',
             'unshippingdb',
+        ]
+
+
+class ProductFilter(FilterSet):
+    # https://docs.djangoproject.com/en/dev/ref/models/lookups/#module-django.db.models.lookups
+    name = CharFilter(lookup_expr='icontains')
+    brand = CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Product
+        fields = [
+            'jancode',
         ]
