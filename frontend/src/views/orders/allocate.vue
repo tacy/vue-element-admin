@@ -332,7 +332,6 @@
         this.list.splice(index, 1);
       },
       update() {
-        this.temp.timestamp = +this.temp.timestamp;
         for (const v of this.list) {
           if (v.id === this.temp.id) {
             const index = this.list.indexOf(v);
@@ -375,7 +374,6 @@
           id: undefined,
           channel_name: 0,
           remark: '',
-          timestamp: 0,
           title: '',
           status: 'published',
           type: ''
