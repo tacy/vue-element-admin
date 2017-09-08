@@ -54,6 +54,8 @@ class OrderSerializer(serializers.ModelSerializer):
     inventory_name = serializers.ReadOnlyField(source='inventory.name')
     buyer_remark = serializers.CharField(
         read_only=False, required=False, allow_null=True, allow_blank=True)
+    receiver_idcard = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
