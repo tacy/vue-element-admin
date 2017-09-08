@@ -10,6 +10,7 @@ var src = path.resolve(__dirname, '../src');
 
 module.exports = {
     entry: {
+        'babel-polyfill': 'babel-polyfill',
         app: './src/main.js'
     },
     output: {
