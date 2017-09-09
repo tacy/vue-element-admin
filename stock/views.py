@@ -1006,6 +1006,9 @@ class OrderConflict(views.APIView):
                         'YYYY-MM-DD HH:mm:ss')  # 需要更新订单分配时间
                     orderObj.save()
                     stockObj.save()
+                else:
+                    orderObj.status = '待采购'
+                    orderObj.save(update_fields=['status'])
 
             return Response(status=status.HTTP_200_OK)
 
