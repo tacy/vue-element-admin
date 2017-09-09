@@ -219,6 +219,33 @@ class XloboCreateFBXBill(views.APIView):
         return Response(data=result, status=status.HTTP_200_OK)
 
 
+# 删除DB面单, 清理订单的shipping_id字段
+class XloboDeleteDBNumber(views.APIView):
+    def post(self, request, format=None):
+        # construct api msg
+        data = request.data
+        shippingid = data['id']
+        db_number = data['db_number']
+        msg = {'BillCode': db_number}
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        sess = aiohttp.ClientSession(loop=loop)
+        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
+                                      client_id)
+        result = loop.run_until_complete(xloboapi.deleteDBNumber(msg))
+        loop.close()
+        logger.debug('XloboDeleteDBNumber', result)
+        print(result)
+        if result['ErrorCount'] > 0:
+            errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
+            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+        for o in Order.objects.filter(shipping_id=shippingid):
+            o.shipping_id = None
+            o.save(update_fields=['shipping_id'])
+
+        return Response(data=result, status=status.HTTP_200_OK)
+
+
 class XloboGetPDF(views.APIView):
     def get(self, request, format=None):
         loop = asyncio.new_event_loop()

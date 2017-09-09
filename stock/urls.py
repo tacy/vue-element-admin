@@ -8,8 +8,9 @@ from .views import (
     PurchaseOrderItemDetail, SupplierList, OrderPurchase, OrderMarkConflict,
     OrderConflict, NoOrderPurchase, PurchaseOrderDelete, OrderDelete,
     CategoryGet, LogisticGet, XloboCreateNoVerification, ShippingDBList,
-    XloboCreateFBXBill, XloboGetPDF, ManualAllocateDBNumber, OrderItemGet,
-    StockOut, OrderTPRCreate, PurchaseOrderClear, UexStockOut)
+    XloboCreateFBXBill, XloboGetPDF, XloboDeleteDBNumber,
+    ManualAllocateDBNumber, OrderItemGet, StockOut, OrderTPRCreate,
+    PurchaseOrderClear, UexStockOut)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -65,6 +66,9 @@ urlpatterns = {
         name="allocatedbnumber"),
     url(r'^xlobo/getlogistic/$', LogisticGet.as_view(), name="getLogistic"),
     url(r'^xlobo/getpdf/$', XloboGetPDF.as_view(), name="getPDF"),
+    url(r'^xlobo/deletedbnumber/$',
+        XloboDeleteDBNumber.as_view(),
+        name="deleteDBNumber"),
     url(r'^xlobo/createnoverification/$',
         XloboCreateNoVerification.as_view(),
         name="createNoVerification"),

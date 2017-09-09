@@ -26,7 +26,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column width="200px" align="center" label="商品名称" show-overflow-tooltip>
+      <el-table-column width="200px" align="center" label="商品名称">
         <template scope="scope">
           <span>{{scope.row.product_title}}</span>
         </template>
@@ -111,6 +111,9 @@
         </el-form-item>
         <el-form-item label="地址">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.receiver_address"></el-input>
+        </el-form-item>
+        <el-form-item label="总价">
+          <el-input :disabled="temp.channel_name==='京东'?false:true" v-model.number="temp.payment" type="number"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -201,6 +204,9 @@
           jancode: '',
           status: '',
 	  brand: undefined,
+	  channel_name: undefined,
+	  payment: undefined,
+	  price: undefined,
 	  category: undefined,
 	  sku_properties_name: undefined
         },
@@ -334,6 +340,9 @@
       update() {
         for (const v of this.list) {
           if (v.id === this.temp.id) {
+	    if (v.payment !== this.temp.payment) {
+	      this.temp.price = this.temp.payment/v.quantity;
+	    }
             const index = this.list.indexOf(v);
             this.list.splice(index, 1, this.temp);
             break;

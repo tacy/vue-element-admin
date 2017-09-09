@@ -212,7 +212,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchShipping, fetchShippingDB, fetchPDF, fetchOrderItems, stockOut } from 'api/orders';
+  import { fetchInventory, fetchShipping, fetchShippingDB, fetchPDF, fetchOrderItems, stockOut, deleteDBNumber } from 'api/orders';
   import pdf from 'vue-pdf';
 
   export default {
@@ -344,6 +344,14 @@
 	});
       },
       handleDelete(row) {
+        deleteDBNumber(row).then(response => {
+	  this.$notify({
+	    title: '成功',
+	    message: '删除面单成功',
+	    type: 'success',
+	    duration: 2000
+	  });
+	});
       },
       handleDBPrint() {
         if (this.selectRow.length===0) {
