@@ -325,6 +325,7 @@
         })
       },
       handleCreate() {
+        this.xloboData.IsRePacking=0;
         if (this.selectRow.length===0) {
           this.$message({
             type: 'error',
@@ -345,7 +346,10 @@
           this.isUEX = true;
           this.dialogUEXVisible = true;
           return
-        }
+        };
+	if ( this.selectRow[0].shipping_name==="虚仓电商" ) {
+          this.xloboData.IsRePacking=1;
+        };
         this.xloboData.Comment = '';
         for ( const i of this.selectRow ) {
           this.xloboData.Comment += i.product_title+', '

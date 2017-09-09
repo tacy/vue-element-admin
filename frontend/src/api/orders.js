@@ -137,6 +137,14 @@ export function createfbxbill(data) {
   });
 }
 
+export function deleteDBNumber(data) {
+  return fetch({
+    url: '/xlobo/deletedbnumber/',
+    method: 'post',
+    data
+  });
+}
+
 export function updateOrder(order, url) {
   return fetch({
     url,

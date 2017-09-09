@@ -19,7 +19,7 @@ export function updateProduct(data, url) {
 export function createProduct(data) {
   return fetch({
     url: '/product/',
-    method: 'put',
+    method: 'post',
     data
   });
 }
