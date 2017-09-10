@@ -25,6 +25,7 @@ class OrderFilter(FilterSet):
             'status',
             'shippingdb',
             'unshippingdb',
+            'delivery_type',
         ]
 
 

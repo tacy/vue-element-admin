@@ -52,6 +52,9 @@ class OrderSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
     shipping_name = serializers.ReadOnlyField(source='shipping.name')
     inventory_name = serializers.ReadOnlyField(source='inventory.name')
+    db_number = serializers.ReadOnlyField(source='shippingdb.db_number')
+    purchaseorder_orderid = serializers.ReadOnlyField(
+        source='purchaseorder.orderid')
     buyer_remark = serializers.CharField(
         read_only=False, required=False, allow_null=True, allow_blank=True)
     receiver_idcard = serializers.CharField(
