@@ -101,6 +101,14 @@ class YmatouAPI():
         result = await self.callAPI(method, biz_content)
         return result
 
+    async def getOrderInfo(self, orderid):
+        method = 'ymatou.order.detail.get'
+        biz_content = {
+            'order_id': orderid,
+        }
+        result = await self.callAPI(method, biz_content)
+        return result
+
 
 class XloboAPI():
     def __init__(self, session, access_token, client_secret, client_id):
