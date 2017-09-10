@@ -704,11 +704,13 @@ class OrderAllocate(views.APIView):
 
                 orderInfo[
                     'allocate_time'] = allocate_time  # 如果更新库存表, 就需要更新派单时间
-
                 purchaseQuantity = stockObj.preallocation - (
                     stockObj.quantity + stockObj.inflight)
                 if purchaseQuantity > 0:  # 订单需采购
-                    orderInfo['need_purchase'] = purchaseQuantity
+                    if purchaseQuantity < orderInfo['quantity']:
+                        orderInfo['need_purchase'] = purchaseQuantity
+                    else:
+                        orderInfo['need_purchase'] = orderInfo['quantity']
                     orderInfo['status'] = '待采购'
                 else:
                     orderInfo['status'] = '待发货'
