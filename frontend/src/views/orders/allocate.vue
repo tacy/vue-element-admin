@@ -2,9 +2,14 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
+      <el-input @keyup.enter.native="handleFilter" style="width: 140px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
       </el-input>
-
+      <el-input @keyup.enter.native="handleFilter" style="width: 140px;" class="filter-item" placeholder="条码" v-model="listQuery.jancode">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 140px;" class="filter-item" placeholder="商品名" v-model="listQuery.product_title">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 140px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
+      </el-input>
       <el-select clearable style="width: 90px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
         <el-option v-for="item in channelnameOptions" :key="item" :label="item" :value="item">
         </el-option>
@@ -191,9 +196,10 @@
         listQuery: {
           page: 1,
           limit: 10,
+	  orderid: undefined,
           channel_name: undefined,
-          title: undefined,
-          type: undefined,
+          receiver_name: undefined,
+	  jancode: undefined,
           status: '待处理',
           sort: '+id'
         },

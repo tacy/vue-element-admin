@@ -139,6 +139,9 @@
         <el-form-item label="面单备注">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="xloboData.Comment"></el-input>
         </el-form-item>
+        <el-form-item label="订单遗漏">
+          <el-checkbox v-model="xloboData.disable_check">无需校验</el-checkbox>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible=false">取 消</el-button>
@@ -248,6 +251,7 @@
 	  LogisticVersion: "2017-08-04 20:00:00",
 	  LineTypeId: 3,
 	  IsContainTax: 1,
+	  disable_check: false,
 	  orders: []
 	},
 	uexData: {

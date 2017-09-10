@@ -12,6 +12,7 @@ class OrderFilter(FilterSet):
     unshippingdb = BooleanFilter(name='shippingdb', lookup_expr='isnull')
     # https://docs.djangoproject.com/en/dev/ref/models/lookups/#module-django.db.models.lookups
     purchaseorder__orderid = CharFilter(lookup_expr='exact')
+    product_title = CharFilter(lookup_expr='icontains')
 
     class Meta:
         model = Order

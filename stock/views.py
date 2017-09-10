@@ -5,6 +5,7 @@ import logging
 import random
 import string
 from io import BytesIO
+from collections import OrderedDict
 
 import aiohttp
 import arrow.arrow
@@ -54,6 +55,8 @@ uex_passwd = '20162017'
 logger = logging.getLogger(__name__)
 
 
+# 1. 生成DB面单, 如果是码头订单, 需要先确认订单状态, 状态异常, 直接返回异常
+# 2. 需要考虑该用户是否有其他订单, 如果有其他订单, 需要提醒操作人员.
 class XloboCreateNoVerification(views.APIView):
     def post(self, request, format=None):
         data = request.data
@@ -65,18 +68,35 @@ class XloboCreateNoVerification(views.APIView):
         sess = aiohttp.ClientSession(loop=loop)
 
         # ymatou order need check orderstatus
+        # 这里可能有合并订单发货情况, 需要根据订单ID去重, 然后去码头后台查每一
+        # 个订单状态是否正常
         if '洋码头' in ords[0]['channel_name']:
             skey = YMTKEY[ords[0]['seller_name']]
             ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
                                          skey['appsecret'], skey['authcode'])
-            result = loop.run_until_complete(
-                ymtapi.getOrderInfo(ords[0]['orderid']))
-            # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
-            for oi in result['content']['order_info']['order_items_info']:
-                if oi['refund_id']:
-                    errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
-                    return Response(
-                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            ordids = list([OrderedDict.fromkeys([i['orderid'] for i in ords])])
+            for oid in ordids:
+                result = loop.run_until_complete(
+                    ymtapi.getOrderInfo(ords[0]['orderid']))
+                # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+                for oi in result['content']['order_info']['order_items_info']:
+                    if oi['refund_id']:
+                        errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
+                        return Response(
+                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+
+        # 如果need_check, 需要先查一下该用户是否有其他订单没有一并提交, 如果有, 返回
+        # 异常
+        if not data['disable_check']:
+            check_ords = Order.objects.filter(
+                receiver_name=ords[0]['receiver_name'],
+                receiver_mobile=ords[0]['receiver_mobile'],
+                shippingdb__isnull=True,
+                status__in=['待处理', '待采购', '待发货', '已采购', '需介入'])
+            if len(check_ords) != len(ords):
+                errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
+                return Response(
+                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
         ords = None
         # create db number
@@ -175,18 +195,35 @@ class XloboCreateFBXBill(views.APIView):
         sess = aiohttp.ClientSession(loop=loop)
 
         # ymatou order need check orderstatus
+        # 这里可能有合并订单发货情况, 需要根据订单ID去重, 然后去码头后台查每一
+        # 个订单状态是否正常
         if '洋码头' in ords[0]['channel_name']:
             skey = YMTKEY[ords[0]['seller_name']]
             ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
                                          skey['appsecret'], skey['authcode'])
-            result = loop.run_until_complete(
-                ymtapi.getOrderInfo(ords[0]['orderid']))
-            # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
-            for oi in result['content']['order_info']['order_items_info']:
-                if oi['refund_id']:
-                    errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
-                    return Response(
-                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            ordids = list([OrderedDict.fromkeys([i['orderid'] for i in ords])])
+            for oid in ordids:
+                result = loop.run_until_complete(
+                    ymtapi.getOrderInfo(ords[0]['orderid']))
+                # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+                for oi in result['content']['order_info']['order_items_info']:
+                    if oi['refund_id']:
+                        errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
+                        return Response(
+                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+
+        # 如果need_check, 需要先查一下该用户是否有其他订单没有一并提交, 如果有, 返回
+        # 异常
+        if not data['disable_check']:
+            check_ords = Order.objects.filter(
+                receiver_name=ords[0]['receiver_name'],
+                receiver_mobile=ords[0]['receiver_mobile'],
+                shippingdb__isnull=True,
+                status__in=['待处理', '待采购', '待发货', '已采购', '需介入'])
+            if len(check_ords) != len(ords):
+                errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
+                return Response(
+                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
         # construct api msg
         channel_name = ords[0]['channel_name']
