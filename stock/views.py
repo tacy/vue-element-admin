@@ -6,6 +6,8 @@ import random
 import string
 from io import BytesIO
 from collections import OrderedDict
+from openpyxl import Workbook
+from django.http import HttpResponse
 
 import aiohttp
 import arrow.arrow
@@ -421,6 +423,31 @@ class LogisticGet(views.APIView):
         return Response(data=data, status=status.HTTP_200_OK)
 
 
+class ExportBondedOrder(views.APIView):
+    def post(self, request, format=None):
+        excel_data = [
+            ['header1', 'header2', 'header3', 'header4', 'header5'],
+            [1, 4, 5, 6, 7],
+            [5, 6, 2, 4, 8],
+        ]
+
+        if excel_data:
+            wb = Workbook(write_only=True)
+            ws = wb.create_sheet()
+            for line in excel_data:
+                ws.append(line)
+
+        response = HttpResponse(
+            content_type=
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename=mydata.xlsx'
+
+        wb.save(response)
+
+        return response
+
+
 class UexStockOut(views.APIView):
     def post(self, request, format=None):
         loop = asyncio.new_event_loop()
@@ -764,6 +791,8 @@ class OrderAllocate(views.APIView):
             # question: how to serializ dict
             orderInfo.pop('inventory_name')
             orderInfo.pop('shipping_name')
+            orderInfo.pop('db_number')
+            orderInfo.pop('purchaseorder_orderid')
             o = Order(**orderInfo)
             o.save()
 
