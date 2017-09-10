@@ -168,7 +168,7 @@ class Order(models.Model):
 
     class Meta:
         # unique_together = ('channel_name', 'orderid', 'jancode')
-        ordering = ['piad_time', 'receiver_mobile']
+        ordering = ['id', 'piad_time', 'receiver_mobile']
 
     def __str__(self):
         return '%d,%s,%s,%s' % (self.id, self.orderid, self.status,

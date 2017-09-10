@@ -9,7 +9,10 @@
 
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="条码" v-model="listQuery.jancode">
       </el-input>
-
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.delivery_type" placeholder="运输方式">
+        <el-option v-for="item in deliveryTypeOptions" :key="item" :label="item" :value="item">
+        </el-option>
+      </el-select>
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
         <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
@@ -28,7 +31,7 @@
       <el-table-column type="expand" width="50px">
 	<template scope="scope">
 	  <el-form label-position="left" inline class="table-expand">
-	    <el-form-item label="商品:" label-width="50px">
+	    <!--el-form-item label="商品:" label-width="50px">
 	      <span>{{ scope.row.product_title }}</span>
 	    </el-form-item>
 	    <el-form-item label="数量:" label-width="50px">
@@ -36,9 +39,37 @@
 	    </el-form-item>
 	    <el-form-item label="规格:" label-width="50px">
 	      <span>{{ scope.row.sku_properties_name }}</span>
+	    </el-form-item-->
+
+	    <el-form-item label="支付时间:" label-width="80px">
+	      <span>{{ scope.row.piad_time }}</span>
+	    </el-form-item>
+	    <el-form-item label="单价:" label-width="50px">
+	      <span>{{ scope.row.price }}</span>
+	    </el-form-item>
+	    <el-form-item label="总价:" label-width="50px">
+	      <span>{{ scope.row.payment }}</span>
+	    </el-form-item>
+	    <el-form-item label="面单:" label-width="50px">
+	      <span>{{ scope.row.db_number }}</span>
+	    </el-form-item>
+	    <el-form-item label="采购单:" label-width="50px">
+	      <span>{{ scope.row.purchaseorder_orderid }}</span>
+	    </el-form-item>
+	    <el-form-item label="仓库:" label-width="50px">
+	      <span>{{ scope.row.inventory_name }}</span>
+	    </el-form-item>
+	    <el-form-item label="发货方式:" label-width="80px">
+	      <span>{{ scope.row.shipping_name }}</span>
 	    </el-form-item>
 	    <el-form-item label="证件:" label-width="50px">
 	      <span>{{ scope.row.receiver_idcard }}</span>
+	    </el-form-item>
+	    <el-form-item label="介入:" label-width="50px">
+	      <span>{{ scope.row.conflict_memo }}</span>
+	    </el-form-item>
+	    <el-form-item label="反馈:" label-width="50px">
+	      <span>{{ scope.row.conflict_feedback }}</span>
 	    </el-form-item>
 	  </el-form>
 	</template>
@@ -53,52 +84,57 @@
 	  <span>{{scope.row.channel_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="状态" width="100px">
+      <el-table-column align="center" label="状态" width="80px">
 	<template scope="scope">
 	  <span>{{scope.row.status}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="仓库" width="70px">
+      <!--el-table-column align="center" label="仓库" width="70px">
 	<template scope="scope">
 	  <span>{{scope.row.inventory_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="发货方式" width="100px">
+      <el-table-column align="center" label="发货方式" width="95px">
 	<template scope="scope">
 	  <span>{{scope.row.shipping_name}}</span>
 	</template>
-      </el-table-column>
+      </el-table-column-->
       <el-table-column align="center" label="收件人" width="95px">
 	<template scope="scope">
 	  <span>{{scope.row.receiver_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="电话" width="115px" show-overflow-tooltip>
+      <!--el-table-column align="center" label="电话" width="115px" show-overflow-tooltip>
 	<template scope="scope">
 	  <span>{{scope.row.receiver_mobile}}</span>
 	</template>
-      </el-table-column>
-      <el-table-column align="center" label="地址" show-overflow-tooltip>
+      </el-table-column-->
+      <el-table-column align="center" label="运输" show-overflow-tooltip>
 	<template scope="scope">
-	  <span>{{scope.row.receiver_address}}</span>
+	  <span>{{scope.row.delivery_type}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="条码" width="130px" show-overflow-tooltip>
+      <el-table-column align="center" label="条码" width="140px" show-overflow-tooltip>
 	<template scope="scope">
 	  <span>{{scope.row.jancode}}</span>
 	</template>
       </el-table-column>
-      <!--el-table-column align="center" label="商品名" show-overflow-tooltip>
+      <el-table-column align="center" label="商品名" width="250px">
 	<template scope="scope">
 	  <span>{{scope.row.product_title}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="规格" show-overflow-tooltip>
+      <el-table-column align="center" label="规格" show-overflow-tooltip width="150px">
 	<template scope="scope">
 	  <span>{{scope.row.sku_properties_name}}</span>
 	</template>
-      </el-table-column-->
-      <el-table-column align="center" label="操作" width="100">
+      </el-table-column>
+      <el-table-column align="center" label="数量" width="65">
+	<template scope="scope">
+	  <span>{{scope.row.quantity}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="操作" width="75">
 	<template scope="scope">
 	  <el-button size="small" :disabled="checkShippingdb(scope.row)" type="danger" @click="handleDelete(scope.row)">删 除
 	  </el-button>
@@ -230,6 +266,7 @@
 	dialogCreateVisible: false,
         inventoryOptions: [],
 	channelOptions: ['洋码头', '京东'],
+	deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
 	statusOptions: ['在途', '删除', '入库'],
         listQuery: {
           page: 1,
@@ -238,7 +275,8 @@
 	  channel_name: undefined,
 	  receiver_name: undefined,
 	  jancode: undefined,
-	  orderid: undefined
+	  orderid: undefined,
+	  delivery_type: undefined,
         },
 	orderData: {
 	  seller_name: '东京彩虹桥',
