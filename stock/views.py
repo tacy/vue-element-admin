@@ -424,7 +424,7 @@ class LogisticGet(views.APIView):
 
 
 class ExportBondedOrder(views.APIView):
-    def post(self, request, format=None):
+    def get(self, request, format=None):
         excel_data = [
             ['header1', 'header2', 'header3', 'header4', 'header5'],
             [1, 4, 5, 6, 7],
@@ -433,9 +433,11 @@ class ExportBondedOrder(views.APIView):
 
         if excel_data:
             wb = Workbook(write_only=True)
-            ws = wb.create_sheet()
+            ws = wb.create_sheet(title='主表')
+            ws2 = wb.create_sheet(title='从表')
             for line in excel_data:
                 ws.append(line)
+                ws2.append(line)
 
         response = HttpResponse(
             content_type=
@@ -1077,6 +1079,8 @@ class OrderMarkConflict(views.APIView):
                 inventory = Inventory.objects.get(id=i['inventory'])
                 i.pop('shipping_name')
                 i.pop('inventory_name')
+                i.pop('db_number')
+                i.pop('purchaseorder_orderid')
                 i['status'] = '需介入'
                 i['shipping'] = shipping
                 i['inventory'] = inventory
