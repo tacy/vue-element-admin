@@ -58,6 +58,9 @@
         <el-form-item label="商品规格">
           <el-input v-model="temp.sku_properties_name"></el-input>
         </el-form-item>
+	<el-form-item label="原因">
+	  <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.conflict_feedback"></el-input>
+	</el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible = false">取 消</el-button>
@@ -143,7 +146,7 @@
           for (const v of this.list) {
             if (v.id === this.temp.id) {
               const index = this.list.indexOf(v);
-              this.list.splice(index, 1, this.temp);
+              this.list.splice(index, 1);
               break;
             }
           }

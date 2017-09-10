@@ -43,13 +43,21 @@ logger = logging.getLogger(__name__)
 
 class XloboCreateNoVerification(views.APIView):
     def post(self, request, format=None):
+        data = request.data
+        ords = data['orders']
+        
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
+        sess = aiohttp.ClientSession(loop=loop)
+        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
+                                      client_id)
 
+        # check orderstatus, if not equal "待发货", return
+        
+        
+        # create db number
         # construct api msg
-        data = request.data
-        ords = data['orders']
         channel_name = ords[0]['channel_name']
         address = ords[0]['receiver_address'].split(',')
         billSenderInfo = {
@@ -92,9 +100,6 @@ class XloboCreateNoVerification(views.APIView):
         data['BillSupplyInfo'] = billSupplyInfo
         data['BillCategoryList'] = billCategoryList
 
-        sess = aiohttp.ClientSession(loop=loop)
-        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
-                                      client_id)
         result = loop.run_until_complete(xloboapi.createNoVerification(data))
         logger.debug('XloboCreateNoVerification', result)
         if result['ErrorCount'] > 0:
@@ -675,7 +680,7 @@ class OrderPurchaseList(views.APIView):
     # 需要返回查询时间, 创建采购单的时候, 我们需要用这个时间来和订单的派单时间做对比, 看看是否能关联相关订单
     #
     def get(self, request, format=None):
-        sql = "select s.jancode, s.name product_name, s.specification sku_properties_name, sum(o.need_purchase) qty from stock_product s inner join stock_order o on o.jancode=s.jancode and o.status='待采购' and o.inventory_id=%s group by jancode"
+        sql = "select s.jancode, s.name product_name, s.specification sku_properties_name, max(o.price) product_price, sum(o.need_purchase) qty from stock_product s inner join stock_order o on o.jancode=s.jancode and o.status='待采购' and o.inventory_id=%s group by jancode"
 
         def dictfetchall(cursor):
             "Return all rows from a cursor as a dict"
@@ -1006,6 +1011,9 @@ class OrderConflict(views.APIView):
                         'YYYY-MM-DD HH:mm:ss')  # 需要更新订单分配时间
                     orderObj.save()
                     stockObj.save()
+                else:
+                    orderObj.status = '待采购'
+                    orderObj.save(update_fields=['status'])
 
             return Response(status=status.HTTP_200_OK)
 
