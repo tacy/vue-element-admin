@@ -10,7 +10,7 @@ from .views import (
     CategoryGet, LogisticGet, XloboCreateNoVerification, ShippingDBList,
     XloboCreateFBXBill, XloboGetPDF, XloboDeleteDBNumber,
     ManualAllocateDBNumber, OrderItemGet, StockOut, OrderTPRCreate,
-    PurchaseOrderClear, UexStockOut)
+    PurchaseOrderClear, UexStockOut, ExportBondedOrder)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -52,6 +52,9 @@ urlpatterns = {
         OrderMarkConflict.as_view(),
         name="orderMarkConflict"),
     url(r'^order/conflict/$', OrderConflict.as_view(), name="orderConflict"),
+    url(r'^order/export/$',
+        ExportBondedOrder.as_view(),
+        name="orderBonderdExport"),
     url(r'^purchase/noorderpurchase/$',
         NoOrderPurchase.as_view(),
         name="noOrderConflict"),
