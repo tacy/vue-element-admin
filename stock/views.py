@@ -25,6 +25,19 @@ from .serializers import (
     ShippingSerializer, StockSerializer, SupplierSerializer, TokenSerializer)
 from ymatou import uex, utils, ymatouapi
 
+YMTKEY = {
+    '东京彩虹桥': {
+        'appid': 'llzlHWWDTkEsUUjwKf',
+        'appsecret': 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox',
+        'authcode': 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk'
+    },
+    '妈妈宝宝日本馆': {
+        'appid': 'B9EBxjEN4JYB58BG4B',
+        'appsecret': 'AKiwySBsiIwqz2TkkgQPXOJgCooc97Jt',
+        'authcode': '6SJRmS03o6kwoYjqNPjUXocfMK0MpLhT'
+    }
+}
+
 access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
 client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
 )
@@ -45,17 +58,27 @@ class XloboCreateNoVerification(views.APIView):
     def post(self, request, format=None):
         data = request.data
         ords = data['orders']
-        
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
-        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
-                                      client_id)
 
-        # check orderstatus, if not equal "待发货", return
-        
-        
+        # ymatou order need check orderstatus
+        if '洋码头' in ords[0]['channel_name']:
+            skey = YMTKEY[ords[0]['seller_name']]
+            ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
+                                         skey['appsecret'], skey['authcode'])
+            result = loop.run_until_complete(
+                ymtapi.getOrderInfo(ords[0]['orderid']))
+            # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+            for oi in result['content']['order_info']['order_items_info']:
+                if oi['refund_id']:
+                    errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
+                    return Response(
+                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+
+        ords = None
         # create db number
         # construct api msg
         channel_name = ords[0]['channel_name']
@@ -100,6 +123,8 @@ class XloboCreateNoVerification(views.APIView):
         data['BillSupplyInfo'] = billSupplyInfo
         data['BillCategoryList'] = billCategoryList
 
+        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
+                                      client_id)
         result = loop.run_until_complete(xloboapi.createNoVerification(data))
         logger.debug('XloboCreateNoVerification', result)
         if result['ErrorCount'] > 0:
@@ -131,6 +156,8 @@ class XloboCreateNoVerification(views.APIView):
 # 虚仓电商无需我们自己再处理, 直接贝海负责打包发货
 class XloboCreateFBXBill(views.APIView):
     def post(self, request, format=None):
+        data = request.data
+        ords = data['orders']
         channinfo = {
             '洋码头': 2,
             '天猫': 3,
@@ -145,10 +172,23 @@ class XloboCreateFBXBill(views.APIView):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
+        sess = aiohttp.ClientSession(loop=loop)
+
+        # ymatou order need check orderstatus
+        if '洋码头' in ords[0]['channel_name']:
+            skey = YMTKEY[ords[0]['seller_name']]
+            ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
+                                         skey['appsecret'], skey['authcode'])
+            result = loop.run_until_complete(
+                ymtapi.getOrderInfo(ords[0]['orderid']))
+            # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+            for oi in result['content']['order_info']['order_items_info']:
+                if oi['refund_id']:
+                    errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
+                    return Response(
+                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
         # construct api msg
-        data = request.data
-        ords = data['orders']
         channel_name = ords[0]['channel_name']
         address = ords[0]['receiver_address'].split(',')
         billSenderInfo = {
@@ -187,7 +227,7 @@ class XloboCreateFBXBill(views.APIView):
         data['BillReceiverInfo'] = billReceiverInfo
         data['BillSupplyInfo'] = billSupplyInfo
         data['GoodsSkuInfos'] = billCategoryList
-        sess = aiohttp.ClientSession(loop=loop)
+
         xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
                                       client_id)
         result = loop.run_until_complete(xloboapi.createFBXBill(data))
@@ -407,6 +447,26 @@ class UexStockOut(views.APIView):
 class ManualAllocateDBNumber(views.APIView):
     def post(self, request, format=None):
         ords = request.data['orders']
+
+        # ymatou order need check orderstatus
+        if '洋码头' in ords[0]['channel_name']:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop = asyncio.get_event_loop()
+            sess = aiohttp.ClientSession(loop=loop)
+
+            skey = YMTKEY[ords[0]['seller_name']]
+            ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
+                                         skey['appsecret'], skey['authcode'])
+            result = loop.run_until_complete(
+                ymtapi.getOrderInfo(ords[0]['orderid']))
+            # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+            for oi in result['content']['order_info']['order_items_info']:
+                if oi['refund_id']:
+                    errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
+                    return Response(
+                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+
         db_number = request.data['Comment']
         channel_name = ords[0]['channel_name']
         with transaction.atomic():
