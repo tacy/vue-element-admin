@@ -24,9 +24,15 @@
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="规格" width="150">
+	<el-table-column align="center" label="规格" width="100">
 	  <template scope="scope">
 	    <span>{{scope.row.sku_properties_name}}</span>
+	  </template>
+	</el-table-column>
+
+	<el-table-column align="center" label="售价" width="80">
+	  <template scope="scope">
+	    <span>{{scope.row.product_price}}</span>
 	  </template>
 	</el-table-column>
 
