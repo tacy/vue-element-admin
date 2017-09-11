@@ -30,7 +30,7 @@
       </el-table-column>
       <el-table-column align="center" label="订单号" width="100px">
 	<template scope="scope">
-	  <span class="link-type" @click="getItem(scope.row)">{{scope.row.orderid}}</span>
+	  <span>{{scope.row.orderid}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="渠道" width="80px">
@@ -320,13 +320,6 @@
       },
       checkSelectable(row) {
         return row.status !== '待采购' & row.status !== '需介入'
-      },
-      getItem(row) {
-        this.dialogItemVisible = true;
-        this.listItem.purchaseorder = row.id,
-        fetchPurchaseOrderItem(this.listItem).then(response => {
-          this.itemData = response.data.results;
-        })
       },
       handleCreate() {
         this.xloboData.IsRePacking=0;

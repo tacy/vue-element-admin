@@ -21,11 +21,13 @@ from rest_framework.response import Response
 
 from .filter import OrderFilter, ProductFilter
 from .models import (Inventory, Order, Product, PurchaseOrder,
-                     PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier)
+                     PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier,
+                     BondedProduct)
 from .serializers import (
     InventorySerializer, OrderSerializer, ProductSerializer,
     PurchaseOrderItemSerializer, PurchaseOrderSerializer, ShippingDBSerializer,
-    ShippingSerializer, StockSerializer, SupplierSerializer, TokenSerializer)
+    ShippingSerializer, StockSerializer, SupplierSerializer, TokenSerializer,
+    BondedProductSerializer)
 from ymatou import uex, utils, ymatouapi
 
 YMTKEY = {
@@ -100,7 +102,6 @@ class XloboCreateNoVerification(views.APIView):
                 return Response(
                     data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
-        ords = None
         # create db number
         # construct api msg
         channel_name = ords[0]['channel_name']
@@ -1252,6 +1253,18 @@ class ProductList(generics.ListCreateAPIView):
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+
+class BondedProductList(generics.ListCreateAPIView):
+    queryset = BondedProduct.objects.all()
+    serializer_class = BondedProductSerializer
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+    filter_fields = ('jancode', 'bonded_name')
+
+
+class BondedProductDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = BondedProduct.objects.all()
+    serializer_class = BondedProductSerializer
 
 
 class OrderList(generics.ListCreateAPIView):

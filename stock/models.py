@@ -56,6 +56,13 @@ class Product(models.Model):
     weight = models.IntegerField(null=True)
 
 
+class BondedProduct(models.Model):
+    product_name = models.CharField(max_length=255, null=False)
+    bonded_name = models.CharField(max_length=24, null=False)
+    jancode = models.CharField(max_length=24, null=False, unique=True)
+    filing_no = models.CharField(max_length=24, null=False, unique=True)
+
+
 class Stock(models.Model):
     inventory = models.ForeignKey(Inventory, related_name='stock')
     jancode = models.ForeignKey(
