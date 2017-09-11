@@ -23,3 +23,27 @@ export function createProduct(data) {
     data
   });
 }
+
+export function fetchBondedProduct(query) {
+  return fetch({
+    url: '/bondedproduct',
+    method: 'get',
+    params: query
+  });
+}
+
+export function updateBondedProduct(data, url) {
+  return fetch({
+    url,
+    method: 'put',
+    data
+  });
+}
+
+export function createBondedProduct(data) {
+  return fetch({
+    url: '/bondedproduct/',
+    method: 'post',
+    data
+  });
+}
