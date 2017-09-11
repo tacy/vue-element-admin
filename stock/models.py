@@ -89,7 +89,8 @@ class Shipping(models.Model):
 
 class ShippingDB(models.Model):
     db_number = models.CharField(
-        max_length=32, null=True)  # xloboDBNumber, uexDBNumber, EMSNumber
+        max_length=32, unique=True,
+        null=False)  # xloboDBNumber, uexDBNumber, EMSNumber
     channel_name = models.CharField(max_length=16, null=False)
     delivery_no = models.CharField(max_length=32, null=True)  # delivery number
     shipping = models.ForeignKey(
