@@ -30,6 +30,7 @@ const purchasescreate = _import('purchases/create');
 
 /* product */
 const productsquery = _import('products/query');
+const bondedproductsquery = _import('products/bondedquery');
 
 /* stock */
 const stocksquery = _import('stocks/query');
@@ -128,7 +129,8 @@ export const asyncRouterMap = [
     name: '商品',
     icon: 'zujian',
     children: [
-      { path: 'query', component: productsquery, name: '查商品' }
+      { path: 'query', component: productsquery, name: '查商品' },
+      { path: 'bondedquery', component: bondedproductsquery, name: '保税仓' }
     ]
   },
   {
