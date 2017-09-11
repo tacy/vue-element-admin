@@ -537,15 +537,19 @@ class ManualAllocateDBNumber(views.APIView):
         db_number = request.data['Comment']
         channel_name = ords[0]['channel_name']
         with transaction.atomic():
-            shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
-            inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
-            shippingdbObj = ShippingDB(
-                db_number=db_number,
-                status='待处理',
-                channel_name=channel_name,
-                shipping=shippingObj,
-                inventory=inventoryObj)
-            shippingdbObj.save()
+            shippingdbObj = None
+            try:
+                shippingdbObj = ShippingDB.objects.get(db_number=db_number)
+            except ShippingDB.DoesNotExist:
+                shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
+                inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
+                shippingdbObj = ShippingDB(
+                    db_number=db_number,
+                    status='待处理',
+                    channel_name=channel_name,
+                    shipping=shippingObj,
+                    inventory=inventoryObj)
+                shippingdbObj.save()
             for o in ords:
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
@@ -1105,8 +1109,7 @@ class OrderConflict(views.APIView):
             if '已删除' in data['status']:  # 退款
                 stockObj = Stock.objects.get(
                     inventory=data['inventory'], jancode=data['jancode'])
-                stockObj.preallocation = F(
-                    'preallocation') - data['need_purchase']
+                stockObj.preallocation = F('preallocation') - data['quantity']
                 stockObj.save()
                 orderObj = Order.objects.get(id=data['id'])
                 orderObj.status = '已删除'
@@ -1118,12 +1121,32 @@ class OrderConflict(views.APIView):
                     rollbackStockObj = Stock.objects.get(
                         inventory=orderObj.inventory, jancode=orderObj.jancode)
                     rollbackStockObj.preallocation = F(
-                        'preallocation') - data['need_purchase']
+                        'preallocation') - data['quantity']
                     rollbackStockObj.save()
 
                     # 判断新jancode库存是否满足
                     stockObj = Stock.objects.get(
                         inventory=data['inventory'], jancode=data['jancode'])
+                    stockObj = None
+                    try:
+                        stockObj = Stock.objects.get(
+                            data['inventory'], jancode=data['jancode'])
+                    except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
+                        if not Product.objects.filter(
+                                jancode=data['jancode']).exists():
+                            errmsg = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
+                            return Response(
+                                data=errmsg,
+                                status=status.HTTP_400_BAD_REQUEST)
+                        stockObj = Stock(
+                            jancode=Product.objects.get(
+                                jancode=data['jancode']),
+                            inventory=Inventory.objects.get(
+                                id=data['inventory']),
+                            quantity=0,
+                            inflight=0,
+                            preallocation=0)
+                        stockObj.save()
                     real_stock_qty = stockObj.quantity + stockObj.inflight - stockObj.preallocation
                     if data['quantity'] <= real_stock_qty:  # 库存足够, 记得取消采购标记(need_purchase=0)
                         stockObj.preallocation = F(
@@ -1139,7 +1162,7 @@ class OrderConflict(views.APIView):
                         orderObj.jancode = data['jancode']
                         orderObj.status = '待采购'
                         stockObj.preallocation = F(
-                            'preallocation') + need_purchase
+                            'preallocation') + data['quantity']
                     orderObj.allocate_time = arrow.now().format(
                         'YYYY-MM-DD HH:mm:ss')  # 需要更新订单分配时间
                     orderObj.save()
@@ -1179,7 +1202,7 @@ class OrderDelete(views.APIView):
                     stockObj = Stock.objects.get(
                         inventory=orderObj.inventory, jancode=orderObj.jancode)
                     stockObj.preallocation = F(
-                        'preallocation') - orderObj.need_purchase
+                        'preallocation') - orderObj.quantity
                     stockObj.save()
                 orderObj.status = '已删除'
                 orderObj.conflict_feedback = data['conflict_feedback']
