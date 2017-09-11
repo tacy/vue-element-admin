@@ -1009,13 +1009,15 @@ class PurchaseOrderDelete(views.APIView):
             for poi in poitemObjs:
                 stockObj = Stock.objects.get(
                     jancode=poi.jancode, inventory=poObj.inventory)
-                stockObj.preallocation = F('preallocation') - poi.quantity
-                stockObj.save()
+                stockObj.inflight = F('inflight') - poi.quantity
+                stockObj.save(update_fields=[
+                    'inflight',
+                ])
 
             # mark purchaseorder status as '删除'
             poObj.status = '删除'
             poObj.save(update_fields=['status'])
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1024,7 +1026,7 @@ class PurchaseOrderDelete(views.APIView):
 class PurchaseOrderClear(views.APIView):
     # 流程:
     #   1. 标记采购单状态: 已入库.
-    #   2. stock入库.
+    #   2. stock入库(减inflight, 增加quantity).
     #   3. 标记订单待发货.
     def put(self, request, format=None):
         print(request.data)
@@ -1043,8 +1045,9 @@ class PurchaseOrderClear(views.APIView):
                 inventory = Inventory.objects.get(id=inventory_id)
                 stockObj = Stock.objects.get(
                     jancode=poi['jancode'], inventory=inventory)
-                # 如果实际到库数量大于采购单记录, 入库实际到库数量,
-                # 否则, 入库采购单记录数量, 并且需要处理漏采(漏采需补采购)
+                # poi.quantity记录的是采购数量, qty是实际到库数量.
+                # 入库实际到库数量, 扣减inflight数量用采购数量.
+                # TODO: 如果实际到库少于采购数量, 需要处理漏采(漏采需补采购)
                 if poi['quantity'] < poi['qty']:
                     stockObj.quantity = F('quantity') + poi['qty']
                 else:
