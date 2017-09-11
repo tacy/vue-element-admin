@@ -1,10 +1,10 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
+      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
       </el-input>
 
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
+      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
       </el-input>
 
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="注文编号" v-model="listQuery.purchaseorder__orderid">
@@ -14,7 +14,10 @@
         <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
       </el-select>
-
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="状态">
+        <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
+        </el-option>
+      </el-select>
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
         <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
         </el-option>
@@ -69,7 +72,7 @@
 	  <span>{{scope.row.receiver_address}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="商品编码" width="130px" show-overflow-tooltip>
+      <el-table-column align="center" label="商品编码" width="150px">
 	<template scope="scope">
 	  <span>{{scope.row.jancode}}</span>
 	</template>
@@ -200,6 +203,7 @@
 	dialogDBInputVisible: false,
         inventoryOptions: [],
 	channelOptions: ['洋码头', '京东'],
+	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
 	shipTypeOptions: [
 	  {key:'跨境空运杂货线路', value:24},
 	  {key:'空运关税补贴线', value:26}
@@ -228,7 +232,6 @@
 	  {key: '包税', value: 0},
 	  {key: '不包税', value: 1}
 	],
-	statusOptions: ['在途', '删除', '入库'],
         listQuery: {
           page: 1,
           limit: 10,
