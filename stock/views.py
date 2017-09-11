@@ -1130,7 +1130,8 @@ class OrderConflict(views.APIView):
                     stockObj = None
                     try:
                         stockObj = Stock.objects.get(
-                            data['inventory'], jancode=data['jancode'])
+                            inventory=data['inventory'],
+                            jancode=data['jancode'])
                     except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
                         if not Product.objects.filter(
                                 jancode=data['jancode']).exists():
