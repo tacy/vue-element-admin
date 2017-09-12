@@ -7,7 +7,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column width="270px" align="center" label="商品名称" show-overflow-tooltip>
+      <el-table-column align="center" label="商品名称">
         <template scope="scope">
           <span>{{scope.row.product_title}}</span>
         </template>
@@ -25,7 +25,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column width="300px" align="center" label="原因" show-overflow-tooltip>
+      <el-table-column align="center" label="原因" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.conflict_memo}}</span>
         </template>
