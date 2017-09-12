@@ -561,7 +561,7 @@ class ManualAllocateDBNumber(views.APIView):
 # 订单发货
 class StockOut(views.APIView):
     # 1. 标记db面单状态, 设置运单号(delivery_no);
-    # 2. 标记订单状态
+    # 2. 标记订单状态, 过滤条件是订单状态: ('待发货')
     # 3. 扣减库存
     def post(self, request, format=None):
         delivery_no = request.data['delivery_no']
@@ -572,7 +572,15 @@ class StockOut(views.APIView):
                 shippingdbObj.status = '已出库'
                 shippingdbObj.delivery_no = delivery_no
                 shippingdbObj.save(update_fields=['status', 'delivery_no'])
-                for o in shippingdbObj.order.all():
+                for o in shippingdbObj.order.filter(status__in=['待发货', '已采购']):
+                    if '已采购' in o.status:
+                        results = {
+                            'errmsg':
+                            '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
+                                db, o.orderid, o.purchaseorder.orderid)
+                        }
+                        return Response(
+                            data=results, status=status.HTTP_400_BAD_REQUEST)
                     o.status = '已发货'
                     o.save(update_fields=['status'])
                     stockObj = Stock.objects.get(
@@ -693,7 +701,7 @@ class OrderTPRCreate(views.APIView):
 
 # 订单预处理
 class OrderAllocate(views.APIView):
-
+    # 派单涉及到两个表: order和stock
     # 派单需要的操作: 1. 占用库存(preallocation); 2. 标记订单需要采购的数量(need_purchase); 3. 修改订单状态(status:待发货/待采购)
     #
     # 派单流程: 派单分为派单和重派, 如果订单的inventory字段为空, 定位为派单;
@@ -723,12 +731,16 @@ class OrderAllocate(views.APIView):
         relate_inventory = Inventory.objects.get(id=paramInventory)
         # if not paramInventory or not paramShipping:  # 传入参数为空, 无效
         #     return status.HTTP_400_BAD_REQUEST
+
+        # 检查是否订单商品已经在product表中, 如不存在, 返回错误提示
         productObj = None
         try:
             productObj = Product.objects.get(jancode=orderInfo['jancode'])
         except Product.DoesNotExist:
             results = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
+
+        # 检查被指派的仓库, 是否该产品已经在仓库中存在, 如果不存在, 创建
         stockObj = None
         try:
             stockObj = Stock.objects.get(
@@ -966,7 +978,6 @@ class NoOrderPurchase(views.APIView):
                 stockObj.inflight = F('inflight') + int(i['quantity'])
                 stockObj.save()
 
-                # update order, notes: may qty != quantity,
                 orders = Order.objects.filter(
                     inventory=inventory, jancode=jancode, status='待采购')
                 for o in orders:
@@ -994,14 +1005,13 @@ class PurchaseOrderDelete(views.APIView):
         id = request.data.get('id')
         poObj = PurchaseOrder.objects.get(id=id)  # 采购单
         poitemObjs = poObj.purchaseorderitem.all()  # 关联采购商品
-        orderObjs = poObj.order.all()  # 关联订单
+        orderObjs = poObj.order.filter(status='已采购')  # 关联订单, 状态为已采购
 
         with transaction.atomic():
 
             # rollback order, set order status
             for o in orderObjs:
-                if '已采购' in o.status:
-                    o.status = '待采购'
+                o.status = '待采购'
                 o.purchaseorder = None  # clear relate po
                 o.save(update_fields=['status', 'purchaseorder'])
 
@@ -1128,8 +1138,6 @@ class OrderConflict(views.APIView):
                     rollbackStockObj.save()
 
                     # 判断新jancode库存是否满足
-                    stockObj = Stock.objects.get(
-                        inventory=data['inventory'], jancode=data['jancode'])
                     stockObj = None
                     try:
                         stockObj = Stock.objects.get(
@@ -1171,7 +1179,7 @@ class OrderConflict(views.APIView):
                         'YYYY-MM-DD HH:mm:ss')  # 需要更新订单分配时间
                     orderObj.save()
                     stockObj.save()
-                else:
+                else:  # 用户没有做任何操作, 直接改订单状态为待采购
                     orderObj.status = '待采购'
                     orderObj.save(update_fields=['status'])
 
