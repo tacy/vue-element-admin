@@ -1,5 +1,5 @@
 from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter
-from .models import Order, Product
+from .models import Order, Product, Stock
 
 
 class CharInFilter(BaseInFilter, CharFilter):
@@ -38,4 +38,15 @@ class ProductFilter(FilterSet):
         model = Product
         fields = [
             'jancode',
+        ]
+
+
+class StockFilter(FilterSet):
+    # https://docs.djangoproject.com/en/dev/ref/models/lookups/#module-django.db.models.lookups
+    jancode = CharFilter(name='product__jancode')
+
+    class Meta:
+        model = Stock
+        fields = [
+            'inventory',
         ]

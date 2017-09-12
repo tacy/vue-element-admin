@@ -4,6 +4,9 @@
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="面单号" v-model="listQuery.db_number">
       </el-input>
 
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="运单号" v-model="listQuery.delivery_no">
+      </el-input>
+
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
         <el-option v-for="item in shippingOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
@@ -90,6 +93,11 @@
 	<template scope="scope">
 	  <span>{{scope.row.ymatou}}</span>
 	  <!--el-tag :type="scope.row.status">{{scope.row.status}}</el-tag-->
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="运单号">
+	<template scope="scope">
+	  <span>{{scope.row.delivery_no}}</span>
 	</template>
       </el-table-column>
       <!--el-table-column align="center" label="打印" width="140">
@@ -243,6 +251,7 @@
 	  channel_name: undefined,
 	  receiver_name: undefined,
 	  db_number: undefined,
+	  delivery_no: undefined
         },
 	queryOrderItems: {
 	  shippingdb_id: undefined,

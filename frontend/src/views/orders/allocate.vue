@@ -67,7 +67,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="备注">
+      <el-table-column align="center" label="备注" width="150px">
         <template scope="scope">
           <span>卖:{{scope.row.seller_memo}}|买:{{scope.row.buyer_remark}}</span>
         </template>

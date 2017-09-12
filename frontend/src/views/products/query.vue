@@ -146,7 +146,7 @@
 <script>
   import { parseTime } from 'utils';
   import { fetchInventory, fetchSupplier, fetchCategory } from 'api/orders';
-  import { fetchProduct, createProduct, updateProduct } from 'api/products';
+  import { fetchProduct, createProduct, updateProductJancode } from 'api/products';
 
   export default {
     data() {
@@ -254,7 +254,7 @@
         if ( this.selectCategory ) {
           this.temp.category = this.selectCategory[1];
 	}
-        updateProduct(this.temp, '/product/'+this.temp.id+'/').then(response => {
+        updateProductJancode(this.temp).then(response => {
 	  for (const v of this.list) {
 	    if (v.id === this.temp.id) {
 	      const index = this.list.indexOf(v);

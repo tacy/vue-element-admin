@@ -19,7 +19,7 @@ from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
-from .filter import OrderFilter, ProductFilter
+from .filter import OrderFilter, ProductFilter, StockFilter
 from .models import (Inventory, Order, Product, PurchaseOrder,
                      PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier,
                      BondedProduct)
@@ -296,7 +296,8 @@ class XloboCreateFBXBill(views.APIView):
                 orderObj.status = '已发货'  # 订单直接进入已发货状态
                 orderObj.save(update_fields=['status', 'shippingdb'])
                 stockObj = Stock.objects.get(
-                    jancode=orderObj.jancode, inventory=orderObj.inventory)
+                    product__jancode=orderObj.jancode,
+                    inventory=orderObj.inventory)
                 stockObj.quantity = F('quantity') - orderObj.quantity  # 扣减库存
                 stockObj.preallocation = F('preallocation') - orderObj.quantity
                 stockObj.save()
@@ -358,7 +359,7 @@ class XloboGetPDF(views.APIView):
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
         merger = PdfFileMerger()
         pdftool = utils.PDFTool()
-        sql = 'select o.product_title, o.sku_properties_name, o.quantity, s.location from stock_order o inner join stock_stock s on o.jancode=s.jancode and o.shippingdb_id=%s'
+        sql = 'select o.product_title, o.sku_properties_name, o.quantity, s.location from stock_order o inner join stock_product p on o.jancode=p.jancode and o.shippingdb_id=%s inner join stock_stock s on s.product_id=p.id'
         for i, b in enumerate(result['Result']):
             db_bytes = base64.b64decode(b['BillPdfLabel'])
             ordsData = None
@@ -504,7 +505,8 @@ class UexStockOut(views.APIView):
                 orderObj.status = '已发货'  # 订单直接进入已发货状态
                 orderObj.save(update_fields=['status', 'shippingdb'])
                 stockObj = Stock.objects.get(
-                    jancode=orderObj.jancode, inventory=orderObj.inventory)
+                    product__jancode=orderObj.jancode,
+                    inventory=orderObj.inventory)
                 stockObj.quantity = F('quantity') - orderObj.quantity  # 扣减库存
                 stockObj.preallocation = F('preallocation') - orderObj.quantity
                 stockObj.save()
@@ -565,7 +567,7 @@ class StockOut(views.APIView):
     # 3. 扣减库存
     def post(self, request, format=None):
         delivery_no = request.data['delivery_no']
-        dbs = request.data['db_numbers'].split(',')
+        dbs = request.data['db_numbers'].split('\n')
         with transaction.atomic():
             for db in dbs:
                 shippingdbObj = ShippingDB.objects.get(db_number=db)
@@ -584,7 +586,7 @@ class StockOut(views.APIView):
                     o.status = '已发货'
                     o.save(update_fields=['status'])
                     stockObj = Stock.objects.get(
-                        jancode=o.jancode, inventory=o.inventory)
+                        product__jancode=o.jancode, inventory=o.inventory)
                     stockObj.quantity = F('quantity') - o.quantity
                     stockObj.preallocation = F('preallocation') - o.quantity
                     stockObj.save()
@@ -592,6 +594,7 @@ class StockOut(views.APIView):
         return Response(status=status.HTTP_200_OK)
 
 
+# 不要使用, 有问题, stock没有jancode字段了
 class OrderItemGet(views.APIView):
     def get(self, request, format=None):
         sql = (
@@ -744,10 +747,10 @@ class OrderAllocate(views.APIView):
         stockObj = None
         try:
             stockObj = Stock.objects.get(
-                inventory=paramInventory, jancode=productObj)
+                inventory=paramInventory, product__id=productObj.id)
         except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
             stockObj = Stock(
-                jancode=productObj,
+                product=productObj,
                 inventory=relate_inventory,
                 quantity=0,
                 inflight=0,
@@ -765,7 +768,7 @@ class OrderAllocate(views.APIView):
         else:  # 重新派单
             if dbinventory.id != paramInventory:  # 重派单, 订单派给了新的仓库, 需要回滚之前的库存占用
                 rollbackstock = Stock.objects.get(
-                    inventory=dbinventory.id, jancode=productObj)
+                    inventory=dbinventory.id, product__id=productObj.id)
                 rollbackstock.preallocation = F(
                     'preallocation') - orderInfo['quantity']
                 stockObj.preallocation = F(
@@ -827,7 +830,7 @@ class OrderPurchaseList(views.APIView):
     # 需要返回查询时间, 创建采购单的时候, 我们需要用这个时间来和订单的派单时间做对比, 看看是否能关联相关订单
     #
     def get(self, request, format=None):
-        sql = "select s.jancode, s.name product_name, s.specification sku_properties_name, max(o.price) product_price, sum(o.need_purchase) qty from stock_product s inner join stock_order o on o.jancode=s.jancode and o.status='待采购' and o.inventory_id=%s group by jancode"
+        sql = "select p.jancode, p.name product_name, p.specification sku_properties_name, max(o.price) product_price, sum(o.need_purchase) qty from stock_product p inner join stock_order o on o.jancode=p.jancode and o.status='待采购' and o.inventory_id=%s group by jancode"
 
         def dictfetchall(cursor):
             "Return all rows from a cursor as a dict"
@@ -893,14 +896,16 @@ class OrderPurchase(views.APIView):
                 # add purchase item
                 price = i['price']
                 poitem = PurchaseOrderItem(
-                    jancode=Product.objects.get(jancode=jancode),
+                    product=Product.objects.get(jancode=jancode),
                     quantity=i['quantity'],
                     purchaseorder=pos[po_id],
                     price=price)
                 poitem.save()
 
                 # set inflight in stock
-                stock = Stock.objects.get(inventory=inventory, jancode=jancode)
+                stock = Stock.objects.get(
+                    inventory=inventory,
+                    product__jancode=jancode, )
                 stock.inflight = F('inflight') + int(i['quantity'])
                 stock.save()
 
@@ -974,7 +979,7 @@ class NoOrderPurchase(views.APIView):
 
                 # set inflight in stock
                 stockObj = Stock.objects.get(
-                    inventory=inventory, jancode=jancode)
+                    inventory=inventory, product__jancode=jancode)
                 stockObj.inflight = F('inflight') + int(i['quantity'])
                 stockObj.save()
 
@@ -1018,7 +1023,7 @@ class PurchaseOrderDelete(views.APIView):
             # rollback stock, set stock preallocation
             for poi in poitemObjs:
                 stockObj = Stock.objects.get(
-                    jancode=poi.jancode, inventory=poObj.inventory)
+                    product=poi.product, inventory=poObj.inventory)
                 stockObj.inflight = F('inflight') - poi.quantity
                 stockObj.save(update_fields=[
                     'inflight',
@@ -1054,7 +1059,7 @@ class PurchaseOrderClear(views.APIView):
             for poi in pois:
                 inventory = Inventory.objects.get(id=inventory_id)
                 stockObj = Stock.objects.get(
-                    jancode=poi['jancode'], inventory=inventory)
+                    product__id=poi['product'], inventory=inventory)
                 # poi.quantity记录的是采购数量, qty是实际到库数量.
                 # 入库实际到库数量, 扣减inflight数量用采购数量.
                 # TODO: 如果实际到库少于采购数量, 需要处理漏采(漏采需补采购)
@@ -1121,7 +1126,8 @@ class OrderConflict(views.APIView):
         with transaction.atomic():
             if '已删除' in data['status']:  # 退款
                 stockObj = Stock.objects.get(
-                    inventory=data['inventory'], jancode=data['jancode'])
+                    inventory=data['inventory'],
+                    product__jancode=data['jancode'])
                 stockObj.preallocation = F('preallocation') - data['quantity']
                 stockObj.save()
                 orderObj = Order.objects.get(id=data['id'])
@@ -1132,7 +1138,8 @@ class OrderConflict(views.APIView):
                 if orderObj.jancode != data['jancode']:
                     # 回滚旧的jancode库存占用
                     rollbackStockObj = Stock.objects.get(
-                        inventory=orderObj.inventory, jancode=orderObj.jancode)
+                        inventory=orderObj.inventory,
+                        product__jancode=orderObj.jancode)
                     rollbackStockObj.preallocation = F(
                         'preallocation') - data['quantity']
                     rollbackStockObj.save()
@@ -1142,7 +1149,7 @@ class OrderConflict(views.APIView):
                     try:
                         stockObj = Stock.objects.get(
                             inventory=data['inventory'],
-                            jancode=data['jancode'])
+                            product__jancode=data['jancode'])
                     except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
                         if not Product.objects.filter(
                                 jancode=data['jancode']).exists():
@@ -1151,7 +1158,7 @@ class OrderConflict(views.APIView):
                                 data=errmsg,
                                 status=status.HTTP_400_BAD_REQUEST)
                         stockObj = Stock(
-                            jancode=Product.objects.get(
+                            product=Product.objects.get(
                                 jancode=data['jancode']),
                             inventory=Inventory.objects.get(
                                 id=data['inventory']),
@@ -1212,7 +1219,8 @@ class OrderDelete(views.APIView):
                   '待采购' in orderObj.status):  # 清除占用的库存
                 if orderObj.need_purchase:
                     stockObj = Stock.objects.get(
-                        inventory=orderObj.inventory, jancode=orderObj.jancode)
+                        inventory=orderObj.inventory,
+                        product__jancode=orderObj.jancode)
                     stockObj.preallocation = F(
                         'preallocation') - orderObj.quantity
                     stockObj.save()
@@ -1225,6 +1233,27 @@ class OrderDelete(views.APIView):
                 return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
 
             return Response(status=status.HTTP_200_OK)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+# 更新产品包括条码
+# 更新条码需要同步更新库存表和订单表
+class ProductUpdateJancode(views.APIView):
+    def post(self, request, format=None):
+        print(request.data)
+        data = request.data
+
+        with transaction.atomic():
+            productObj = Product.objects.get(id=data['id'])
+            jancode = productObj.jancode
+            productSerializer = ProductSerializer(
+                productObj, data=request.data)
+            if productSerializer.is_valid():
+                productSerializer.save()
+                Order.objects.filter(jancode=jancode).update(
+                    jancode=data['jancode'])
+                return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1265,7 +1294,6 @@ class PurchaseOrderDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class PurchaseOrderItemList(generics.ListCreateAPIView):
-
     queryset = PurchaseOrderItem.objects.all()
     serializer_class = PurchaseOrderItemSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
@@ -1320,7 +1348,7 @@ class StockList(generics.ListCreateAPIView):
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
-    filter_fields = ('jancode', 'inventory')
+    filter_class = StockFilter
 
 
 class StockDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -1339,7 +1367,8 @@ class ShippingDBList(generics.ListAPIView):
     queryset = ShippingDB.objects.all()
     serializer_class = ShippingDBSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
-    filter_fields = ('inventory', 'status', 'shipping')
+    filter_fields = ('inventory', 'status', 'shipping', 'db_number',
+                     'delivery_no')
 
 
 class InventoryList(generics.ListCreateAPIView):
