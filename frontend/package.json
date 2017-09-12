@@ -1,8 +1,8 @@
 {
-  "name": "juicy",
-  "version": "1.1.0",
-  "description": "A Vue.js admin",
-  "author": "Pan <panfree23@gmail.com>",
+  "name": "lelewu",
+  "version": "1.0",
+  "description": "Lelewu ERP",
+  "author": "tacy lee <tacy.lee@gmail.com>",
   "license": "MIT",
   "private": true,
   "scripts": {
