@@ -134,8 +134,10 @@
 	  <span>{{scope.row.quantity}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="操作" width="75">
+      <el-table-column align="center" label="操作" width="150">
 	<template scope="scope">
+          <el-button size="small" :disabled="scope.row.status==='待处理'?false:true" type="primary" @click="handleMark(scope.row)">标记
+	  </el-button>
 	  <el-button size="small" :disabled="checkShippingdb(scope.row)" type="danger" @click="handleDelete(scope.row)">删 除
 	  </el-button>
 	</template>
@@ -233,6 +235,17 @@
         <el-button type="primary" @click="deleteOrder()">确 定</el-button>
       </div>
     </el-dialog>
+     <el-dialog title="标记订单" :visible.sync="dialogMarkVisible">
+      <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
+        <el-form-item label="卖家备注">
+          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.seller_memo"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogMarkVisible=false">取 消</el-button>
+        <el-button type="primary" @click="markOrder()">确 定</el-button>
+      </div>
+    </el-dialog>
 
   </div>
 </template>
@@ -254,7 +267,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchSupplier, fetchOrder, orderDelete, orderTPRCreate } from 'api/orders';
+  import { fetchInventory, fetchSupplier, fetchOrder, orderDelete, updateOrder, orderTPRCreate } from 'api/orders';
 
   export default {
     data() {
@@ -264,6 +277,7 @@
         total: null,
 	dialogFormVisible: false,
 	dialogCreateVisible: false,
+	dialogMarkVisible: false,
         inventoryOptions: [],
 	channelOptions: ['洋码头', '京东'],
 	deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
@@ -300,6 +314,7 @@
 	temp: {
           id: undefined,
 	  status: undefined,
+	  seller_memo:undefined,
 	  conflict_feedback: undefined
         }
       }
@@ -364,6 +379,28 @@
       handleCreate() {
         this.dialogCreateVisible = true
       },
+      handleMark(row) {
+        this.temp = Object.assign({}, row);
+	this.dialogMarkVisible = true;
+      },
+      markOrder() {
+        updateOrder(this.temp, '/order/'+this.temp.id+'/').then(response => {
+	  for (const v of this.list) {
+	    if (v.id === this.temp.id) {
+	      const index = this.list.indexOf(v);
+	      this.list.splice(index, 1, this.temp);
+	      break;
+	    }
+          }
+          this.$notify({
+            title: '成功',
+            message: '订单标记成功',
+            type: 'success',
+            duration: 2000
+          });
+	  this.dialogMarkVisible = false
+        })
+      },
       createTPROrder() {
         orderTPRCreate(this.orderData).then(response => {
           this.$notify({
@@ -385,6 +422,12 @@
 	      break;
 	    }
           }
+          this.$notify({
+            title: '成功',
+            message: '订单删除成功',
+            type: 'success',
+            duration: 2000
+          });
 	  this.dialogFormVisible = false
         })
       }

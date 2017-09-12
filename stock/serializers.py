@@ -69,6 +69,8 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only=False, required=False, allow_null=True, allow_blank=True)
     receiver_idcard = serializers.CharField(
         read_only=False, required=False, allow_null=True, allow_blank=True)
+    jancode = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
