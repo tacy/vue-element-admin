@@ -104,11 +104,11 @@ export const asyncRouterMap = [
     icon: 'zujian',
     children: [
       { path: 'query', component: ordersQuery, name: '查订单' },
-      { path: 'allocate', component: ordersAllocate, name: '预处理' },
-      { path: 'purchase', component: ordersPurchase, name: '待采购' },
+      { path: 'allocate', component: ordersAllocate, name: '预处理', meta: { role: ['admin'] } },
+      { path: 'purchase', component: ordersPurchase, name: '待采购', meta: { role: ['admin'] } },
       { path: 'conflict', component: ordersConflict, name: '需介入' },
-      { path: 'createdb', component: ordersCreateDB, name: '出面单' },
-      { path: 'shipping', component: ordersShipping, name: '待发货' }
+      { path: 'createdb', component: ordersCreateDB, name: '出面单', meta: { role: ['admin'] } },
+      { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin'] } }
     ]
   },
   {
@@ -118,8 +118,8 @@ export const asyncRouterMap = [
     name: '采购',
     icon: 'zujian',
     children: [
-      { path: 'order', component: purchasesorder, name: '采购单' },
-      { path: 'create', component: purchasescreate, name: '新采购' }
+      { path: 'order', component: purchasesorder, name: '采购单', meta: { role: ['admin'] } },
+      { path: 'create', component: purchasescreate, name: '新采购', meta: { role: ['admin'] } }
     ]
   },
   {
@@ -141,7 +141,7 @@ export const asyncRouterMap = [
     icon: 'zujian',
     children: [
       { path: 'query', component: stocksquery, name: '查库存' },
-      { path: 'move', component: stocksmove, name: '移库单' }
+      { path: 'move', component: stocksmove, name: '移库单', meta: { role: ['admin'] } }
     ]
   },
   { path: '*', redirect: '/404', hidden: true }

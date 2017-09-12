@@ -37,7 +37,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column width="140px" align="center" label="条码" show-overflow-tooltip>
+      <el-table-column width="120px" align="center" label="条码">
         <template scope="scope">
           <span>{{scope.row.jancode}}</span>
         </template>
@@ -49,11 +49,11 @@
         </template>
       </el-table-column>
 
-      <!--el-table-column width="100px" align="center" label="规格" show-overflow-tooltip>
+      <el-table-column width="180px" align="center" label="规格">
         <template scope="scope">
           <span>{{scope.row.sku_properties_name}}</span>
         </template>
-      </el-table-column-->
+      </el-table-column>
 
       <el-table-column width="100px" align="center" label="收件人" show-overflow-tooltip>
         <template scope="scope">
@@ -67,13 +67,13 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="备注" show-overflow-tooltip>
+      <el-table-column align="center" label="备注">
         <template scope="scope">
           <span>卖:{{scope.row.seller_memo}}|买:{{scope.row.buyer_remark}}</span>
         </template>
       </el-table-column>
 
-      <el-table-column width="160px" align="center" label="支付时间">
+      <el-table-column width="120px" align="center" label="支付时间">
         <template scope="scope">
           <span>{{scope.row.piad_time}}</span>
         </template>
