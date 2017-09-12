@@ -1059,7 +1059,7 @@ class PurchaseOrderClear(views.APIView):
             for poi in pois:
                 inventory = Inventory.objects.get(id=inventory_id)
                 stockObj = Stock.objects.get(
-                    product__id=poi['product'], inventory=inventory)
+                    product__jancode=poi['jancode'], inventory=inventory)
                 # poi.quantity记录的是采购数量, qty是实际到库数量.
                 # 入库实际到库数量, 扣减inflight数量用采购数量.
                 # TODO: 如果实际到库少于采购数量, 需要处理漏采(漏采需补采购)
