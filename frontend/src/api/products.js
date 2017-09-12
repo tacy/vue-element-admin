@@ -24,6 +24,14 @@ export function createProduct(data) {
   });
 }
 
+export function updateProductJancode(data) {
+  return fetch({
+    url: '/product/updatejancode/',
+    method: 'post',
+    data
+  });
+}
+
 export function fetchBondedProduct(query) {
   return fetch({
     url: '/bondedproduct',

@@ -65,15 +65,14 @@ class BondedProduct(models.Model):
 
 class Stock(models.Model):
     inventory = models.ForeignKey(Inventory, related_name='stock')
-    jancode = models.ForeignKey(
-        Product, to_field='jancode', related_name='stock', db_column='jancode')
+    product = models.ForeignKey(Product, related_name='stock')
     quantity = models.IntegerField(null=True, default=0)  # 库存
     inflight = models.IntegerField(null=True, default=0)  # 在途数量
     preallocation = models.IntegerField(null=True, default=0)  # 分配到该仓库商品的订单
     location = models.CharField(max_length=8, null=True)  # 库存位置
 
     class Meta:
-        unique_together = ('inventory', 'jancode')
+        unique_together = ('inventory', 'product')
 
 
 class Shipping(models.Model):
@@ -125,18 +124,14 @@ class PurchaseOrder(models.Model):
 class PurchaseOrderItem(models.Model):
     purchaseorder = models.ForeignKey(
         PurchaseOrder, related_name='purchaseorderitem')
-    jancode = models.ForeignKey(
-        Product,
-        to_field='jancode',
-        related_name='purchaseorderitem',
-        db_column='jancode')
+    product = models.ForeignKey(Product, related_name='purchaseorderitem')
     quantity = models.IntegerField(null=False)
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
 
     def __str__(self):
         """Return a human readable representation of the model instance."""
-        return "{},{},{},{},{}".format(self.jancode.jancode, self.jancode.name,
-                                       self.jancode.specification,
+        return "{},{},{},{},{}".format(self.product.jancode, self.product.name,
+                                       self.product.specification,
                                        self.quantity, self.price)
 
 

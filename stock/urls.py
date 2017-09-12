@@ -11,7 +11,7 @@ from .views import (
     XloboCreateFBXBill, XloboGetPDF, XloboDeleteDBNumber,
     ManualAllocateDBNumber, OrderItemGet, StockOut, OrderTPRCreate,
     PurchaseOrderClear, UexStockOut, ExportBondedOrder, BondedProductList,
-    BondedProductDetail)
+    BondedProductDetail, ProductUpdateJancode)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -30,6 +30,9 @@ urlpatterns = {
     url(r'^product/(?P<pk>[0-9]+)/$',
         ProductDetail.as_view(),
         name="ProductDetail"),
+    url(r'^product/updatejancode/$',
+        ProductUpdateJancode.as_view(),
+        name="updateProductJancode"),
     url(r'^bondedproduct/$',
         BondedProductList.as_view(),
         name="createBondedProduct"),
