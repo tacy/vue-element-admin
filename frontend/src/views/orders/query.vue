@@ -154,35 +154,66 @@
       <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
         <el-row>
 	  <el-col :span="6">
-	    <el-form-item label="姓名:" label-width="50px">
-	      <el-input style="width: 180px" v-model="orderData.receiver_name"></el-input>
+	    <el-form-item label="订单号:">
+	      <el-input style="width: 150px" v-model="orderData.orderid"></el-input>
+	    </el-form-item>
+ 	  </el-col>
+	  <el-col :span="6">
+	    <el-form-item label="卖家:">
+	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.seller_name" placeholder="渠道">
+	      <el-option v-for="item in sellerOptions" :key="item" :label="item" :value="item">
+	      </el-option>
+	      </el-select>
+	    </el-form-item>
+   	  </el-col>
+	  <el-col :span="6">
+	    <el-form-item label="渠道:">
+	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.channel_name" placeholder="渠道">
+	      <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
+	      </el-option>
+	      </el-select>
+	    </el-form-item>
+   	  </el-col>
+	  <el-col :span="6">
+	    <el-form-item label="运输:">
+	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.delivery_type" placeholder="运输方式">
+		<el-option v-for="item in deliveryTypeOptions" :key="item" :label="item" :value="item">
+		</el-option>
+	      </el-select>
+	    </el-form-item>
+   	  </el-col>
+	</el-row>
+	<el-row>
+	  <el-col :span="6">
+	    <el-form-item label="姓名:">
+	      <el-input style="width: 150px" v-model="orderData.receiver_name"></el-input>
 	    </el-form-item>
  	  </el-col>
           <el-col :span="6">
-	    <el-form-item label="电话:" label-width="50px">
-	      <el-input style="width: 180px" v-model="orderData.receiver_mobile"></el-input>
+	    <el-form-item label="电话:">
+	      <el-input style="width: 150px" v-model="orderData.receiver_mobile"></el-input>
+	    </el-form-item>
+	  </el-col>
+          <el-col :span="6">
+	    <el-form-item label="邮编:">
+	      <el-input style="width: 150px" v-model="orderData.receiver_zip"></el-input>
 	    </el-form-item>
 	  </el-col>
 	  <el-col :span="6">
-	    <el-form-item label="证件:" label-width="50px">
-	      <el-input style="width: 180px" v-model="orderData.receiver_idcard"></el-input>
+	    <el-form-item label="证件:">
+	      <el-input style="width: 150px" v-model="orderData.receiver_idcard"></el-input>
 	    </el-form-item>
  	  </el-col>
-          <el-col :span="6">
-	    <el-form-item label="邮编:" label-width="50px">
-	      <el-input style="width: 180px" v-model="orderData.receiver_zip"></el-input>
-	    </el-form-item>
-	  </el-col>
 	</el-row>
         <el-row>
 	  <el-col :span="12">
-	    <el-form-item label="地址:" label-width="50px">
-	      <el-input style="width: 460px" v-model="orderData.receiver_address"></el-input>
+	    <el-form-item label="地址:">
+	      <el-input style="width: 430px" v-model="orderData.receiver_address"></el-input>
 	    </el-form-item>
  	  </el-col>
           <el-col :span="12">
-	    <el-form-item label="备注:" label-width="50px">
-	      <el-input style="width: 460px" v-model="orderData.seller_memo"></el-input>
+	    <el-form-item label="备注:">
+	      <el-input style="width: 430px" v-model="orderData.seller_memo"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
@@ -204,12 +235,12 @@
 	  </el-col>
           <el-col :span="3">
 	    <el-form-item label="数量:" label-width="50px">
-	      <el-input style="width: 80px" v-model="p.quantity"></el-input>
+	      <el-input style="width: 80px" v-model.number="p.quantity" type="number"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="5">
 	    <el-form-item label="价格:" label-width="50px">
-	      <el-input style="width: 88px" v-model="p.price"></el-input>
+	      <el-input style="width: 88px" v-model.number="p.price" type="number"></el-input>
 	      <el-button type="danger" icon="delete" @click="deleteProduct(p)"></el-button>
 	    </el-form-item>
 	  </el-col>
@@ -280,6 +311,7 @@
 	dialogMarkVisible: false,
         inventoryOptions: [],
 	channelOptions: ['洋码头', '京东'],
+	sellerOptions: ['东京彩虹桥', '妈妈宝宝日本馆', '天狗'],
 	deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
 	statusOptions: ['在途', '删除', '入库'],
         listQuery: {
@@ -293,8 +325,10 @@
 	  delivery_type: undefined,
         },
 	orderData: {
-	  seller_name: '东京彩虹桥',
-	  channel_name: '京东',
+	  orderid: undefined,
+	  seller_name: undefined,
+	  channel_name: undefined,
+	  delivery_type: undefined,
 	  receiver_name: undefined,
 	  receiver_address: undefined,
 	  receiver_zip: undefined,
@@ -377,6 +411,27 @@
 	this.dialogFormVisible = true;
       },
       handleCreate() {
+	this.orderData = {
+	  orderid: undefined,
+	  seller_name: undefined,
+	  channel_name: undefined,
+	  delivery_type: undefined,
+	  receiver_name: undefined,
+	  receiver_address: undefined,
+	  receiver_zip: undefined,
+	  receiver_mobile: undefined,
+	  receiver_idcard: undefined,
+	  seller_memo: undefined,
+	  products: [
+	    {
+	      jancode: undefined,
+	      quantity: undefined,
+	      price: undefined,
+	      product_title: undefined,
+	      sku_properties_name: undefined
+	    },
+	  ]
+	},
         this.dialogCreateVisible = true
       },
       handleMark(row) {
