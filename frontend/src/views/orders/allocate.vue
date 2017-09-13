@@ -117,6 +117,9 @@
         <el-form-item label="地址">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.receiver_address"></el-input>
         </el-form-item>
+        <el-form-item label="数量">
+          <el-input v-model="temp.quantity"></el-input>
+        </el-form-item>
         <el-form-item label="总价">
           <el-input :disabled="temp.channel_name==='京东'?false:true" v-model.number="temp.payment" type="number"></el-input>
         </el-form-item>
@@ -213,6 +216,7 @@
 	  channel_name: undefined,
 	  payment: undefined,
 	  price: undefined,
+	  quantity: undefined,
 	  category: undefined,
 	  sku_properties_name: undefined
         },

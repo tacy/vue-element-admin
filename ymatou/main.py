@@ -9,6 +9,7 @@ import click
 from bs4 import BeautifulSoup
 from tiangouAPI import TiangouAPI
 from ymatouapi import XloboAPI
+from utils import SyncStock
 
 REQUEST_TIMEOUT = 120
 db_password = '12345678'
@@ -366,6 +367,12 @@ def importProduct():
         loop.run_until_complete(fetch_all(session, url, payloads, loop))
 
 
+@click.command()
+def exportStock():
+    syncstock = SyncStock()
+    syncstock.syncXloboStockByGoogle()
+
+
 @click.group()
 def cli():
     pass
@@ -383,6 +390,7 @@ cli.add_command(importCategory)
 cli.add_command(importLogistic)
 cli.add_command(importTpoToXlobo)
 cli.add_command(importYmtToXlobo)
+cli.add_command(exportStock)
 
 if __name__ == '__main__':
     cli()

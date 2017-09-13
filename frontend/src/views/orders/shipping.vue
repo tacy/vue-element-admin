@@ -1,10 +1,22 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="面单号" v-model="listQuery.db_number">
+      <el-select v-model="listQuery.labelVal" style="width: 120px;" class="filter-item" placeholder="请选择">
+	<el-option
+	    v-for="item in selectedOptions"
+	    :label="item.label"
+	    :value="item.value">
+	</el-option>
+      </el-select>
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="面单号" v-model="listQuery.db_number" v-show="listQuery.labelVal == '1'">
       </el-input>
-
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="运单号" v-model="listQuery.delivery_no">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品名称" v-model="listQuery.product_title" v-show="listQuery.labelVal == '2'">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="商品条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '3'">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="运单号" v-model="listQuery.delivery_no" v-show="listQuery.labelVal == '4'">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '5'">
       </el-input>
 
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
@@ -49,6 +61,9 @@
 	    </el-form-item>
 	    <el-form-item label="注文编号">
 	      <span>{{ p.purchaseorder }}</span>
+	    </el-form-item>
+	    <el-form-item label="产品名">
+	      <span>{{ p.product_title }}</span>
 	    </el-form-item>
 	  </el-form>
 	</template>
@@ -214,7 +229,7 @@
   .table-expand .el-form-item {
     margin-right: 0;
     margin-bottom: 0;
-    width: 25%;
+    width: 50%;
   }
 </style>
 
@@ -242,16 +257,35 @@
 	channelOptions: ['洋码头', '京东'],
 	shippingOptions: [],
 	statusOptions: ['待处理', '已出库', '已删除'],
+        selectedOptions: [{
+          value: '1',
+	  label: '运单号'
+	}, {
+	  value: '2',
+	  label: '商品名称'
+	}, {
+	  value: '3',
+	  label: '商品条码'
+	}, {
+	  value: '4',
+	  label: '运单号'
+	}, {
+	  value: '5',
+	  label: '收件人'
+	}],
         listQuery: {
           page: 1,
           limit: 10,
+	  labelVal: '1',
 	  status: "待处理",
           inventory: undefined,
 	  shipping: undefined,
 	  channel_name: undefined,
 	  receiver_name: undefined,
 	  db_number: undefined,
-	  delivery_no: undefined
+	  delivery_no: undefined,
+	  product_title: undefined,
+	  jancode: undefined,
         },
 	queryOrderItems: {
 	  shippingdb_id: undefined,
@@ -290,7 +324,13 @@
 	    const tmp = [];
 	    for (const o of t.order) {
 	      const ordinfo = o.split(',');
-	      tmp.push({'id': ordinfo[0], 'orderid': ordinfo[1], 'status': ordinfo[2], 'purchaseorder': ordinfo[3]});
+	      tmp.push({
+		'id': ordinfo[0],
+		'orderid': ordinfo[1],
+		'status': ordinfo[2],
+		'purchaseorder': ordinfo[3],
+		'product_title': ordinfo[4]
+	      });
 	      if ( ordinfo[2] !== '待发货' ) {
 	        this.list[index].stockStatus = '在途';
 	      };
@@ -315,7 +355,7 @@
         this.getShippingDB();
       },
       checkSelectable(row) {
-        return row.stockStatus !== '在途'
+        return row.stockStatus !== '在途' && row.status==='待处理'
       },
       handleSelect(val) {
         this.selectRow = val;
@@ -354,6 +394,13 @@
       },
       handleDelete(row) {
         deleteDBNumber(row).then(response => {
+	  for (const v of this.list) {
+	    if (v.id === row.id) {
+	      const index = this.list.indexOf(v);
+	      this.list.splice(index, 1);
+	      break;
+	    }
+	  };
 	  this.$notify({
 	    title: '成功',
 	    message: '删除面单成功',

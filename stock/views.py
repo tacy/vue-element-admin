@@ -2,8 +2,6 @@ import json
 import asyncio
 import base64
 import logging
-import random
-import string
 from io import BytesIO
 from collections import OrderedDict
 from openpyxl import Workbook
@@ -19,7 +17,7 @@ from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
-from .filter import OrderFilter, ProductFilter, StockFilter
+from .filter import OrderFilter, ProductFilter, StockFilter, ShippingDBFilter
 from .models import (Inventory, Order, Product, PurchaseOrder,
                      PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier,
                      BondedProduct)
@@ -312,24 +310,32 @@ class XloboDeleteDBNumber(views.APIView):
         data = request.data
         shippingid = data['id']
         db_number = data['db_number']
-        msg = {'BillCode': db_number}
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        sess = aiohttp.ClientSession(loop=loop)
-        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
-                                      client_id)
-        result = loop.run_until_complete(xloboapi.deleteDBNumber(msg))
-        loop.close()
-        logger.debug('XloboDeleteDBNumber', result)
-        print(result)
-        if result['ErrorCount'] > 0:
-            errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-        for o in Order.objects.filter(shipping_id=shippingid):
-            o.shipping_id = None
-            o.save(update_fields=['shipping_id'])
+        if data['shipping_name'] in ['虚仓电商', '直邮电商']:
+            msg = {'BillCode': db_number}
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            sess = aiohttp.ClientSession(loop=loop)
+            xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
+                                          client_id)
+            result = loop.run_until_complete(xloboapi.deleteDBNumber(msg))
+            loop.close()
+            logger.debug('XloboDeleteDBNumber', result)
+            print(result)
+            if result['ErrorCount'] > 0:
+                errmsg = {
+                    'errmsg': result['ErrorInfoList'][0]['ErrorDescription']
+                }
+                return Response(
+                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            shippingdbObj = ShippingDB.objects.get(id=data['id'])
+            shippingdbObj.status = '已删除'
+            shippingdbObj.order.all().update(shippingdb=None)
+            shippingdbObj.save(update_fields=[
+                'status',
+            ])
 
-        return Response(data=result, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK)
 
 
 class XloboGetPDF(views.APIView):
@@ -675,14 +681,14 @@ class OrderTPRCreate(views.APIView):
         data = request.data
         t = arrow.now()
         piad_time = t.format('YYYY-MM-DD HH:mm:ss')
-        orderid = 'T' + t.format('YYMMDD') + ''.join(
-            random.choices(string.digits, k=2))
+        # orderid = 'T' + t.format('YYMMDD') + ''.join(
+        #     random.choices(string.digits, k=2))
         with transaction.atomic():
             for p in data['products']:
                 o = {
-                    'orderid': orderid,
+                    'orderid': data['orderid'],
                     'piad_time': piad_time,
-                    'delivery_type': '第三方',
+                    'delivery_type': data['delivery_type'],
                     'seller_name': data['seller_name'],
                     'channel_name': data['channel_name'],
                     'receiver_name': data['receiver_name'],
@@ -695,6 +701,7 @@ class OrderTPRCreate(views.APIView):
                     'product_title': p['product_title'],
                     'sku_properties_name': p['sku_properties_name'],
                     'price': p['price'],
+                    'payment': float(p['price']) * float(p['quantity']),
                     'quantity': p['quantity']
                 }
                 orderObj = Order(**o)
@@ -1367,8 +1374,7 @@ class ShippingDBList(generics.ListAPIView):
     queryset = ShippingDB.objects.all()
     serializer_class = ShippingDBSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
-    filter_fields = ('inventory', 'status', 'shipping', 'db_number',
-                     'delivery_no')
+    filter_class = ShippingDBFilter
 
 
 class InventoryList(generics.ListCreateAPIView):

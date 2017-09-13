@@ -1,3 +1,4 @@
+from . import gsp
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -67,3 +68,18 @@ class PDFTool:
         pdf = buf.getvalue()
         buf.close()
         return pdf
+
+
+class SyncStock:
+    def __init__(self):
+        pass
+
+    def syncXloboStockByGoogle(self):
+        ss = gsp.open_google_doc('virtualstock-products')
+        stocks = gsp.read_google_doc_by_range(ss, 'stock', 'A2:C100')
+        for s in stocks:
+            print(s)
+        pass
+
+    def syncGzStockByGoogle(self):
+        pass

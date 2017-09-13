@@ -197,7 +197,7 @@ class XloboAPI():
         return result
 
     async def deleteDBNumber(self, msg):
-        method = 'xlobo.label.delete'
+        method = 'xlobo.labels.delete'
         BusinessNo = str(random.randint(10000000, 99999999))
         msg['BusinessNo'] = BusinessNo
         msg_param = json.dumps(msg)
