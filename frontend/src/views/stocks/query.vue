@@ -9,7 +9,7 @@
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <!--el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleCreate">新增商品</el-button-->
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleSync">同步库存</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
@@ -74,13 +74,28 @@
       </el-pagination>
     </div>
 
+    <el-dialog title="同步库存" size="small" :visible.sync="dialogSyncVisible">
+      <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
+	<el-form-item label="仓库:">
+	  <el-select clearable style="width: 150px" class="filter-item" v-model="temp.inventory_name" placeholder="选择仓库">
+	  <el-option v-for="item in syncInvOptions" :key="item" :label="item" :value="item">
+	  </el-option>
+	  </el-select>
+	</el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogSyncVisible=false">取消</el-button>
+        <el-button type="primary" @click="sync">提交</el-button>
+      </div>
+    </el-dialog>
+
   </div>
 </template>
 
 <script>
   import { parseTime } from 'utils';
   import { fetchInventory, fetchCategory } from 'api/orders';
-  import { fetchStock, updateStock } from 'api/stocks';
+  import { fetchStock, updateStock, syncStock } from 'api/stocks';
 
   export default {
     data() {
@@ -88,13 +103,18 @@
         list: [],
         listLoading: true,
         total: null,
+	syncInvOptions: ['贝海', '广州'],
+	dialogSyncVisible: false,
 	inventoryOptions: [],
         listQuery: {
           page: 1,
           limit: 10,
 	  jancode: undefined,
 	  inventory: undefined
-        }
+        },
+	temp: {
+	  inventory_name: undefined
+	}
       }
     },
     created() {
@@ -146,6 +166,21 @@
 	  });
 	  row.edit = false;
         })
+      },
+      handleSync() {
+        this.dialogSyncVisible = true;
+	this.temp.inventory_name = null;
+      },
+      sync() {
+        syncStock(this.temp).then(response => {
+	  this.$notify({
+	    title: '成功',
+	    message: '更新成功',
+	    type: 'success',
+	    duration: 2000
+	  });
+	  this.dialogSyncVisible = false;
+        });
       }
     }
   }

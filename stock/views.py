@@ -458,6 +458,44 @@ class ExportBondedOrder(views.APIView):
         return response
 
 
+class SyncStock(views.APIView):
+    def post(self, request, format=None):
+        data = request.data
+        print(data)
+        impInventory = data['inventory_name']
+        gsp = 'virtualstock-products' if '贝海' in impInventory else u'国内库存出入库流水.xls'
+        wks = 'stock' if '贝海' in impInventory else u'库存表'
+        inventoryObj = Inventory.objects.get(name=impInventory)
+        syncer = utils.GoogleSpread()
+        syncer.open_google_doc(gsp)
+        stocks = syncer.read_google_doc_by_range(wks, 'A2:C', all_rows=True)
+        with transaction.atomic():
+            for i in list(syncer.chunks(stocks, 3)):
+                if not i[2]:
+                    continue
+                productObj = None
+                try:
+                    productObj = Product.objects.get(jancode=i[0])
+                except Product.DoesNotExist:
+                    logger.info('Sync stock error, Jancode %s', i[0])
+                    continue
+                try:
+                    stockObj = Stock.objects.get(
+                        product=productObj, inventory=inventoryObj)
+                    stockObj.quantity = i[2]
+                    stockObj.save(update_fields=['quantity'])
+                except Stock.DoesNotExist:
+                    stockObj = Stock(
+                        product=productObj,
+                        quantity=i[2],
+                        inventory=inventoryObj,
+                        preallocation=0,
+                        inflight=0, )
+                    stockObj.save()
+            return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
 class UexStockOut(views.APIView):
     def post(self, request, format=None):
         loop = asyncio.new_event_loop()
