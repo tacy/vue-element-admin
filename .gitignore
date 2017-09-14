@@ -10,3 +10,4 @@ gifs/
 frontend/npm-debug.log
 venv/
 *.log
+*.pyc

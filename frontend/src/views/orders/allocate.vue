@@ -121,7 +121,7 @@
           <el-input v-model="temp.quantity"></el-input>
         </el-form-item>
         <el-form-item label="总价">
-          <el-input :disabled="temp.channel_name==='京东'?false:true" v-model.number="temp.payment" type="number"></el-input>
+          <el-input v-model.number="temp.payment" type="number"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">

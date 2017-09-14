@@ -8,15 +8,15 @@
 	    :value="item.value">
 	</el-option>
       </el-select>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="面单号" v-model="listQuery.db_number" v-show="listQuery.labelVal == '1'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="输入面单号" v-model="listQuery.db_number" v-show="listQuery.labelVal == '1'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品名称" v-model="listQuery.product_title" v-show="listQuery.labelVal == '2'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="输入商品名称" v-model="listQuery.product_title" v-show="listQuery.labelVal == '2'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="商品条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '3'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item"  placeholder="输入商品条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '3'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="运单号" v-model="listQuery.delivery_no" v-show="listQuery.labelVal == '4'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item"  placeholder="输入运单号" v-model="listQuery.delivery_no" v-show="listQuery.labelVal == '4'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '5'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '5'">
       </el-input>
 
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
@@ -259,7 +259,7 @@
 	statusOptions: ['待处理', '已出库', '已删除'],
         selectedOptions: [{
           value: '1',
-	  label: '运单号'
+	  label: '面单号'
 	}, {
 	  value: '2',
 	  label: '商品名称'
