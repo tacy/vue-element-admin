@@ -11,7 +11,7 @@ from .views import (
     XloboCreateFBXBill, XloboGetPDF, XloboDeleteDBNumber,
     ManualAllocateDBNumber, OrderItemGet, StockOut, OrderTPRCreate,
     PurchaseOrderClear, UexStockOut, ExportBondedOrder, BondedProductList,
-    BondedProductDetail, ProductUpdateJancode)
+    BondedProductDetail, ProductUpdateJancode, SyncStock)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -50,6 +50,7 @@ urlpatterns = {
     url(r'^supplier/$', SupplierList.as_view(), name="createSupplier"),
     url(r'^order/allocate/$', OrderAllocate.as_view(), name="orderAllocate"),
     url(r'^stock/out/$', StockOut.as_view(), name="stockOut"),
+    url(r'^stock/sync/$', SyncStock.as_view(), name="stockSync"),
     url(r'^order/needpurchase/$',
         OrderPurchaseList.as_view(),
         name="needPurchaseOrd"),

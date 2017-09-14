@@ -11,6 +11,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics, ttfonts
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
+
 log = logging.getLogger(__name__)
 
 
@@ -131,6 +132,10 @@ class GoogleSpread:
         except (Exception, eventlet.Timeout):
             log.exception('Write google doc failed')
             raise
+
+    def chunks(self, arrays, size):
+        for i in range(0, len(arrays), size):
+            yield arrays[i:i + size]
 
 
 # class SyncStock:

@@ -15,3 +15,11 @@ export function updateStock(data, url) {
     data
   });
 }
+
+export function syncStock(data) {
+  return fetch({
+    url: '/stock/sync/',
+    method: 'post',
+    data
+  });
+}
