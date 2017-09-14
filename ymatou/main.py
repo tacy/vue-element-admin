@@ -6,10 +6,12 @@ import aiomysql
 import arrow
 import async_timeout
 import click
+import pymysql.cursors
 from bs4 import BeautifulSoup
+
 from tiangouAPI import TiangouAPI
-from ymatouapi import XloboAPI
 from utils import SyncStock
+from ymatouapi import XloboAPI
 
 REQUEST_TIMEOUT = 120
 db_password = 'asd12288'
@@ -369,8 +371,29 @@ def importProduct():
 
 @click.command()
 def exportStock():
+    conn = pymysql.connect(
+        user='root',
+        host='127.0.0.1',
+        passwd=db_password,
+        db='ymatou',
+        # http://stackoverflow.com/questions/2108824/mysql-incorrect-string-value-error-when-save-unicode-string-in-django
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor)
     syncstock = SyncStock()
-    syncstock.syncXloboStockByGoogle()
+    xloboStock = syncstock.syncXloboStockByGoogle()
+    gzStock = syncstock.syncGzStockByGoogle()
+    print(gzStock)
+    return
+    updateSql = ('update stock_stock set quantity=%s where jancode=%s')
+    try:
+        with conn.cursor() as cursor:
+            for i in list(syncstock.chunks(xloboStock, 3)):
+                cursor.executemany(
+                    updateSql,
+                    (i[2], i[0]), )  # (jancode, prodcut_name, quantity)
+            conn.commit()
+    finally:
+        conn.close()
 
 
 @click.group()

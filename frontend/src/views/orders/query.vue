@@ -239,8 +239,8 @@
 	    </el-form-item>
 	  </el-col>
           <el-col :span="5">
-	    <el-form-item label="价格:" label-width="55px">
-	      <el-input style="width: 82px" v-model.number="p.price" type="number" required="true"></el-input>
+	    <el-form-item label="价格:" label-width="55px" required="true">
+	      <el-input style="width: 82px" v-model.number="p.price" type="number"></el-input>
 	      <el-button type="danger" icon="delete" @click="deleteProduct(p)"></el-button>
 	    </el-form-item>
 	  </el-col>
