@@ -179,7 +179,7 @@
 
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogAllocationVisible=false">取 消</el-button>
-        <el-button type="primary" @click="allocate">确 定</el-button>
+        <el-button type="primary" :disabled="submitting" @click="allocate">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -195,6 +195,7 @@
       return {
         list: null,
         total: null,
+	submitting: false,
         listLoading: true,
         listQuery: {
           page: 1,
@@ -369,6 +370,7 @@
         });
       },
       allocate() {
+        this.submitting = true;
         orderAllocate(this.temp).then(response => {
           // 刷新列表数据
           for (const v of this.list) {
@@ -378,7 +380,7 @@
               break;
             }
           }
-
+	  this.submitting = false;
           this.dialogAllocationVisible = false;
           this.$notify({
             title: '成功',
@@ -386,7 +388,9 @@
             type: 'success',
             duration: 2000
           });
-        })
+        }).catch(error => {
+	  this.submitting = false;
+	})
       },
       resetTemp() {
         this.temp = {

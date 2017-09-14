@@ -291,6 +291,9 @@
     methods: {
       getOrder() {
         this.listLoading = true;
+	if ( ! this.listQuery.status ) {
+	  this.listQuery.status="待发货,待采购,已采购,需介入"
+	}
         fetchOrder(this.listQuery).then(response => {
           this.list = response.data.results;
           this.total = response.data.count;

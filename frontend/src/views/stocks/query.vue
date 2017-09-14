@@ -85,7 +85,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogSyncVisible=false">取消</el-button>
-        <el-button type="primary" @click="sync">提交</el-button>
+        <el-button :disabled="submitting" type="primary" @click="sync">提交</el-button>
       </div>
     </el-dialog>
 
@@ -106,6 +106,7 @@
 	syncInvOptions: ['贝海', '广州'],
 	dialogSyncVisible: false,
 	inventoryOptions: [],
+	submitting: false,
         listQuery: {
           page: 1,
           limit: 10,
@@ -172,6 +173,7 @@
 	this.temp.inventory_name = null;
       },
       sync() {
+        this.submitting = true;
         syncStock(this.temp).then(response => {
 	  this.$notify({
 	    title: '成功',
@@ -180,7 +182,10 @@
 	    duration: 2000
 	  });
 	  this.dialogSyncVisible = false;
-        });
+	  this.submitting = false;
+        }).catch(error => {
+	  this.submitting = false;
+	})
       }
     }
   }
