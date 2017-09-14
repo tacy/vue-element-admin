@@ -53,7 +53,7 @@ class Product(models.Model):
     proddesc = models.CharField(max_length=255, null=True)
     unit = models.CharField(max_length=2, null=True)
     expired = models.CharField(max_length=8, null=True)
-    weight = models.IntegerField(null=True)
+    weight = models.DecimalField(max_digits=5, null=True, decimal_places=2)
 
 
 class BondedProduct(models.Model):
