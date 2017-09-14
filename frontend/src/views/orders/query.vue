@@ -151,15 +151,15 @@
     </div>
 
     <el-dialog title="录入订单" size="large" :visible.sync="dialogCreateVisible">
-      <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
+      <el-form :rules="rules" ref="form" class="small-space" :model="orderData" label-position="left" label-width="80px">
         <el-row>
 	  <el-col :span="6">
-	    <el-form-item label="订单号:">
+	    <el-form-item label="订单号:" prop="orderid">
 	      <el-input style="width: 150px" v-model="orderData.orderid"></el-input>
 	    </el-form-item>
  	  </el-col>
 	  <el-col :span="6">
-	    <el-form-item label="卖家:">
+	    <el-form-item label="卖家:" prop="seller_name">
 	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.seller_name" placeholder="渠道">
 	      <el-option v-for="item in sellerOptions" :key="item" :label="item" :value="item">
 	      </el-option>
@@ -167,15 +167,15 @@
 	    </el-form-item>
    	  </el-col>
 	  <el-col :span="6">
-	    <el-form-item label="渠道:">
+	    <el-form-item label="渠道:" prop="channel_name">
 	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.channel_name" placeholder="渠道">
-	      <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
-	      </el-option>
+		<el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
+		</el-option>
 	      </el-select>
 	    </el-form-item>
    	  </el-col>
 	  <el-col :span="6">
-	    <el-form-item label="运输:">
+	    <el-form-item label="运输:" prop="delivery_type">
 	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.delivery_type" placeholder="运输方式">
 		<el-option v-for="item in deliveryTypeOptions" :key="item" :label="item" :value="item">
 		</el-option>
@@ -185,62 +185,62 @@
 	</el-row>
 	<el-row>
 	  <el-col :span="6">
-	    <el-form-item label="姓名:">
+	    <el-form-item label="姓名:" prop="receiver_name">
 	      <el-input style="width: 150px" v-model="orderData.receiver_name"></el-input>
 	    </el-form-item>
  	  </el-col>
           <el-col :span="6">
-	    <el-form-item label="电话:">
+	    <el-form-item label="电话:" prop="receiver_mobile">
 	      <el-input style="width: 150px" v-model="orderData.receiver_mobile"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="6">
-	    <el-form-item label="邮编:">
+	    <el-form-item label="邮编:" prop="receiver_zip">
 	      <el-input style="width: 150px" v-model="orderData.receiver_zip"></el-input>
 	    </el-form-item>
 	  </el-col>
 	  <el-col :span="6">
-	    <el-form-item label="证件:">
+	    <el-form-item label="证件:" prop="receiver_idcard">
 	      <el-input style="width: 150px" v-model="orderData.receiver_idcard"></el-input>
 	    </el-form-item>
  	  </el-col>
 	</el-row>
         <el-row>
 	  <el-col :span="12">
-	    <el-form-item label="地址:">
+	    <el-form-item label="地址:" prop="receiver_address">
 	      <el-input style="width: 430px" v-model="orderData.receiver_address"></el-input>
 	    </el-form-item>
  	  </el-col>
           <el-col :span="12">
-	    <el-form-item label="备注:">
+	    <el-form-item label="备注:" prop="seller_memo">
 	      <el-input style="width: 430px" v-model="orderData.seller_memo"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
 	<el-row v-for="(p, index) in orderData.products">
           <el-col :span="4">
-	    <el-form-item label="条码:" label-width="50px">
+	    <el-form-item label="条码:" label-width="55px" prop="jancode" required="true">
 	      <el-input style="width: 120px" v-model="p.jancode"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="8">
-	    <el-form-item label="名称:" label-width="50px">
+	    <el-form-item label="名称:" label-width="55px" prop="product_title" required="true">
 	      <el-input style="width: 275px" v-model="p.product_title"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="4">
-	    <el-form-item label="规格:" label-width="50px">
+	    <el-form-item label="规格:" label-width="55px" prop="sku_properties_name" required="true">
 	      <el-input style="width: 120px" v-model="p.sku_properties_name"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="3">
-	    <el-form-item label="数量:" label-width="50px">
+	    <el-form-item label="数量:" label-width="55px" prop="quantity" required="true">
 	      <el-input style="width: 80px" v-model.number="p.quantity" type="number"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="5">
-	    <el-form-item label="价格:" label-width="50px">
-	      <el-input style="width: 88px" v-model.number="p.price" type="number"></el-input>
+	    <el-form-item label="价格:" label-width="55px">
+	      <el-input style="width: 82px" v-model.number="p.price" type="number" required="true"></el-input>
 	      <el-button type="danger" icon="delete" @click="deleteProduct(p)"></el-button>
 	    </el-form-item>
 	  </el-col>
@@ -350,8 +350,34 @@
 	  status: undefined,
 	  seller_memo:undefined,
 	  conflict_feedback: undefined
-        }
-      }
+        },
+        rules: {
+	  orderid: [
+	    {required: true, message: '请输入订单号', trigger: 'blur'}
+	  ],
+	  seller_name: [
+	      {required: true, message: '请选择卖家', trigger: 'blur'}
+	  ],
+	  channel_name: [
+	      {required: true, message: '请选择渠道', trigger: 'blur'}
+	  ],
+	  delivery_type: [
+	      {required: true, message: '请选择运输方式', trigger: 'blur'}
+	  ],
+	  receiver_name: [
+	      {required: true, message: '请输入买家姓名', trigger: 'blur'}
+	  ],
+	  receiver_mobile: [
+	      {required: true, message: '请输入买家电话', trigger: 'blur'}
+	  ],
+	  receiver_zip: [
+	      {required: true, message: '请输入买家邮编', trigger: 'blur'}
+	  ],
+	  receiver_address: [
+	      {required: true, message: '请输入买家地址', trigger: 'blur'}
+	  ]
+	}
+      };
     },
     created() {
       this.getInventory();
@@ -457,14 +483,20 @@
         })
       },
       createTPROrder() {
-        orderTPRCreate(this.orderData).then(response => {
-          this.$notify({
-            title: '成功',
-            message: '订单创建成功',
-            type: 'success',
-            duration: 2000
-          });
-	  this.dialogCreateVisible = false
+        this.$refs.form.validate(valid => {
+	  if (!valid) {
+	    return false;
+	  } else {
+	    orderTPRCreate(this.orderData).then(response => {
+	      this.$notify({
+		title: '成功',
+		message: '订单创建成功',
+		type: 'success',
+		duration: 2000
+	      });
+	      this.dialogCreateVisible = false
+	    });
+	  }
 	});
       },
       deleteOrder() {
