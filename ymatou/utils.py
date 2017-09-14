@@ -1,11 +1,17 @@
-from . import gsp
-from io import BytesIO
+import os
+import json
+import logging
+import eventlet
+import gspread
 
+from io import BytesIO
+from oauth2client.client import SignedJwtAssertionCredentials
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics, ttfonts
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
+log = logging.getLogger(__name__)
 
 
 class PDFTool:
@@ -70,23 +76,80 @@ class PDFTool:
         return pdf
 
 
-class SyncStock:
-    def __init__(self):
-        pass
+class GoogleSpread:
+    def __init(self):
+        self.doc = None
 
-    def chunks(self, arrays, size):
-        """Yield successive n-sized chunks from l."""
-        for i in range(0, len(arrays), size):
-            yield arrays[i:i + size]
+    def open_google_doc(self, doc_name):
+        cdir = os.path.dirname(os.path.abspath(__file__))
+        json_key = json.load(
+            open(os.path.join(cdir, 'tacy-speedsheet-d32988f60e38.json')))
+        scope = ['https://spreadsheets.google.com/feeds']
 
-    def syncXloboStockByGoogle(self):
-        ss = gsp.open_google_doc('virtualstock-products')
-        stocks = gsp.read_google_doc_by_range(
-            ss, 'stock', 'A2:C', all_rows=True)
-        return stocks
+        credentials = SignedJwtAssertionCredentials(
+            json_key['client_email'], json_key['private_key'], scope)
+        try:
+            with eventlet.Timeout(120):
+                gc = gspread.authorize(credentials)
+                self.doc = gc.open(doc_name)
+        except (Exception, eventlet.Timeout):
+            log.exception('Open google doc failed')
+            raise
 
-    def syncGzStockByGoogle(self):
-        ss = gsp.open_google_doc(u'国内库存出入库流水.xls')
-        stocks = gsp.read_google_doc_by_range(
-            ss, '最新表入库', 'A2:C', all_rows=True)
-        return stocks
+    def read_google_doc_by_col(self, wks_name, col):
+        wks = self.doc.worksheet(wks_name)
+        return wks.col_values(col)
+
+    def read_google_doc_by_range(self, wks_name, rangestr, all_rows=False):
+        wks = self.doc.worksheet(wks_name)
+        if all_rows:
+            count = wks.row_count
+            rangestr = rangestr + str(count)
+        r = wks.range(rangestr)
+        return [i.value for i in r]
+
+    def write_google_doc(self, wks_name, data, size, mode, left, right):
+        c_range = None
+        wks = self.doc.worksheet(wks_name)
+        orc = wks.row_count
+
+        try:
+            with eventlet.Timeout(120):
+                if 'append' in mode:
+                    wks.add_rows(size)
+                    rc = wks.row_count
+                    c_range = left + str(orc + 1) + ':' + right + str(rc)
+                else:
+                    c_range = left + '2:' + right + str(size)
+                    wks.resize(size)  # overwrite all cell
+                log.info(c_range)
+
+                cells = wks.range(c_range)
+                for cell, value in zip(cells, data):
+                    cell.value = value
+                wks.update_cells(cells)
+        except (Exception, eventlet.Timeout):
+            log.exception('Write google doc failed')
+            raise
+
+
+# class SyncStock:
+#     def __init__(self):
+#         pass
+
+#     def chunks(self, arrays, size):
+#         """Yield successive n-sized chunks from l."""
+#         for i in range(0, len(arrays), size):
+#             yield arrays[i:i + size]
+
+#     def syncXloboStockByGoogle(self):
+#         ss = gsp.open_google_doc('virtualstock-products')
+#         stocks = gsp.read_google_doc_by_range(
+#             ss, 'stock', 'A2:C', all_rows=True)
+#         return stocks
+
+#     def syncGzStockByGoogle(self):
+#         ss = gsp.open_google_doc(u'国内库存出入库流水.xls')
+#         stocks = gsp.read_google_doc_by_range(
+#             ss, '最新表入库', 'A2:C', all_rows=True)
+#         return stocks

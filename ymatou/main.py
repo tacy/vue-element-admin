@@ -382,16 +382,17 @@ def exportStock():
     syncstock = SyncStock()
     xloboStock = syncstock.syncXloboStockByGoogle()
     gzStock = syncstock.syncGzStockByGoogle()
-    print(gzStock)
-    return
-    updateSql = ('update stock_stock set quantity=%s where jancode=%s')
+
+    querySql = 'select id from stock_product where jancode=%s'
+    updateSql = 'update stock_stock set quantity=%s where jancode=%s'
     try:
         with conn.cursor() as cursor:
             for i in list(syncstock.chunks(xloboStock, 3)):
-                cursor.executemany(
-                    updateSql,
-                    (i[2], i[0]), )  # (jancode, prodcut_name, quantity)
-            conn.commit()
+                cursor.execute(querySql, (i[0]))
+            #     cursor.executemany(
+            #         updateSql,
+            #         (i[2], i[0]), )  # (jancode, prodcut_name, quantity)
+            # conn.commit()
     finally:
         conn.close()
 
