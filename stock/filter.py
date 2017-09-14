@@ -1,5 +1,5 @@
 from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter
-from .models import Order, Product, Stock, ShippingDB
+from .models import Order, Product, Stock, ShippingDB, PurchaseOrder
 
 
 class CharInFilter(BaseInFilter, CharFilter):
@@ -66,4 +66,16 @@ class ShippingDBFilter(FilterSet):
             'shipping',
             'delivery_no',
             'inventory',
+        ]
+
+
+class PurchaseOrderFilter(FilterSet):
+    orderid = CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = PurchaseOrder
+        fields = [
+            'inventory',
+            'supplier',
+            'status',
         ]

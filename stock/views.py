@@ -17,7 +17,7 @@ from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
-from .filter import OrderFilter, ProductFilter, StockFilter, ShippingDBFilter
+from .filter import OrderFilter, ProductFilter, StockFilter, ShippingDBFilter, PurchaseOrderFilter
 from .models import (Inventory, Order, Product, PurchaseOrder,
                      PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier,
                      BondedProduct)
@@ -1330,7 +1330,8 @@ class PurchaseOrderList(generics.ListCreateAPIView):
     queryset = PurchaseOrder.objects.all()
     serializer_class = PurchaseOrderSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
-    filter_fields = ('orderid', 'inventory', 'supplier', 'status')
+    # filter_fields = ('orderid', 'inventory', 'supplier', 'status')
+    filter_class = PurchaseOrderFilter
 
 
 class PurchaseOrderDetail(generics.RetrieveUpdateDestroyAPIView):
