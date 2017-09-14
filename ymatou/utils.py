@@ -74,12 +74,19 @@ class SyncStock:
     def __init__(self):
         pass
 
+    def chunks(self, arrays, size):
+        """Yield successive n-sized chunks from l."""
+        for i in range(0, len(arrays), size):
+            yield arrays[i:i + size]
+
     def syncXloboStockByGoogle(self):
         ss = gsp.open_google_doc('virtualstock-products')
-        stocks = gsp.read_google_doc_by_range(ss, 'stock', 'A2:C100')
-        for s in stocks:
-            print(s)
-        pass
+        stocks = gsp.read_google_doc_by_range(
+            ss, 'stock', 'A2:C', all_rows=True)
+        return stocks
 
     def syncGzStockByGoogle(self):
-        pass
+        ss = gsp.open_google_doc(u'国内库存出入库流水.xls')
+        stocks = gsp.read_google_doc_by_range(
+            ss, '最新表入库', 'A2:C', all_rows=True)
+        return stocks

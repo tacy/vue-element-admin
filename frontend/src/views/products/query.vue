@@ -120,7 +120,7 @@
 	<el-row>
           <el-col :span="12">
 	    <el-form-item label="重量:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.weight"></el-input>
+	      <el-input style="width: 200px" v-model.number="temp.weight" type="number"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
@@ -173,16 +173,16 @@
           id: undefined,
           jancode: undefined,
           name: undefined,
-          category: '',
-          brand: '',
-          specification: '',
-	  origin: '',
-	  model: '',
-	  size: '',
-	  proddesc: '',
-	  unit: '',
-	  expired: '',
-          weight: ''
+          category: undefined,
+          brand: undefined,
+          specification: undefined,
+	  origin: undefined,
+	  model: undefined,
+	  size: undefined,
+	  proddesc: undefined,
+	  unit: undefined,
+	  expired: undefined,
+          weight: undefined
         }
       }
     },
@@ -236,16 +236,16 @@
           id: undefined,
           jancode: undefined,
           name: undefined,
-          category: '',
-          brand: '',
-          specification: '',
-	  origin: '',
-	  model: '',
-	  size: '',
-	  proddesc: '',
-	  unit: '',
-	  expired: '',
-          weight: ''
+          category: undefined,
+          brand: undefined,
+          specification: undefined,
+	  origin: undefined,
+	  model: undefined,
+	  size: undefined,
+	  proddesc: undefined,
+	  unit: undefined,
+	  expired: undefined,
+          weight: undefined
 	},
         this.dialogStatus = 'create';
 	this.dialogFormVisible = true;

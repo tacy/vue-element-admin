@@ -41,6 +41,20 @@ class ProductSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
     category_name = serializers.ReadOnlyField(
         source='category.category_cn_name')
+    origin = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    model = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    size = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    proddesc = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    unit = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    expired = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    weight = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""

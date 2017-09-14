@@ -16,8 +16,7 @@ def open_google_doc(doc_name):
     scope = ['https://spreadsheets.google.com/feeds']
 
     credentials = SignedJwtAssertionCredentials(json_key['client_email'],
-                                                json_key['private_key'],
-                                                scope)
+                                                json_key['private_key'], scope)
     sp = None
     try:
         with eventlet.Timeout(120):
@@ -34,8 +33,11 @@ def read_google_doc_by_col(doc, wks_name, col):
     return wks.col_values(col)
 
 
-def read_google_doc_by_range(doc, wks_name, rangestr):
+def read_google_doc_by_range(doc, wks_name, rangestr, all_rows=False):
     wks = doc.worksheet(wks_name)
+    if all_rows:
+        count = wks.row_count
+        rangestr = rangestr + str(count)
     r = wks.range(rangestr)
     return [i.value for i in r]
 
@@ -53,7 +55,7 @@ def write_google_doc(doc, wks_name, data, size, mode, left, right):
                 c_range = left + str(orc + 1) + ':' + right + str(rc)
             else:
                 c_range = left + '2:' + right + str(size)
-                wks.resize(size)   # overwrite all cell
+                wks.resize(size)  # overwrite all cell
             log.info(c_range)
 
             cells = wks.range(c_range)
