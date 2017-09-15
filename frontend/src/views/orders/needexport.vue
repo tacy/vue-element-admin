@@ -7,8 +7,8 @@
       <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
       </el-input>
 
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.delivery_type" placeholder="运输方式">
-        <el-option v-for="item in deliveryTypeOptions" :key="item" :label="item" :value="item">
+      <el-select style="width: 120px" class="filter-item" v-model="orderType" placeholder="选择订单类型">
+        <el-option v-for="item in orderTypeOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
 
@@ -113,17 +113,18 @@
         total: null,
 	channelOptions: ['洋码头', '京东'],
 	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
-        deliveryTypeOptions: ['第三方保税'],
+	orderTypeOptions: ['拼邮', '保税'],
 	exportstatusOptions: ['未导出', '已导出'],
 	selectRows: [],
+	orderType: '拼邮',
         listQuery: {
           page: 1,
           limit: 10,
 	  status: "待发货,待采购,已采购,需介入",
           inventory: undefined,
+	  shipping: undefined,
 	  purchaseorder__orderid: undefined,
 	  channel_name: undefined,
-	  delivery_name: ['拼邮', '第三方保税'],
 	  receiver_name: undefined,
 	  orderid: undefined,
 	  delivery_type: undefined
@@ -149,7 +150,14 @@
         this.listLoading = true;
 	if ( ! this.listQuery.status ) {
 	  this.listQuery.status="待发货,待采购,已采购,需介入"
-	}
+	};
+	if ( this.orderType==='拼邮' ) {
+	  this.listQuery.shipping=5
+	  this.listQuery.delivery_type = undefined;
+	} else {
+	  this.listQuery.shipping=undefined;
+	  this.listQuery.delivery_type = '第三个方保税';
+	};
         fetchOrder(this.listQuery).then(response => {
           this.list = response.data.results;
           this.total = response.data.count;
