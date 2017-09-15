@@ -1,32 +1,32 @@
-import json
-import asyncio
 import base64
+import asyncio
+import json
 import logging
-from io import BytesIO
 from collections import OrderedDict
-from openpyxl import Workbook
-from openpyxl.writer.excel import save_virtual_workbook
 from django.http import HttpResponse
+from io import BytesIO
 
-import aiohttp
 import arrow.arrow
+import aiohttp
 import django_filters.rest_framework
 from PyPDF2 import PdfFileMerger
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
 from django.db.models import F
+from openpyxl import Workbook
+from openpyxl.writer.excel import save_virtual_workbook
 from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
-from .filter import OrderFilter, ProductFilter, StockFilter, ShippingDBFilter, PurchaseOrderFilter
-from .models import (Inventory, Order, Product, PurchaseOrder,
-                     PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier,
-                     BondedProduct)
-from .serializers import (
-    InventorySerializer, OrderSerializer, ProductSerializer,
-    PurchaseOrderItemSerializer, PurchaseOrderSerializer, ShippingDBSerializer,
-    ShippingSerializer, StockSerializer, SupplierSerializer, TokenSerializer,
-    BondedProductSerializer)
+from .filter import (OrderFilter, ProductFilter, PurchaseOrderFilter,
+                     ShippingDBFilter, StockFilter)
+from .models import (BondedProduct, Inventory, Order, Product, PurchaseOrder,
+                     PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier)
+from .serializers import (BondedProductSerializer, InventorySerializer,
+                          OrderSerializer, ProductSerializer,
+                          PurchaseOrderItemSerializer, PurchaseOrderSerializer,
+                          ShippingDBSerializer, ShippingSerializer,
+                          StockSerializer, SupplierSerializer, TokenSerializer)
 from ymatou import uex, utils, ymatouapi
 
 YMTKEY = {
@@ -680,29 +680,32 @@ class StockOut(views.APIView):
     def post(self, request, format=None):
         delivery_no = request.data['delivery_no']
         dbs = request.data['db_numbers'].split('\n')
-        with transaction.atomic():
-            for db in dbs:
-                shippingdbObj = ShippingDB.objects.get(db_number=db)
-                shippingdbObj.status = '已出库'
-                shippingdbObj.delivery_no = delivery_no
-                shippingdbObj.save(update_fields=['status', 'delivery_no'])
-                for o in shippingdbObj.order.filter(status__in=['待发货', '已采购']):
-                    if '已采购' in o.status:
-                        results = {
-                            'errmsg':
-                            '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
-                                db, o.orderid, o.purchaseorder.orderid)
-                        }
-                        transaction.rollback()
-                        return Response(
-                            data=results, status=status.HTTP_400_BAD_REQUEST)
-                    o.status = '已发货'
-                    o.save(update_fields=['status'])
-                    stockObj = Stock.objects.get(
-                        product__jancode=o.jancode, inventory=o.inventory)
-                    stockObj.quantity = F('quantity') - o.quantity
-                    stockObj.preallocation = F('preallocation') - o.quantity
-                    stockObj.save()
+        results = None
+        try:
+            with transaction.atomic():
+                for db in dbs:
+                    shippingdbObj = ShippingDB.objects.get(db_number=db)
+                    shippingdbObj.status = '已出库'
+                    shippingdbObj.delivery_no = delivery_no
+                    shippingdbObj.save(update_fields=['status', 'delivery_no'])
+                    for o in shippingdbObj.order.filter(
+                            status__in=['待发货', '已采购']):
+                        if '已采购' in o.status:
+                            results = {
+                                'errmsg':
+                                '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
+                                    db, o.orderid, o.purchaseorder.orderid)
+                            }
+                            raise IntegrityError
+                        o.status = '已发货'
+                        o.save(update_fields=['status'])
+                        stockObj = Stock.objects.get(
+                            product__jancode=o.jancode, inventory=o.inventory)
+                        stockObj.quantity = F('quantity') - o.quantity
+                        stockObj.preallocation = F('preallocation') - o.quantity
+                        stockObj.save()
+        except IntegrityError:
+            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -936,7 +939,7 @@ class OrderAllocate(views.APIView):
                         orderInfo['need_purchase'] = orderInfo['quantity']
                     orderInfo['status'] = '待采购'
                 else:
-                    orderInfo['status'] = '待发货'
+                    ordreInfo['status'] = '待发货'
 
             # 更新订单和仓库信息
             # relate_inventory = Inventory.objects.get(id=orderInfo['inventory'])
@@ -1003,7 +1006,6 @@ class OrderPurchase(views.APIView):
         data = request.data.get('data')
         queryTime = request.data.get('queryTime')
         inventory = request.data.get('inventory')
-
         with transaction.atomic():
             createtime = arrow.now()
             pos = {}
@@ -1015,7 +1017,6 @@ class OrderPurchase(views.APIView):
                 if (not i['quantity'] or i['quantity'] < i['qty'] or
                         not i['supplier'] or not i['price']):
                     results = {'errmsg': '请检查输入'}
-                    transaction.rollback()
                     return Response(
                         data=results, status=status.HTTP_400_BAD_REQUEST)
                 jancode = i['jancode']
@@ -1275,14 +1276,6 @@ class OrderConflict(views.APIView):
             else:  # 更换
                 orderObj = Order.objects.get(id=data['id'])
                 if orderObj.jancode != data['jancode']:
-                    # 回滚旧的jancode库存占用
-                    rollbackStockObj = Stock.objects.get(
-                        inventory=orderObj.inventory,
-                        product__jancode=orderObj.jancode)
-                    rollbackStockObj.preallocation = F(
-                        'preallocation') - data['quantity']
-                    rollbackStockObj.save()
-
                     # 判断新jancode库存是否满足
                     stockObj = None
                     try:
@@ -1293,7 +1286,6 @@ class OrderConflict(views.APIView):
                         if not Product.objects.filter(
                                 jancode=data['jancode']).exists():
                             errmsg = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
-                            transaction.rollback()
                             return Response(
                                 data=errmsg,
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -1306,6 +1298,15 @@ class OrderConflict(views.APIView):
                             inflight=0,
                             preallocation=0)
                         stockObj.save()
+
+                    # 回滚旧的jancode库存占用
+                    rollbackStockObj = Stock.objects.get(
+                        inventory=orderObj.inventory,
+                        product__jancode=orderObj.jancode)
+                    rollbackStockObj.preallocation = F(
+                        'preallocation') - data['quantity']
+                    rollbackStockObj.save()
+
                     real_stock_qty = stockObj.quantity + stockObj.inflight - stockObj.preallocation
                     if data['quantity'] <= real_stock_qty:  # 库存足够, 记得取消采购标记(need_purchase=0)
                         stockObj.preallocation = F(
