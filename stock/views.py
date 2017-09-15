@@ -722,6 +722,11 @@ class OrderOut(views.APIView):
                 stockObj.preallocation = F('preallocation') - ordObjs.quantity
                 stockObj.quantity = F('quantity') - ordObjs.quantity
                 stockObj.save()
+                return Response(status=status.HTTP_200_OK)
+            else:
+                results = {'errmsg': '订单已发货'}
+                return Response(
+                    data=results, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 不要使用, 有问题, stock没有jancode字段了
