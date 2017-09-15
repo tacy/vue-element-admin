@@ -939,7 +939,7 @@ class OrderAllocate(views.APIView):
                         orderInfo['need_purchase'] = orderInfo['quantity']
                     orderInfo['status'] = '待采购'
                 else:
-                    ordreInfo['status'] = '待发货'
+                    orderInfo['status'] = '待发货'
 
             # 更新订单和仓库信息
             # relate_inventory = Inventory.objects.get(id=orderInfo['inventory'])
