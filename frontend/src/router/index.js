@@ -23,6 +23,7 @@ const ordersPurchase = _import('orders/purchase');
 const ordersConflict = _import('orders/conflict');
 const ordersCreateDB = _import('orders/createdb');
 const ordersShipping = _import('orders/shipping');
+const ordersNeedExport = _import('orders/needexport');
 
 /* purchase */
 const purchasesorder = _import('purchases/order');
@@ -44,7 +45,7 @@ const Err401 = _import('error/401');
 /* const Theme = _import('theme/index'); */
 
 /* permission */
-const Permission = _import('permission/index');
+// const Permission = _import('permission/index');
 
 Vue.use(Router);
 
@@ -108,7 +109,8 @@ export const asyncRouterMap = [
       { path: 'purchase', component: ordersPurchase, name: '待采购', meta: { role: ['admin'] } },
       { path: 'conflict', component: ordersConflict, name: '需介入' },
       { path: 'createdb', component: ordersCreateDB, name: '出面单', meta: { role: ['admin'] } },
-      { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin'] } }
+      { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin'] } },
+      { path: 'needexport', component: ordersNeedExport, name: '拼邮&第三方' }
     ]
   },
   {

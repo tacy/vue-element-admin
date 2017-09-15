@@ -97,6 +97,22 @@ export function productcreate(data) {
   });
 }
 
+export function exportDomesticOrder(data) {
+  return fetch({
+    url: '/order/exportdomestic/',
+    method: 'post',
+    data
+  });
+}
+
+export function outOrder(data) {
+  return fetch({
+    url: '/order/out/',
+    method: 'post',
+    data
+  });
+}
+
 export function createUexDB(data) {
   return fetch({
     url: '/uex/stockout/',
