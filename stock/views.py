@@ -693,6 +693,7 @@ class StockOut(views.APIView):
                             '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
                                 db, o.orderid, o.purchaseorder.orderid)
                         }
+                        transaction.rollback()
                         return Response(
                             data=results, status=status.HTTP_400_BAD_REQUEST)
                     o.status = '已发货'
@@ -1014,6 +1015,7 @@ class OrderPurchase(views.APIView):
                 if (not i['quantity'] or i['quantity'] < i['qty'] or
                         not i['supplier'] or not i['price']):
                     results = {'errmsg': '请检查输入'}
+                    transaction.rollback()
                     return Response(
                         data=results, status=status.HTTP_400_BAD_REQUEST)
                 jancode = i['jancode']
@@ -1269,7 +1271,7 @@ class OrderConflict(views.APIView):
                 orderObj = Order.objects.get(id=data['id'])
                 orderObj.status = '已删除'
                 orderObj.conflict_feedback = data['conflict_feedback']
-                orderObj.save(update_fields=['status', 'conflict_back'])
+                orderObj.save(update_fields=['status', 'conflict_feedback'])
             else:  # 更换
                 orderObj = Order.objects.get(id=data['id'])
                 if orderObj.jancode != data['jancode']:
@@ -1291,6 +1293,7 @@ class OrderConflict(views.APIView):
                         if not Product.objects.filter(
                                 jancode=data['jancode']).exists():
                             errmsg = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
+                            transaction.rollback()
                             return Response(
                                 data=errmsg,
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -1326,7 +1329,9 @@ class OrderConflict(views.APIView):
                     stockObj.save()
                 else:  # 用户没有做任何操作, 直接改订单状态为待采购
                     orderObj.status = '待采购'
-                    orderObj.save(update_fields=['status'])
+                    orderObj.conflict_feedback = data['conflict_feedback']
+                    orderObj.save(
+                        update_fields=['status', 'conflict_feedback'])
 
             return Response(status=status.HTTP_200_OK)
 
@@ -1368,7 +1373,9 @@ class OrderDelete(views.APIView):
             elif '已删除' in orderObj.status:
                 pass
             else:  # 不可删除, 已经分配DB单号, 需要先删除DB单号, 或者已经发货, 无法删除
-                return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+                errmsg = {'errmsg': '订单已分配面单, 无法删除'}
+                return Response(
+                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
             return Response(status=status.HTTP_200_OK)
 
