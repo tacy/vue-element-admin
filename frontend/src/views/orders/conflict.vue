@@ -130,6 +130,17 @@
           this.listLoading = false;
         })
       },
+      handleFilter() {
+        this.getList();
+      },
+      handleSizeChange(val) {
+        this.listQuery.limit = val;
+        this.getList();
+      },
+      handleCurrentChange(val) {
+        this.listQuery.page = val;
+        this.getList();
+      },
       handleUpdate(row) {
         this.temp = Object.assign({}, row);
         this.dialogStatus = 'update';
