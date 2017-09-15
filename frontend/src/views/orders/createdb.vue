@@ -9,7 +9,10 @@
 
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="注文编号" v-model="listQuery.purchaseorder__orderid">
       </el-input>
-
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
+        <el-option v-for="item in shippingOptions" :key="item.id" :label="item.name" :value="item.id">
+        </el-option>
+      </el-select>
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
         <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
@@ -193,7 +196,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchSupplier, fetchOrder, fetchLogistic, createNoVerification, createfbxbill, manualallocatedb, createUexDB} from 'api/orders';
+  import { fetchInventory, fetchShipping, fetchOrder, fetchLogistic, createNoVerification, createfbxbill, manualallocatedb, createUexDB} from 'api/orders';
   import { fetchPurchaseOrderItem, purchaseOrderDelete } from 'api/purchases';
 
   export default {
@@ -207,6 +210,7 @@
 	dialogUEXVisible: false,
 	dialogDBInputVisible: false,
         inventoryOptions: [],
+	shippingOptions: [],
 	channelOptions: ['洋码头', '京东'],
 	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
 	shipTypeOptions: [
@@ -290,6 +294,7 @@
     },
     created() {
       this.getInventory();
+      this.getShipping();
       this.getOrder();
       this.getLogistic()
     },
@@ -308,6 +313,11 @@
       getInventory() {
         fetchInventory().then(response => {
           this.inventoryOptions = response.data.results;
+        })
+      },
+      getShipping() {
+        fetchShipping().then(response => {
+          this.shippingOptions = response.data.results;
         })
       },
       getLogistic() {

@@ -1262,7 +1262,8 @@ class OrderConflict(views.APIView):
                 stockObj.save()
                 orderObj = Order.objects.get(id=data['id'])
                 orderObj.status = '已删除'
-                orderObj.save(update_fields=['status'])
+                orderObj.conflict_feedback = data['conflict_feedback']
+                orderObj.save(update_fields=['status', 'conflict_back'])
             else:  # 更换
                 orderObj = Order.objects.get(id=data['id'])
                 if orderObj.jancode != data['jancode']:
@@ -1314,6 +1315,7 @@ class OrderConflict(views.APIView):
                             'preallocation') + data['quantity']
                     orderObj.allocate_time = arrow.now().format(
                         'YYYY-MM-DD HH:mm:ss')  # 需要更新订单分配时间
+                    orderObj.conflict_feedback = data['conflict_feedback']
                     orderObj.save()
                     stockObj.save()
                 else:  # 用户没有做任何操作, 直接改订单状态为待采购

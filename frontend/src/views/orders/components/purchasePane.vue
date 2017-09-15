@@ -88,9 +88,14 @@
   	  </template>
         </el-table-column>
 
-	<el-table-column align="center" label="备注" width="350px">
+	<el-table-column align="center" label="备注" width="200px">
 	  <template scope="scope">
     	    <el-input size="small" v-model="scope.row.conflict_memo"></el-input>
+	  </template>
+	</el-table-column>
+	<el-table-column align="center" label="反馈" width="200px">
+	  <template scope="scope">
+    	    <el-input size="small" v-model="scope.row.conflict_feedback"></el-input>
 	  </template>
 	</el-table-column>
       </el-table>

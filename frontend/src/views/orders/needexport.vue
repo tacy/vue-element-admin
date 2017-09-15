@@ -74,6 +74,11 @@
 	  <span>{{scope.row.jancode}}</span>
 	</template>
       </el-table-column>
+      <el-table-column align="center" label="数量" width="80px">
+	<template scope="scope">
+	  <span>{{scope.row.quantity}}</span>
+	</template>
+      </el-table-column>
       <el-table-column align="center" label="商品名" width="200px">
 	<template scope="scope">
 	  <span>{{scope.row.product_title}}</span>
