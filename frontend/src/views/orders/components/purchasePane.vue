@@ -90,12 +90,12 @@
 
 	<el-table-column align="center" label="备注" width="200px">
 	  <template scope="scope">
-    	    <el-input size="small" v-model="scope.row.conflict_memo"></el-input>
+            <el-input type="textarea" :autosize="{minRows: 2, maxRows: 8}" v-model="scope.row.conflict_memo"></el-input>
 	  </template>
 	</el-table-column>
-	<el-table-column align="center" label="反馈" width="200px">
+	<el-table-column align="center" label="客服反馈" width="200px">
 	  <template scope="scope">
-    	    <el-input size="small" v-model="scope.row.conflict_feedback"></el-input>
+            <el-input type="textarea" :disabled="true" :autosize="{minRows: 2, maxRows: 8}" v-model="scope.row.conflict_feedback"></el-input>
 	  </template>
 	</el-table-column>
       </el-table>

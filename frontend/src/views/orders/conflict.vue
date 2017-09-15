@@ -25,7 +25,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="原因" show-overflow-tooltip>
+      <el-table-column align="center" label="备注" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.conflict_memo}}</span>
         </template>
@@ -58,7 +58,7 @@
         <el-form-item label="商品规格">
           <el-input v-model="temp.sku_properties_name"></el-input>
         </el-form-item>
-	<el-form-item label="原因">
+	<el-form-item label="反馈">
 	  <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.conflict_feedback"></el-input>
 	</el-form-item>
       </el-form>
@@ -71,7 +71,7 @@
 
     <el-dialog title="退款" :visible.sync="dialogDeleteVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
-        <el-form-item label="原因">
+        <el-form-item label="反馈">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.conflict_feedback"></el-input>
         </el-form-item>
       </el-form>
