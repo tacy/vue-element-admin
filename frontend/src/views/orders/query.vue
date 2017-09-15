@@ -53,7 +53,10 @@
 	    <el-form-item label="面单:" label-width="50px">
 	      <span>{{ scope.row.db_number }}</span>
 	    </el-form-item>
-	    <el-form-item label="采购单:" label-width="50px">
+	    <el-form-item label="注文编号:" label-width="80px">
+	      <span>{{ scope.row.purchaseorder_orderid }}</span>
+	    </el-form-item>
+	    <el-form-item label="采购单:" label-width="80px">
 	      <span>{{ scope.row.purchaseorder_orderid }}</span>
 	    </el-form-item>
 	    <el-form-item label="仓库:" label-width="50px">

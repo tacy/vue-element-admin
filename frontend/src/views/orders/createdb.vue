@@ -67,7 +67,7 @@
 	  <span>{{scope.row.receiver_mobile}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="地址" show-overflow-tooltip>
+      <el-table-column align="center" label="地址" width="150px" show-overflow-tooltip>
 	<template scope="scope">
 	  <span>{{scope.row.receiver_address}}</span>
 	</template>
@@ -80,6 +80,11 @@
       <el-table-column align="center" label="商品名" show-overflow-tooltip>
 	<template scope="scope">
 	  <span>{{scope.row.product_title}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="日期" width="160px">
+	<template scope="scope">
+	  <span>{{scope.row.piad_time}}</span>
 	</template>
       </el-table-column>
       <!--el-table-column align="center" label="规格" show-overflow-tooltip>
