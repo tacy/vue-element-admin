@@ -47,13 +47,13 @@ class PDFTool:
             print(o)
             prodname = '<font name="wqy">{}</font>'.format(
                 o[0].replace(' ', ','))
-            sku_properties_name = '<font name="wqy">{}</font>'.format(
-                o[1].replace(' ', ','))
+            sku_properties_name = '<font name="wqy">{}/{}</font>'.format(
+                o[1].replace(' ', ','), o[2])
             data.append([
                 Paragraph(prodname, styles['Normal']),
                 Paragraph(sku_properties_name, styles['Normal']),
-                o[2],
                 o[3],
+                o[4],
             ])
         t = Table(
             data,

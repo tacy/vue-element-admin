@@ -365,7 +365,7 @@ class XloboGetPDF(views.APIView):
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
         merger = PdfFileMerger()
         pdftool = utils.PDFTool()
-        sql = 'select o.product_title, o.sku_properties_name, o.quantity, s.location from stock_order o inner join stock_product p on o.jancode=p.jancode and o.shippingdb_id=%s inner join stock_stock s on s.product_id=p.id'
+        sql = 'select p.name, p.specification, o.jancode, o.quantity, s.location from stock_order o inner join stock_product p on o.jancode=p.jancode and o.shippingdb_id=%s inner join stock_stock s on s.product_id=p.id'
         for i, b in enumerate(result['Result']):
             db_bytes = base64.b64decode(b['BillPdfLabel'])
             ordsData = None
