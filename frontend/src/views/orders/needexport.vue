@@ -234,7 +234,7 @@
 	  const link = document.createElement('a')
 	  link.href = window.URL.createObjectURL(blob)
 	  link.target = "_blank";
-	  link.download = "domestic_order.pdf"
+	  link.download = "domestic_order.xlsx"
 	  link.click()
 	  // window.open(link);
           this.getOrder();
