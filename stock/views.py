@@ -717,7 +717,8 @@ class OrderOut(views.APIView):
                 ordObjs.status = '已发货'
                 ordObjs.save(update_fields=['status'])
                 productObj = Product.objects.get(jancode=ordObjs.jancode)
-                stockObj = Stock.objects.get(product=productObj)
+                stockObj = Stock.objects.get(
+                    product=productObj, inventory=ordObjs.inventory)
                 stockObj.preallocation = F('preallocation') - ordObjs.quantity
                 stockObj.quantity = F('quantity') - ordObjs.quantity
                 stockObj.save()
