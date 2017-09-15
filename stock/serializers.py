@@ -29,6 +29,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
     jancode = serializers.ReadOnlyField(source='product.jancode')
+    product_name = serializers.ReadOnlyField(source='product.name')
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""

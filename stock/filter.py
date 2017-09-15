@@ -72,6 +72,9 @@ class ShippingDBFilter(FilterSet):
 
 class PurchaseOrderFilter(FilterSet):
     orderid = CharFilter(lookup_expr='icontains')
+    jancode = CharFilter(name='purchaseorderitem__product__jancode')
+    product_name = CharFilter(
+        name='purchaseorderitem__product__name', lookup_expr='icontains')
 
     class Meta:
         model = PurchaseOrder

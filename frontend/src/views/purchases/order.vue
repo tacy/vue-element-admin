@@ -4,6 +4,12 @@
       <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="注文编号" v-model="listQuery.orderid">
       </el-input>
 
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品条码" v-model="listQuery.jancode">
+      </el-input>
+
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="商品名称" v-model="listQuery.product_name">
+      </el-input>
+
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
         <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
@@ -71,17 +77,22 @@
 
     <el-dialog title="订单明细" :visible.sync="dialogItemVisible" size="small">
       <el-table :data="itemData" border fit highlight-current-row style="width: 100%">
-	<el-table-column align="center" label="商品编码">
+	<el-table-column align="center" label="商品编码" width="150px">
 	  <template scope="scope">
 	    <span>{{scope.row.jancode}}</span>
 	  </template>
         </el-table-column>
-	<el-table-column align="center" label="数量">
+	<el-table-column align="center" label="商品名称">
+	  <template scope="scope">
+	    <span>{{scope.row.product_name}}</span>
+	  </template>
+        </el-table-column>
+	<el-table-column align="center" label="数量" width="80px">
 	  <template scope="scope">
 	    <span>{{scope.row.quantity}}</span>
 	  </template>
         </el-table-column>
-	<el-table-column align="center" label="价格">
+	<el-table-column align="center" label="价格" width="100px">
 	  <template scope="scope">
 	    <span>{{scope.row.price}}</span>
 	  </template>
@@ -167,7 +178,9 @@
 	  status: undefined,
           inventory: undefined,
 	  supplier: undefined,
-	  orderid: undefined
+	  orderid: undefined,
+	  jancode: undefined,
+	  product_name: undefined,
         },
 	temp: {
           id: undefined,
