@@ -23,6 +23,7 @@ class OrderFilter(FilterSet):
             'receiver_name',
             'jancode',
             'status',
+            'shipping',
             'shippingdb',
             'unshippingdb',
             'delivery_type',

@@ -110,7 +110,7 @@ export const asyncRouterMap = [
       { path: 'conflict', component: ordersConflict, name: '需介入' },
       { path: 'createdb', component: ordersCreateDB, name: '出面单', meta: { role: ['admin'] } },
       { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin'] } },
-      { path: 'needexport', component: ordersNeedExport, name: '拼邮&第三方' }
+      { path: 'needexport', component: ordersNeedExport, name: '拼邮&保税' }
     ]
   },
   {
