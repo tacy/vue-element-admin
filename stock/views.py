@@ -5,6 +5,7 @@ import logging
 from io import BytesIO
 from collections import OrderedDict
 from openpyxl import Workbook
+from openpyxl.writer.excel import save_virtual_workbook
 from django.http import HttpResponse
 
 import aiohttp
@@ -308,7 +309,6 @@ class XloboDeleteDBNumber(views.APIView):
     def post(self, request, format=None):
         # construct api msg
         data = request.data
-        shippingid = data['id']
         db_number = data['db_number']
         if data['shipping_name'] in ['虚仓电商', '直邮电商']:
             msg = {'BillCode': db_number}
@@ -458,6 +458,70 @@ class ExportBondedOrder(views.APIView):
         return response
 
 
+class ExportDomesticOrder(views.APIView):
+    def post(self, request, format=None):
+        ords = request.data
+        excel_data = [
+            [
+                '订单号',
+                '收件人',
+                '固话',
+                '手机',
+                '地址',
+                '明细',
+                '发件人',
+                '发件人电话',
+                '发件人地址',
+                '备注',
+                '代收金额',
+                '保价金额',
+                '业务类型',
+            ],
+        ]
+
+        for o in ords:
+            if '拼邮' not in o['shipping_name'] or '已发货' in o['status']:
+                errmsg = {'errmsg': '订单:%s物流方式非拼邮或者状态为已发货' % (o['orderid'])}
+                return Response(
+                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            excel_data.append([
+                o['orderid'],
+                o['receiver_name'],
+                o['receiver_mobile'],
+                o['receiver_mobile'],
+                o['receiver_address'],
+                o['product_title'],
+                o['seller_name'],
+                '13922442299',
+                '',
+                '',
+                '',
+                '',
+                '',
+            ])
+        if excel_data:
+            wb = Workbook(write_only=True)
+            ws = wb.create_sheet(title='主表')
+            for line in excel_data:
+                ws.append(line)
+
+        # response = HttpResponse(
+        #     content_type=
+        #     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        # )
+        # response['Content-Disposition'] = 'attachment; filename=mydata.xlsx'
+        # wb.save(response)
+
+        # https://stackoverflow.com/questions/8469665/saving-openpyxl-file-via-text-and-filestream
+        base64Data = base64.b64encode(save_virtual_workbook(wb))
+        msg = {'tableData': base64Data}
+        with transaction.atomic():
+            for o in ords:
+                Order.objects.filter(id=o['id']).update(export_status='已导出')
+
+        return Response(data=msg, status=status.HTTP_200_OK)
+
+
 class SyncStock(views.APIView):
     def post(self, request, format=None):
         data = request.data
@@ -557,6 +621,8 @@ class UexStockOut(views.APIView):
         return Response(data=result, status=status.HTTP_200_OK)
 
 
+# 思考: 拼邮订单, 还是需要填写正确的EMS单号, 否则不容易追踪包裹情况, 但是存在
+# 不正确填写EMS单号的情况, 这个需要怎么处理?
 class ManualAllocateDBNumber(views.APIView):
     def post(self, request, format=None):
         ords = request.data['orders']
@@ -582,6 +648,7 @@ class ManualAllocateDBNumber(views.APIView):
 
         db_number = request.data['Comment']
         channel_name = ords[0]['channel_name']
+        # delivery_type = ords[0]['delivery_type']
         with transaction.atomic():
             shippingdbObj = None
             try:
@@ -591,6 +658,7 @@ class ManualAllocateDBNumber(views.APIView):
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
                 shippingdbObj = ShippingDB(
                     db_number=db_number,
+                    # status='已出库' if '拼邮' in delivery_type else '待处理',   # 如果是拼邮订单, 只是需要一个面单回填, 无需做国外发货处理
                     status='待处理',
                     channel_name=channel_name,
                     shipping=shippingObj,
@@ -636,6 +704,23 @@ class StockOut(views.APIView):
                     stockObj.save()
 
         return Response(status=status.HTTP_200_OK)
+
+
+# 拼邮订单和第三方保税订单出库操作
+# 更新订单状态, 扣减库存
+class OrderOut(views.APIView):
+    def post(self, request, format=None):
+        ord = request.data
+        with transaction.atomic():
+            ordObjs = Order.objects.get(id=ord['id'])
+            if '已发货' not in ordObjs.status:
+                ordObjs.status = '已发货'
+                ordObjs.save(update_fields=['status'])
+                productObj = Product.objects.get(jancode=ordObjs.jancode)
+                stockObj = Stock.objects.get(product=productObj)
+                stockObj.preallocation = F('preallocation') - ordObjs.quantity
+                stockObj.quantity = F('quantity') - ordObjs.quantity
+                stockObj.save()
 
 
 # 不要使用, 有问题, stock没有jancode字段了

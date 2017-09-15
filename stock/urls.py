@@ -11,7 +11,8 @@ from .views import (
     XloboCreateFBXBill, XloboGetPDF, XloboDeleteDBNumber,
     ManualAllocateDBNumber, OrderItemGet, StockOut, OrderTPRCreate,
     PurchaseOrderClear, UexStockOut, ExportBondedOrder, BondedProductList,
-    BondedProductDetail, ProductUpdateJancode, SyncStock)
+    BondedProductDetail, ProductUpdateJancode, SyncStock, ExportDomesticOrder,
+    OrderOut)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -56,6 +57,7 @@ urlpatterns = {
         name="needPurchaseOrd"),
     url(r'^order/purchase/$', OrderPurchase.as_view(), name="orderPurchase"),
     url(r'^order/delete/$', OrderDelete.as_view(), name="orderDelete"),
+    url(r'^order/out/$', OrderOut.as_view(), name="orderOut"),
     url(r'^order/createtpr/$', OrderTPRCreate.as_view(),
         name='orderCreateTPR'),
     url(r'^order/items/$', OrderItemGet.as_view(), name="orderItem"),
@@ -63,9 +65,12 @@ urlpatterns = {
         OrderMarkConflict.as_view(),
         name="orderMarkConflict"),
     url(r'^order/conflict/$', OrderConflict.as_view(), name="orderConflict"),
-    url(r'^order/export/$',
+    url(r'^order/exportbonded/$',
         ExportBondedOrder.as_view(),
         name="orderBonderdExport"),
+    url(r'^order/exportdomestic/$',
+        ExportDomesticOrder.as_view(),
+        name="orderDomesticExport"),
     url(r'^purchase/noorderpurchase/$',
         NoOrderPurchase.as_view(),
         name="noOrderConflict"),

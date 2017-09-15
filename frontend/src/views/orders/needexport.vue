@@ -1,0 +1,232 @@
+<template>
+  <div class="app-container calendar-list-container">
+    <div class="filter-container">
+      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
+      </el-input>
+
+      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
+      </el-input>
+
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.delivery_type" placeholder="运输方式">
+        <el-option v-for="item in deliveryTypeOptions" :key="item" :label="item" :value="item">
+        </el-option>
+      </el-select>
+
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="状态">
+        <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
+        </el-option>
+      </el-select>
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.exportstatus" placeholder="导出状态">
+        <el-option v-for="item in exportstatusOptions" :key="item" :label="item" :value="item">
+        </el-option>
+      </el-select>
+
+      <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="domesticOrder">导出拼邮单</el-button>
+    </div>
+
+    <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
+      <el-table-column type="selection" width="45" :selectable="checkSelectable">
+      </el-table-column>
+      <el-table-column align="center" label="订单号" width="100px">
+	<template scope="scope">
+	  <span>{{scope.row.orderid}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="状态" width="100px">
+	<template scope="scope">
+	  <!--span>{{scope.row.status}}</span-->
+	  <el-tag :type="scope.row.status | statusFilter">{{scope.row.status}}</el-tag>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="导出状态" width="100px">
+	<template scope="scope">
+	  <span>{{scope.row.export_status}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="发货方式" width="100px">
+	<template scope="scope">
+	  <span>{{scope.row.shipping_name}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="运输方式" width="100px">
+	<template scope="scope">
+	  <span>{{scope.row.delivery_type}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="收件人" width="95px">
+	<template scope="scope">
+	  <span>{{scope.row.receiver_name}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="电话" width="115px" show-overflow-tooltip>
+	<template scope="scope">
+	  <span>{{scope.row.receiver_mobile}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="地址" width="200px">
+	<template scope="scope">
+	  <span>{{scope.row.receiver_address}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="商品编码" width="100px">
+	<template scope="scope">
+	  <span>{{scope.row.jancode}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="商品名" width="200px">
+	<template scope="scope">
+	  <span>{{scope.row.product_title}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="规格" width="180px">
+	<template scope="scope">
+	  <span>{{scope.row.sku_properties_name}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="操作" width="80">
+	<template scope="scope">
+          <el-button size="small" :disabled="scope.row.status==='已发货'?true:false" type="primary" @click="stockOut(scope.row)">出库
+	  </el-button>
+	</template>
+      </el-table-column>
+    </el-table>
+
+    <div v-show="!listLoading" class="pagination-container">
+      <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page.sync="listQuery.page"
+        :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper" :total="total">
+      </el-pagination>
+    </div>
+
+  </div>
+</template>
+
+<script>
+  import { parseTime } from 'utils';
+  import { fetchOrder, exportDomesticOrder, outOrder } from 'api/orders';
+
+  export default {
+    data() {
+      return {
+        list: [],
+        listLoading: true,
+        total: null,
+	channelOptions: ['洋码头', '京东'],
+	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
+        deliveryTypeOptions: ['第三方保税'],
+	exportstatusOptions: ['未导出', '已导出'],
+	selectRows: [],
+        listQuery: {
+          page: 1,
+          limit: 10,
+	  status: "待发货,待采购,已采购,需介入",
+          inventory: undefined,
+	  purchaseorder__orderid: undefined,
+	  channel_name: undefined,
+	  delivery_name: ['拼邮', '第三方保税'],
+	  receiver_name: undefined,
+	  orderid: undefined,
+	  delivery_type: undefined
+        }
+      }
+    },
+    filters: {
+      statusFilter(status) {
+        const statusMap = {
+          待发货: 'success',
+          已采购: 'primary',
+          需介入: 'danger',
+	  待采购: 'warning',
+        };
+        return statusMap[status]
+      }
+    },
+    created() {
+      this.getOrder();
+    },
+    methods: {
+      getOrder() {
+        this.listLoading = true;
+	if ( ! this.listQuery.status ) {
+	  this.listQuery.status="待发货,待采购,已采购,需介入"
+	}
+        fetchOrder(this.listQuery).then(response => {
+          this.list = response.data.results;
+          this.total = response.data.count;
+          this.listLoading = false;
+        })
+      },
+      handleFilter() {
+        this.getOrder();
+      },
+      handleSizeChange(val) {
+        this.listQuery.limit = val;
+        this.getOrder();
+      },
+      handleCurrentChange(val) {
+        this.listQuery.page = val;
+        this.getOrder();
+      },
+      handleSelect(val) {
+        this.selectRow = val;
+      },
+      checkSelectable(row) {
+        return row.status !== '待采购' & row.status !== '需介入'
+      },
+      stockOut(row) {
+        outOrder(row).then(response => {
+	  for (const v of this.list) {
+	    if (v.id === row.id) {
+	      row.status='已发货';
+	      const index = this.list.indexOf(v);
+	      this.list.splice(index, 1, row);
+	      break;
+	    }
+	  };
+          this.dialogFormVisible = false;
+          this.$notify({
+            title: '成功',
+            message: '更新成功',
+            type: 'success',
+            duration: 2000
+          });
+        });
+      },
+      domesticOrder() {
+        if (this.selectRow.length===0) {
+          this.$message({
+            type: 'error',
+            message: '请选择面单对应订单',
+            duration: 2000
+          });
+          return
+        };
+	const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
+	  const byteCharacters = atob(b64Data);
+	  const byteArrays = [];
+	  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+	    const slice = byteCharacters.slice(offset, offset + sliceSize);
+	    const byteNumbers = new Array(slice.length);
+	    for (let i = 0; i < slice.length; i++) {
+	      byteNumbers[i] = slice.charCodeAt(i);
+	    }
+	    const byteArray = new Uint8Array(byteNumbers);
+	    byteArrays.push(byteArray);
+	  }
+	  const blob = new Blob(byteArrays, {type: contentType});
+	  return blob;
+	};
+        exportDomesticOrder(this.selectRow).then(response => {
+          const blob = b64toBlob(response.data.tableData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+	  const link = document.createElement('a')
+	  link.href = window.URL.createObjectURL(blob)
+	  link.target = "_blank";
+	  link.download = "domestic_order.pdf"
+	  link.click()
+	  // window.open(link);
+          this.getOrder();
+	});
+      }
+    }
+  }
+</script>

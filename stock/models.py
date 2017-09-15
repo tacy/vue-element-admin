@@ -164,6 +164,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=3, null=True, default='待处理')  # 待处理/待发货/已发货
     importstatus = models.CharField(max_length=3, null=True)  # 是否已经导入贝海后台
+    export_status = models.CharField(max_length=3, null=True)  # 导出发货
     conflict = models.CharField(max_length=8, null=True)  # 换货/退款
     conflict_memo = models.CharField(max_length=128, null=True)
     conflict_feedback = models.CharField(max_length=128, null=True)
