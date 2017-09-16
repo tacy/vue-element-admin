@@ -147,6 +147,7 @@
         })
       },
       handleFilter() {
+        this.listQuery.page=1;
         this.getStock();
       },
       handleSizeChange(val) {

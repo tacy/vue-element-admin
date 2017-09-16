@@ -326,6 +326,7 @@
         })
       },
       handleFilter() {
+        this.listQuery.page=1;
         this.getOrder();
       },
       handleSizeChange(val) {

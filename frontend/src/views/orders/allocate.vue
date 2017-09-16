@@ -286,6 +286,7 @@
         })
       },
       handleFilter() {
+        this.listQuery.page=1;
         this.getList();
       },
       handleSizeChange(val) {
