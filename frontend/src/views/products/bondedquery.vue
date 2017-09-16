@@ -28,14 +28,14 @@
 
       <el-table-column align="center" label="名称">
 	<template scope="scope">
-          <el-input v-show="scope.row.edit" size="small" v-model="scope.row.product_name"></el-input>
+          <el-input v-show="scope.row.edit" size="small" v-model.trim="scope.row.product_name"></el-input>
           <span v-show="!scope.row.edit">{{ scope.row.product_name }}</span>
 	</template>
       </el-table-column>
 
       <el-table-column align="center" label="备案号" width="200px">
 	<template scope="scope">
-          <el-input v-show="scope.row.edit" size="small" v-model="scope.row.filing_no"></el-input>
+          <el-input v-show="scope.row.edit" size="small" v-model.trim="scope.row.filing_no"></el-input>
           <span v-show="!scope.row.edit">{{ scope.row.filing_no }}</span>
 	</template>
       </el-table-column>
@@ -50,10 +50,10 @@
     <el-dialog title="保税产品资料" :visible.sync="dialogCreateVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
         <el-form-item label="商品编码">
-          <el-input v-model="temp.jancode"></el-input>
+          <el-input v-model.trim="temp.jancode"></el-input>
         </el-form-item>
         <el-form-item label="商品名">
-          <el-input v-model="temp.product_name"></el-input>
+          <el-input v-model.trim="temp.product_name"></el-input>
         </el-form-item>
         <el-form-item label="保税仓">
 	  <el-select clearable style="width: 330px" class="filter-item" v-model="temp.bonded_name" placeholder="选择保税仓">
@@ -62,7 +62,7 @@
 	  </el-select>
 	</el-form-item>
         <el-form-item label="备案号">
-          <el-input v-model="temp.filing_no"></el-input>
+          <el-input v-model.trim="temp.filing_no"></el-input>
         </el-form-item>
       </el-form>
 

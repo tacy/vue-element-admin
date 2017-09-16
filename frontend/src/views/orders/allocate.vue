@@ -106,19 +106,19 @@
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
         <el-form-item label="条码">
-          <el-input v-model="temp.jancode"></el-input>
+          <el-input v-model.trim="temp.jancode"></el-input>
         </el-form-item>
         <el-form-item label="收件人">
-          <el-input v-model="temp.receiver_name"></el-input>
+          <el-input v-model.trim="temp.receiver_name"></el-input>
         </el-form-item>
         <el-form-item label="电话">
-          <el-input v-model="temp.receiver_mobile"></el-input>
+          <el-input v-model.trim="temp.receiver_mobile"></el-input>
         </el-form-item>
         <el-form-item label="地址">
-          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.receiver_address"></el-input>
+          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="temp.receiver_address"></el-input>
         </el-form-item>
         <el-form-item label="数量">
-          <el-input v-model="temp.quantity"></el-input>
+          <el-input v-model.number="temp.quantity" type="number"></el-input>
         </el-form-item>
         <el-form-item label="总价">
           <el-input v-model.number="temp.payment" type="number"></el-input>
@@ -134,13 +134,13 @@
     <el-dialog title="产品资料" :visible.sync="dialogProductVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
         <el-form-item label="商品编码">
-          <el-input v-model="temp.jancode"></el-input>
+          <el-input v-model.trim="temp.jancode"></el-input>
         </el-form-item>
         <el-form-item label="名称">
-          <el-input v-model="temp.product_title"></el-input>
+          <el-input v-model.trim="temp.product_title"></el-input>
         </el-form-item>
         <el-form-item label="品牌">
-          <el-input v-model="temp.brand"></el-input>
+          <el-input v-model.trim="temp.brand"></el-input>
         </el-form-item>
         <el-form-item label="类目">
 	  <el-cascader :options="categoryOptions" v-model="temp.category" style='width: 330px;' filterable show-all-levels clearable placeholder="请选择产品类目">
@@ -148,7 +148,7 @@
           <!--el-input v-model="temp.category"></el-input-->
         </el-form-item>
         <el-form-item label="规格">
-          <el-input v-model="temp.sku_properties_name"></el-input>
+          <el-input v-model.trim="temp.sku_properties_name"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">

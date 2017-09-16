@@ -41,7 +41,7 @@
       <el-table-column align="center" label="库位号" width="120px" show-overflow-tooltip>
 	<template scope="scope">
 	  <!--span>{{scope.row.location}}</span-->
-          <el-input v-show="scope.row.edit" size="small" v-model="scope.row.location"></el-input>
+          <el-input v-show="scope.row.edit" size="small" v-model.trim="scope.row.location"></el-input>
           <span v-show="!scope.row.edit">{{ scope.row.location }}</span>
 	</template>
       </el-table-column>

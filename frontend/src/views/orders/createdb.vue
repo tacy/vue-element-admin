@@ -170,7 +170,7 @@
 	  </el-select>
 	</el-form-item>
         <el-form-item label="面单备注">
-          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="uexData.Comment"></el-input>
+          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="uexData.Comment"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -182,7 +182,7 @@
     <el-dialog title="面单回填" size="small" :visible.sync="dialogDBInputVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
         <el-form-item label="面单号">
-          <el-input v-model="xloboData.Comment"></el-input>
+          <el-input v-model.trim="xloboData.Comment"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">

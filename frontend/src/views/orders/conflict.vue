@@ -50,16 +50,16 @@
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
         <el-form-item label="商品编码">
-          <el-input v-model="temp.jancode"></el-input>
+          <el-input v-model.trim="temp.jancode"></el-input>
         </el-form-item>
         <el-form-item label="商品名称">
-          <el-input v-model="temp.product_title"></el-input>
+          <el-input v-model.trim="temp.product_title"></el-input>
         </el-form-item>
         <el-form-item label="商品规格">
-          <el-input v-model="temp.sku_properties_name"></el-input>
+          <el-input v-model.trim="temp.sku_properties_name"></el-input>
         </el-form-item>
 	<el-form-item label="反馈">
-	  <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.conflict_feedback"></el-input>
+	  <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="temp.conflict_feedback"></el-input>
 	</el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -72,7 +72,7 @@
     <el-dialog title="退款" :visible.sync="dialogDeleteVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
         <el-form-item label="反馈">
-          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.conflict_feedback"></el-input>
+          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="temp.conflict_feedback"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">

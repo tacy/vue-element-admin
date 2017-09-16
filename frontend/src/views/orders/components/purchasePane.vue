@@ -65,7 +65,7 @@
 
 	<el-table-column align="center" label="注文编号" width="150">
 	  <template scope="scope">
-	    <el-input size="small" v-model="scope.row.purchaseorderid" placeholder=""></el-input>
+	    <el-input size="small" v-model.trim="scope.row.purchaseorderid" placeholder=""></el-input>
 	  </template>
 	</el-table-column>
 
