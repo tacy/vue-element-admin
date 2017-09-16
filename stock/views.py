@@ -1094,7 +1094,6 @@ class NoOrderPurchase(views.APIView):
     def put(self, request, format=None):
         print(request.data)
         data = request.data
-        jancode = data['jancode']
         inventory = data['inventory']
 
         with transaction.atomic():
@@ -1113,7 +1112,7 @@ class NoOrderPurchase(views.APIView):
             for i in data['items']:
                 # add purchase item
                 poitemObj = PurchaseOrderItem(
-                    jancode=Product.objects.get(jancode=jancode),
+                    product=Product.objects.get(jancode=i['jancode']),
                     quantity=i['quantity'],
                     purchaseorder=poObj,
                     price=i['price'])
@@ -1121,12 +1120,12 @@ class NoOrderPurchase(views.APIView):
 
                 # set inflight in stock
                 stockObj = Stock.objects.get(
-                    inventory=inventory, product__jancode=jancode)
+                    inventory=inventory, product__jancode=i['jancode'])
                 stockObj.inflight = F('inflight') + int(i['quantity'])
                 stockObj.save()
 
                 orders = Order.objects.filter(
-                    inventory=inventory, jancode=jancode, status='待采购')
+                    inventory=inventory, jancode=i['jancode'], status='待采购')
                 for o in orders:
                     o.purchaseorder = poObj
                     o.status = '已采购'
