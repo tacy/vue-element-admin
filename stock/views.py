@@ -1006,65 +1006,68 @@ class OrderPurchase(views.APIView):
         data = request.data.get('data')
         queryTime = request.data.get('queryTime')
         inventory = request.data.get('inventory')
-        with transaction.atomic():
-            createtime = arrow.now()
-            pos = {}
-            for i in data:
-                # create purchaseorder
-                po_id = i.get('purchaseorderid')
-                if not po_id:
-                    continue
-                if (not i['quantity'] or i['quantity'] < i['qty'] or
-                        not i['supplier'] or not i['price']):
-                    results = {'errmsg': '请检查输入'}
-                    return Response(
-                        data=results, status=status.HTTP_400_BAD_REQUEST)
-                jancode = i['jancode']
-                if po_id not in pos:
-                    supplierOb = Supplier.objects.get(id=i['supplier'])
-                    inventoryOb = Inventory.objects.get(id=inventory)
-                    po = PurchaseOrder(
-                        orderid=po_id,
-                        supplier=supplierOb,
-                        inventory=inventoryOb,
-                        create_time=createtime,
-                        status='在途', )
-                    po.save()
-                    pos[po_id] = po
-
-                # add purchase item
-                price = i['price']
-                poitem = PurchaseOrderItem(
-                    product=Product.objects.get(jancode=jancode),
-                    quantity=i['quantity'],
-                    purchaseorder=pos[po_id],
-                    price=price)
-                poitem.save()
-
-                # set inflight in stock
-                stock = Stock.objects.get(
-                    inventory=inventory,
-                    product__jancode=jancode, )
-                stock.inflight = F('inflight') + int(i['quantity'])
-                stock.save()
-
-                # 1. update order, notes: may qty != quantity
-                # 2. if allocate_time > querytime, don't relation it.
-                orders = Order.objects.filter(
-                    inventory=inventory, jancode=jancode, status='待采购')
-                # orders_qty_sum = 0
-                for o in orders:
-                    # django存的是naive的时间, 所以我们这里也要用才能比较
-                    if o.allocate_time > arrow.get(queryTime).naive:
+        results = {}
+        try:
+            with transaction.atomic():
+                createtime = arrow.now()
+                pos = {}
+                for i in data:
+                    # create purchaseorder
+                    po_id = i.get('purchaseorderid')
+                    if not po_id:
                         continue
-                    o.purchaseorder = pos[po_id]
-                    o.status = '已采购'
-                    o.save(update_fields=['status', 'purchaseorder'])
-                    # orders_qty_sum += o.need_purchase
-                    # if orders_qty_sum > int(i['quantity']):
-                    #     break
+                    if (not i['quantity'] or i['quantity'] < i['qty'] or
+                            not i['supplier'] or not i['price']):
+                        results = {'errmsg': '请检查输入'}
+                        raise IntegrityError
+                    jancode = i['jancode']
+                    if po_id not in pos:
+                        supplierOb = Supplier.objects.get(id=i['supplier'])
+                        inventoryOb = Inventory.objects.get(id=inventory)
+                        po = PurchaseOrder(
+                            orderid=po_id,
+                            supplier=supplierOb,
+                            inventory=inventoryOb,
+                            create_time=createtime,
+                            status='在途', )
+                        po.save()
+                        pos[po_id] = po
 
-            return Response(status=status.HTTP_201_CREATED)
+                    # add purchase item
+                    price = i['price']
+                    poitem = PurchaseOrderItem(
+                        product=Product.objects.get(jancode=jancode),
+                        quantity=i['quantity'],
+                        purchaseorder=pos[po_id],
+                        price=price)
+                    poitem.save()
+
+                    # set inflight in stock
+                    stock = Stock.objects.get(
+                        inventory=inventory,
+                        product__jancode=jancode, )
+                    stock.inflight = F('inflight') + int(i['quantity'])
+                    stock.save()
+
+                    # 1. update order, notes: may qty != quantity
+                    # 2. if allocate_time > querytime, don't relation it.
+                    orders = Order.objects.filter(
+                        inventory=inventory, jancode=jancode, status='待采购')
+                    # orders_qty_sum = 0
+                    for o in orders:
+                        # django存的是naive的时间, 所以我们这里也要用才能比较
+                        if o.allocate_time > arrow.get(queryTime).naive:
+                            continue
+                        o.purchaseorder = pos[po_id]
+                        o.status = '已采购'
+                        o.save(update_fields=['status', 'purchaseorder'])
+                        # orders_qty_sum += o.need_purchase
+                        # if orders_qty_sum > int(i['quantity']):
+                        #     break
+        except IntegrityError:
+            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_201_CREATED)
 
 
 # 提交采购单(直接采购, 不参考待采购列表)
