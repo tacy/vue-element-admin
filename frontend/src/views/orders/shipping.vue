@@ -352,6 +352,7 @@
         })
       },
       handleFilter() {
+        this.listQuery.page=1;
         this.getShippingDB();
       },
       checkSelectable(row) {

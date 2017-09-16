@@ -205,6 +205,7 @@
 	})
       },
       handleFilter() {
+        this.listQuery.page=1;
         this.getProduct();
       },
       handleSizeChange(val) {

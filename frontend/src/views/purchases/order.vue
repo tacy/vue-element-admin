@@ -238,6 +238,7 @@
         })
       },
       handleFilter() {
+        this.listQuery.page=1;
         this.getPurchaseOrder();
       },
       handleSizeChange(val) {
