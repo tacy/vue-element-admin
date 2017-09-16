@@ -66,12 +66,12 @@
     <el-dialog :title="textMap[dialogStatus]" size="small" :visible.sync="dialogFormVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
 	<el-form-item label="名称:" label-width="50px">
-	  <el-input style="width: 500px" v-model="temp.name"></el-input>
+	  <el-input style="width: 500px" v-model.trim="temp.name"></el-input>
 	</el-form-item>
 	<el-row>
           <el-col :span="12">
 	    <el-form-item label="条码:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.jancode"></el-input>
+	      <el-input style="width: 200px" v-model.trim="temp.jancode"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
@@ -84,36 +84,36 @@
 	<el-row>
           <el-col :span="12">
 	    <el-form-item label="品牌:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.brand"></el-input>
+	      <el-input style="width: 200px" v-model.trim="temp.brand"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
 	    <el-form-item label="规格:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.specification"></el-input>
+	      <el-input style="width: 200px" v-model.trim="temp.specification"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
 	<el-row>
           <el-col :span="12">
 	    <el-form-item label="产地:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.origin"></el-input>
+	      <el-input style="width: 200px" v-model.trim="temp.origin"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
 	    <el-form-item label="型号:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.model"></el-input>
+	      <el-input style="width: 200px" v-model.trim="temp.model"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
 	<el-row>
           <el-col :span="12">
 	    <el-form-item label="材质:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.size"></el-input>
+	      <el-input style="width: 200px" v-model.trim="temp.size"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
 	    <el-form-item label="单位:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.unit"></el-input>
+	      <el-input style="width: 200px" v-model.trim="temp.unit"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
@@ -125,12 +125,12 @@
 	  </el-col>
           <el-col :span="12">
 	    <el-form-item label="保质期:" label-width="50px">
-	      <el-input style="width: 200px" v-model="temp.expired"></el-input>
+	      <el-input style="width: 200px" v-model.trim="temp.expired"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
         <el-form-item label="描述:" label-width="50px">
-          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" style="width: 500px" v-model="temp.proddesc"></el-input>
+          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" style="width: 500px" v-model.trim="temp.proddesc"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">

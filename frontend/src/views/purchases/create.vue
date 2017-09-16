@@ -33,7 +33,7 @@
 	    </el-col>
 	    <el-col :span="8">
 	      <el-form-item label-width="80px" label="注文编号" class="postInfo-container-item">
-		<el-input placeholder="请输入" style='min-width:150px;' v-model="postForm.orderid">
+		<el-input placeholder="请输入" style='min-width:150px;' v-model.trim="postForm.orderid">
 		</el-input>
 	      </el-form-item>
 	    </el-col>
@@ -46,17 +46,17 @@
 	<el-table :data="postForm.items" border fit highlight-current-row style="width: 100%">
 	  <el-table-column align="center" label="商品编号">
 	    <template scope="scope">
-	      <el-input size="small" v-model="scope.row.jancode"></el-input>
+	      <el-input size="small" v-model.trim="scope.row.jancode"></el-input>
 	    </template>
 	  </el-table-column>
 	  <el-table-column align="center" label="采购数量">
 	    <template scope="scope">
-	      <el-input size="small" v-model="scope.row.quantity"></el-input>
+	      <el-input size="small" v-model.trim="scope.row.quantity"></el-input>
 	    </template>
 	  </el-table-column>
 	  <el-table-column align="center" label="价格">
 	    <template scope="scope">
-	      <el-input size="small" v-model="scope.row.price"></el-input>
+	      <el-input size="small" v-model.number="scope.row.price" type="number"></el-input>
 	    </template>
           </el-table-column>
   	  <el-table-column align="center" label="操作">

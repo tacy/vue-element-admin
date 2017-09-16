@@ -158,12 +158,12 @@
         <el-row>
 	  <el-col :span="6">
 	    <el-form-item label="订单号:" prop="orderid">
-	      <el-input style="width: 150px" v-model="orderData.orderid"></el-input>
+	      <el-input style="width: 150px" v-model.trim="orderData.orderid"></el-input>
 	    </el-form-item>
  	  </el-col>
 	  <el-col :span="6">
 	    <el-form-item label="卖家:" prop="seller_name">
-	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.seller_name" placeholder="渠道">
+	      <el-select clearable style="width: 150px" class="filter-item" v-model.trim="orderData.seller_name" placeholder="渠道">
 	      <el-option v-for="item in sellerOptions" :key="item" :label="item" :value="item">
 	      </el-option>
 	      </el-select>
@@ -171,7 +171,7 @@
    	  </el-col>
 	  <el-col :span="6">
 	    <el-form-item label="渠道:" prop="channel_name">
-	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.channel_name" placeholder="渠道">
+	      <el-select clearable style="width: 150px" class="filter-item" v-model.trim="orderData.channel_name" placeholder="渠道">
 		<el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
 		</el-option>
 	      </el-select>
@@ -179,7 +179,7 @@
    	  </el-col>
 	  <el-col :span="6">
 	    <el-form-item label="运输:" prop="delivery_type">
-	      <el-select clearable style="width: 150px" class="filter-item" v-model="orderData.delivery_type" placeholder="运输方式">
+	      <el-select clearable style="width: 150px" class="filter-item" v-model.trim="orderData.delivery_type" placeholder="运输方式">
 		<el-option v-for="item in deliveryTypeOptions" :key="item" :label="item" :value="item">
 		</el-option>
 	      </el-select>
@@ -189,51 +189,51 @@
 	<el-row>
 	  <el-col :span="6">
 	    <el-form-item label="姓名:" prop="receiver_name">
-	      <el-input style="width: 150px" v-model="orderData.receiver_name"></el-input>
+	      <el-input style="width: 150px" v-model.trim="orderData.receiver_name"></el-input>
 	    </el-form-item>
  	  </el-col>
           <el-col :span="6">
 	    <el-form-item label="电话:" prop="receiver_mobile">
-	      <el-input style="width: 150px" v-model="orderData.receiver_mobile"></el-input>
+	      <el-input style="width: 150px" v-model.trim="orderData.receiver_mobile"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="6">
 	    <el-form-item label="邮编:" prop="receiver_zip">
-	      <el-input style="width: 150px" v-model="orderData.receiver_zip"></el-input>
+	      <el-input style="width: 150px" v-model.trim="orderData.receiver_zip"></el-input>
 	    </el-form-item>
 	  </el-col>
 	  <el-col :span="6">
 	    <el-form-item label="证件:" prop="receiver_idcard">
-	      <el-input style="width: 150px" v-model="orderData.receiver_idcard"></el-input>
+	      <el-input style="width: 150px" v-model.trim="orderData.receiver_idcard"></el-input>
 	    </el-form-item>
  	  </el-col>
 	</el-row>
         <el-row>
 	  <el-col :span="12">
 	    <el-form-item label="地址:" prop="receiver_address">
-	      <el-input style="width: 430px" v-model="orderData.receiver_address"></el-input>
+	      <el-input style="width: 430px" v-model.trim="orderData.receiver_address"></el-input>
 	    </el-form-item>
  	  </el-col>
           <el-col :span="12">
 	    <el-form-item label="备注:" prop="seller_memo">
-	      <el-input style="width: 430px" v-model="orderData.seller_memo"></el-input>
+	      <el-input style="width: 430px" v-model.trim="orderData.seller_memo"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
 	<el-row v-for="(p, index) in orderData.products">
           <el-col :span="4">
 	    <el-form-item label="条码:" label-width="55px" prop="jancode" required="true">
-	      <el-input style="width: 120px" v-model="p.jancode"></el-input>
+	      <el-input style="width: 120px" v-model.trim="p.jancode"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="8">
 	    <el-form-item label="名称:" label-width="55px" prop="product_title" required="true">
-	      <el-input style="width: 275px" v-model="p.product_title"></el-input>
+	      <el-input style="width: 275px" v-model.trim="p.product_title"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="4">
 	    <el-form-item label="规格:" label-width="55px" prop="sku_properties_name" required="true">
-	      <el-input style="width: 120px" v-model="p.sku_properties_name"></el-input>
+	      <el-input style="width: 120px" v-model.trim="p.sku_properties_name"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="3">
