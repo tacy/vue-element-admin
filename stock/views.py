@@ -1364,13 +1364,11 @@ class OrderDelete(views.APIView):
             elif ('待发货' in orderObj.status or '需介入' in orderObj.status or
                   '已采购' in orderObj.status or
                   '待采购' in orderObj.status):  # 清除占用的库存
-                if orderObj.need_purchase:
-                    stockObj = Stock.objects.get(
-                        inventory=orderObj.inventory,
-                        product__jancode=orderObj.jancode)
-                    stockObj.preallocation = F(
-                        'preallocation') - orderObj.quantity
-                    stockObj.save()
+                stockObj = Stock.objects.get(
+                    inventory=orderObj.inventory,
+                    product__jancode=orderObj.jancode)
+                stockObj.preallocation = F('preallocation') - orderObj.quantity
+                stockObj.save()
                 orderObj.status = '已删除'
                 orderObj.conflict_feedback = data['conflict_feedback']
                 orderObj.save()
