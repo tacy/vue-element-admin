@@ -5,18 +5,11 @@
       </div>
       <el-table :data="postData.data" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
 
-	<el-table-column align="center" label="条码" width="140">
+	<el-table-column align="center" label="条码" width="120">
 	  <template scope="scope">
 	    <span class="link-type" @click="getOrder(scope.row)">{{scope.row.jancode}}</span>
 	  </template>
 	</el-table-column>
-
-	<!--el-table-column min-width="300px" label="标题">
-	  <template scope="scope">
-	    <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.title}}</span>
-	    <el-tag>{{scope.row.type}}</el-tag>
-	  </template>
-	</el-table-column-->
 
 	<el-table-column align="center" label="商品名称">
 	  <template scope="scope">
@@ -24,9 +17,15 @@
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="规格" width="100">
+	<el-table-column align="center" label="规格" width="120">
 	  <template scope="scope">
 	    <span>{{scope.row.sku_properties_name}}</span>
+	  </template>
+	</el-table-column>
+
+	<el-table-column align="center" label="支付时间" width="120" show-overflow-tooltip>
+	  <template scope="scope">
+	    <span>{{scope.row.piad_time}}</span>
 	  </template>
 	</el-table-column>
 
@@ -42,7 +41,7 @@
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="渠道" width="120">
+	<el-table-column align="center" label="渠道" width="150">
 	  <template scope="scope">
 	    <el-select clearable v-model="scope.row.supplier" placeholder="渠道">
 	      <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id">
@@ -63,7 +62,7 @@
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="注文编号" width="150">
+	<el-table-column align="center" label="注文编号" width="180">
 	  <template scope="scope">
 	    <el-input size="small" v-model.trim="scope.row.purchaseorderid" placeholder=""></el-input>
 	  </template>
