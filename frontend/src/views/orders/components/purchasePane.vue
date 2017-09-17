@@ -23,7 +23,7 @@
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="支付时间" width="120" show-overflow-tooltip>
+	<el-table-column align="center" label="支付时间" width="120">
 	  <template scope="scope">
 	    <span>{{scope.row.piad_time}}</span>
 	  </template>
