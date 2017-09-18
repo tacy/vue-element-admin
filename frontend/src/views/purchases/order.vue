@@ -61,7 +61,7 @@
       </el-table-column>
       <el-table-column align="center" label="操作" width="180">
         <template scope="scope">
-          <el-button size="small" :disabled="scope.row.status === '在途' ? false:true" type="success" @click="handleStockIn(scope.row)">入 库
+          <el-button size="small" :disabled="scope.row.status === '入库' ? true:false" type="success" @click="handleStockIn(scope.row)">入 库
 	  </el-button>
           <el-button size="small" :disabled="scope.row.status === '在途' ? false:true" type="danger" @click="handleDelete(scope.row)">删 除
           </el-button>
@@ -117,7 +117,7 @@
     </el-dialog>
 
     <el-dialog title="采购入库" size="large" :visible.sync="dialogPOItemVisible">
-      <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
+      <el-form class="small-space" :model="poitemp" label-position="left" label-width="80px">
 	<el-row v-for="(p, index) in poitemp.pois">
           <el-col :span="4">
 	    <el-form-item label="条码:" label-width="50px">
@@ -141,7 +141,7 @@
 	  </el-col>
           <el-col :span="5">
 	    <el-form-item label="实际到库:" label-width="80px">
-	      <el-input style="width: 100px" v-model="p.qty"></el-input>
+	      <el-input style="width: 120px" :disabled="p.status" v-model.number="p.qty" type="number"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
@@ -171,7 +171,7 @@
 	dialogFormVisible: false,
         inventoryOptions: [],
 	supplierOptions: [],
-	statusOptions: ['在途', '删除', '入库'],
+	statusOptions: ['在途', '部分入库', '删除', '入库'],
         listQuery: {
           page: 1,
           limit: 10,
@@ -212,13 +212,20 @@
 	    const tmp = [];
 	    for (const o of t.purchaseorderitem) {
 	      const poi = o.split(',')
+	      const qty = null
+	      const disabledStatus = false
+	      if ( poi[5]==='已入库' ) {
+	        qty = poi[3]
+		disabledStatus = true
+	      }
 	      tmp.push({
 	        jancode: poi[0],
 		product_title: poi[1],
 		sku_properties_name: poi[2],
 		quantity: poi[3],
 		price: poi[4],
-		qty: poi[3]
+		qty: qty,
+		status: disabledStatus
 	      });
 	    }
 	    this.list[index].pois = tmp;

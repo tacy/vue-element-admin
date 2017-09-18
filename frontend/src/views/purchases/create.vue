@@ -51,7 +51,7 @@
 	  </el-table-column>
 	  <el-table-column align="center" label="采购数量">
 	    <template scope="scope">
-	      <el-input size="small" v-model.trim="scope.row.quantity"></el-input>
+	      <el-input size="small" v-model.number="scope.row.quantity" type="number"></el-input>
 	    </template>
 	  </el-table-column>
 	  <el-table-column align="center" label="价格">
