@@ -77,6 +77,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                 num = int(oi['num'])
                 price = int(oi['price']) / len(js)
                 payment = int(oi['payment']) / len(js)
+                sku_properties_name = oi['sku_properties_name'] if oi[
+                    'sku_properties_name'] else '无'
                 if len(jinfo) == 2:
                     jancode = jinfo[0]
                     jc = jinfo[1] if jinfo[1] else 1  # 可能写成"jancode*", 需要跳过
@@ -90,8 +92,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                       o['receiver_address'], o['receiver_zip'],
                       o['receiver_mobile'], receiver_idcard, o['seller_memo'],
                       o['buyer_remark'], jancode, num, price, payment, dt,
-                      o['paid_time'], oi['product_title'],
-                      oi['sku_properties_name'], '待处理')
+                      o['paid_time'], oi['product_title'], sku_properties_name,
+                      '待处理')
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
@@ -169,6 +171,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
                 payment = oi['fenTanAmount']
                 price = payment / num
                 product_title = oi['name']
+                sku_properties_name = oi['attrSku'] if oi['attrSku'] else '无'
                 if len(jinfo) == 2:
                     num = num * int(jinfo[1])
                     price = price / int(jinfo[1])
@@ -176,14 +179,14 @@ async def syncTGOrder(tgapi, sellerName, pool):
                 it = (sellerName, '京东', orderid, receiver_name,
                       receiver_address, '100101', receiver_mobile,
                       receiver_idcard, jancode, num, price, payment, '第三方',
-                      createTime, product_title, '待处理')
+                      createTime, product_title, sku_properties_name, '待处理')
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
         '(seller_name, channel_name, orderid, receiver_name, receiver_address, '
         'receiver_zip, receiver_mobile, receiver_idcard, jancode, quantity, '
-        'price, payment, delivery_type, piad_time, product_title, status) '
-        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        'price, payment, delivery_type, piad_time, product_title, sku_properties_name, status) '
+        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     )
     insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, start_time, export_time, count) values (%s, %s, %s, %s)'
 
