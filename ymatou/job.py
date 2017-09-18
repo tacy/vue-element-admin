@@ -322,7 +322,7 @@ async def deliveryYmtOrder(ymtapi, pool):
             for i in rs:
                 r = await ymtapi.deliver(i[0], i[1], i[2])
                 if not r:
-                    return
+                    continue
                 if '0000' in r.get('code') and r.get('content'):
                     info = r['content']['results']
                     if info[0]['exec_success']:
@@ -331,12 +331,14 @@ async def deliveryYmtOrder(ymtapi, pool):
                             (i[1], ))
                         await conn.commit()
                     else:
-                        logging.error(info)
+                        logging.error(
+                            'deliveryYmtOrder: %s failed, ErrMsg:%s' %
+                            (i[0], info[0].msg))
 
 
 # automatic process tiangou order delivery
 async def deliveryTgOrder(tgapi, pool):
-    # 订单渠道是洋码头, 并且db单中的ymatou字段为空
+    # 订单渠道是京东, 并且db单中的ymatou字段为空
     result = await tgapi.login()
     if not result:
         return
@@ -360,14 +362,15 @@ async def deliveryTgOrder(tgapi, pool):
                 }
                 r = await tgapi.matchAndShip(payload)
                 if not r:
-                    return
+                    continue
                 if r['success']:
                     await cur.execute(
                         "update stock_shippingdb set ymatou='已发货' where db_number=%s",
-                        (i[1], ))
+                        (i[2], ))
                     await conn.commit()
                 else:
-                    logging.error(r)
+                    logging.error('deliveryTgOrder:%s failed, ErrMsg: %s' %
+                                  (i[0], r['message']))
 
 
 # https://stackoverflow.com/questions/37512182/how-can-i-periodically-execute-a-function-with-asyncio
