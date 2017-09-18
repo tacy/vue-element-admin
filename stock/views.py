@@ -1141,7 +1141,7 @@ class NoOrderPurchase(views.APIView):
                     poitemObj.save()
 
                     # set inflight in stock
-                    stockObj = Stock.objects.get_or_create(
+                    stockObj, _ = Stock.objects.get_or_create(
                         inventory=inventory,
                         product__jancode=i['jancode'],
                         defaults={'preallocation': 0,
