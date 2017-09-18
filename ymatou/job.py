@@ -274,7 +274,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                         'SecondLevelCategoryId': r[12],
                         'CategoryVersion': r[13],
                         'Num': r[10],
-                        'Weight': r[14] if r[14] else 0.3,
+                        'Weight': str(r[14]) if r[14] else '0.3',
                         'UnitPrice': str(r[11]),
                         'Brand': r[15],
                         'Specification': r[16]
