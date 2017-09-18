@@ -1214,6 +1214,7 @@ class PurchaseOrderClear(views.APIView):
     #   1. 标记采购单状态: 已入库.
     #   2. stock入库(减inflight, 增加quantity).
     #   3. 标记订单待发货.
+    # 需要支持部分入库
     def put(self, request, format=None):
         print(request.data)
         id = request.data.get('id')
@@ -1223,32 +1224,42 @@ class PurchaseOrderClear(views.APIView):
 
         with transaction.atomic():
             # mark purchaseorder
-            poObj.status = '入库'
-            poObj.save(update_fields=['status'])
+            # poObj.status = '入库'
+            # poObj.save(update_fields=['status'])
 
             # stock in
             for poi in pois:
+                poiObj = poObj.purchaseorderitem.get(
+                    product__jancode=poi['jancode'])
+                if not poi['qty'] or '已入库' == poiObj.status:
+                    continue
+                poiObj.status = '已入库'
+                poiObj.save()
+
                 inventory = Inventory.objects.get(id=inventory_id)
                 stockObj = Stock.objects.get(
                     product__jancode=poi['jancode'], inventory=inventory)
                 # poi.quantity记录的是采购数量, qty是实际到库数量.
                 # 入库实际到库数量, 扣减inflight数量用采购数量.
                 # TODO: 如果实际到库少于采购数量, 需要处理漏采(漏采需补采购)
-                if poi['quantity'] < poi['qty']:
+                if poiObj.quantity < poi['qty']:
                     stockObj.quantity = F('quantity') + poi['qty']
                 else:
-                    stockObj.quantity = F('quantity') + poi['quantity']
-                stockObj.inflight = F('inflight') - poi['quantity']
+                    stockObj.quantity = F('quantity') + poiObj.quantity
+                stockObj.inflight = F('inflight') - poiObj.quantity
                 stockObj.save()
 
-            # mark order
-            # orderObjs = poObj.order.all()  # 关联订单
-            # for o in orderObjs:
-            #     if '已采购' in o.status:
-            #         o.status = '待发货'
-            #         o.save()
-            poObj.order.filter(status='已采购').update(status='待发货')
+                poObj.order.filter(
+                    jancode=poi['jancode'], status='已采购').update(status='待发货')
 
+            if poObj.purchaseorderitem.filter(
+                    status='已入库').count() < len(pois):
+                poObj.status = '部分入库'
+            else:
+                poObj.status = '入库'
+            poObj.save(update_fields=[
+                'status',
+            ])
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)

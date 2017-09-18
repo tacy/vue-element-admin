@@ -110,7 +110,7 @@ class PurchaseOrder(models.Model):
     supplier = models.ForeignKey(Supplier, related_name='purchaseorder')
     inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
     delivery_id = models.CharField(max_length=255, blank=True)
-    status = models.CharField(max_length=255, default='create')
+    status = models.CharField(max_length=255, default='create')  # 在途/入库/部分入库
     create_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -126,13 +126,14 @@ class PurchaseOrderItem(models.Model):
         PurchaseOrder, related_name='purchaseorderitem')
     product = models.ForeignKey(Product, related_name='purchaseorderitem')
     quantity = models.IntegerField(null=False)
+    status = models.CharField(max_length=8, null=True)  # 已入库
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
 
     def __str__(self):
         """Return a human readable representation of the model instance."""
-        return "{},{},{},{},{}".format(self.product.jancode, self.product.name,
-                                       self.product.specification,
-                                       self.quantity, self.price)
+        return "{},{},{},{},{},{}".format(
+            self.product.jancode, self.product.name,
+            self.product.specification, self.quantity, self.price, self.status)
 
 
 class Order(models.Model):

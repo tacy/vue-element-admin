@@ -23,13 +23,13 @@
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="支付时间" width="120">
+	<el-table-column align="center" label="支付时间" width="100">
 	  <template scope="scope">
 	    <span>{{scope.row.piad_time}}</span>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="售价" width="80">
+	<el-table-column align="center" label="售价" width="65">
 	  <template scope="scope">
 	    <span>{{scope.row.product_price}}</span>
 	  </template>
@@ -52,19 +52,19 @@
 
 	<el-table-column align="center" label="实采" width="100">
 	  <template scope="scope">
-	    <el-input size="small" v-model.number="scope.row.quantity"></el-input>
+	    <el-input size="small" v-model.number="scope.row.quantity" type="number"></el-input>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="价格" width="100">
+	<el-table-column align="center" label="价格" width="120">
 	  <template scope="scope">
-	    <el-input size="small" v-model.number="scope.row.price" placeholder=""></el-input>
+	    <el-input size="small" v-model.number="scope.row.price" type="number"></el-input>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="注文编号" width="180">
+	<el-table-column align="center" label="注文编号" width="190">
 	  <template scope="scope">
-	    <el-input size="small" v-model.trim="scope.row.purchaseorderid" placeholder=""></el-input>
+	    <el-input size="small" v-model.trim="scope.row.purchaseorderid"></el-input>
 	  </template>
 	</el-table-column>
 
