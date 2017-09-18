@@ -333,7 +333,7 @@ async def deliveryYmtOrder(ymtapi, pool):
                     else:
                         logging.error(
                             'deliveryYmtOrder: %s failed, ErrMsg:%s' %
-                            (i[0], info[0].msg))
+                            (i[0], info[0]['msg']))
 
 
 # automatic process tiangou order delivery
