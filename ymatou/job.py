@@ -77,6 +77,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                 num = int(oi['num'])
                 price = int(oi['price']) / len(js)
                 payment = int(oi['payment']) / len(js)
+                sku_properties_name = oi['sku_properties_name'] if oi[
+                    'sku_properties_name'] else '无'
                 if len(jinfo) == 2:
                     jancode = jinfo[0]
                     jc = jinfo[1] if jinfo[1] else 1  # 可能写成"jancode*", 需要跳过
@@ -90,8 +92,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                       o['receiver_address'], o['receiver_zip'],
                       o['receiver_mobile'], receiver_idcard, o['seller_memo'],
                       o['buyer_remark'], jancode, num, price, payment, dt,
-                      o['paid_time'], oi['product_title'],
-                      oi['sku_properties_name'], '待处理')
+                      o['paid_time'], oi['product_title'], sku_properties_name,
+                      '待处理')
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
