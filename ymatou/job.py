@@ -169,6 +169,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
                 payment = oi['fenTanAmount']
                 price = payment / num
                 product_title = oi['name']
+                sku_properties_name = oi['attrSku'] if oi['attrSku'] else '无'
                 if len(jinfo) == 2:
                     num = num * int(jinfo[1])
                     price = price / int(jinfo[1])
@@ -176,14 +177,14 @@ async def syncTGOrder(tgapi, sellerName, pool):
                 it = (sellerName, '京东', orderid, receiver_name,
                       receiver_address, '100101', receiver_mobile,
                       receiver_idcard, jancode, num, price, payment, '第三方',
-                      createTime, product_title, '待处理')
+                      createTime, product_title, sku_properties_name, '待处理')
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
         '(seller_name, channel_name, orderid, receiver_name, receiver_address, '
         'receiver_zip, receiver_mobile, receiver_idcard, jancode, quantity, '
-        'price, payment, delivery_type, piad_time, product_title, status) '
-        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        'price, payment, delivery_type, piad_time, product_title, sku_properties_name, status) '
+        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     )
     insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, start_time, export_time, count) values (%s, %s, %s, %s)'
 
