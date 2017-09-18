@@ -11,7 +11,7 @@ import aiohttp
 import django_filters.rest_framework
 from PyPDF2 import PdfFileMerger
 from django.db import IntegrityError, connection, transaction
-from django.db.models import F
+from django.db.models import F, Max
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 from rest_framework import generics, status, views
@@ -845,10 +845,14 @@ class OrderTPRCreate(views.APIView):
 # 订单预处理
 class OrderAllocate(views.APIView):
     # 派单涉及到两个表: order和stock
-    # 派单需要的操作: 1. 占用库存(preallocation); 2. 标记订单需要采购的数量(need_purchase); 3. 修改订单状态(status:待发货/待采购)
+    # 派单需要的操作: 1. 占用库存(preallocation); 2. 标记订单需要采购的数量(need_purchase);
+    # 3. 修改订单状态(status:待发货/待采购)
     #
     # 派单流程: 派单分为派单和重派, 如果订单的inventory字段为空, 定位为派单;
     # 如果该字段非空, 定义为重派.
+    #
+    # 计算商品库存是否能满足订单发需求的时候, 需要特别注意, 如果在库实际不足, 但是在库+在途能满足,
+    # 需要标记订单状态为已采购, 同时关联最晚采购该商品的采购订单
     #
     # 需要根据传入订单号, 查询数据库表中对应订单, 判断order_inventory字段内容:
     # if paramorder.status == '已删除'; then delete order opetion, use in conflict
@@ -939,7 +943,19 @@ class OrderAllocate(views.APIView):
                         orderInfo['need_purchase'] = orderInfo['quantity']
                     orderInfo['status'] = '待采购'
                 else:
-                    orderInfo['status'] = '待发货'
+                    # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
+                    # 在途的采购单绑定, 同时标记状态为已采购
+                    if stockObj.preallocation > stockObj.quantity:
+                        orderInfo['status'] = '已采购'
+                        # 找到最新的采购单
+                        id = PurchaseOrder.objects.filter(
+                            purchaseorderitem__product__jancode=orderInfo[
+                                'jancode'],
+                            status='在途').aggregate(Max('id'))
+                        orderInfo['purchaseorder'] = PurchaseOrder.objects.get(
+                            id=id['id__max'])
+                    else:
+                        orderInfo['status'] = '待发货'
 
             # 更新订单和仓库信息
             # relate_inventory = Inventory.objects.get(id=orderInfo['inventory'])
@@ -1095,45 +1111,59 @@ class NoOrderPurchase(views.APIView):
         print(request.data)
         data = request.data
         inventory = data['inventory']
+        results = {}
+        try:
+            with transaction.atomic():
+                createtime = arrow.now()
+                # create purchaseorder
+                supplierObj = Supplier.objects.get(id=data['supplier'])
+                inventoryObj = Inventory.objects.get(id=inventory)
+                poObj = PurchaseOrder(
+                    orderid=data['orderid'],
+                    supplier=supplierObj,
+                    inventory=inventoryObj,
+                    create_time=createtime,
+                    status='在途', )
+                poObj.save()
 
-        with transaction.atomic():
-            createtime = arrow.now()
-            # create purchaseorder
-            supplierObj = Supplier.objects.get(id=data['supplier'])
-            inventoryObj = Inventory.objects.get(id=inventory)
-            poObj = PurchaseOrder(
-                orderid=data['orderid'],
-                supplier=supplierObj,
-                inventory=inventoryObj,
-                create_time=createtime,
-                status='在途', )
-            poObj.save()
+                for i in data['items']:
+                    # add purchase item
+                    try:
+                        productObj = Product.objects.get(jancode=i['jancode'])
+                    except Product.DoesNotExist:
+                        results = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
+                        raise IntegrityError
+                    poitemObj = PurchaseOrderItem(
+                        product=productObj,
+                        quantity=i['quantity'],
+                        purchaseorder=poObj,
+                        price=i['price'])
+                    poitemObj.save()
 
-            for i in data['items']:
-                # add purchase item
-                poitemObj = PurchaseOrderItem(
-                    product=Product.objects.get(jancode=i['jancode']),
-                    quantity=i['quantity'],
-                    purchaseorder=poObj,
-                    price=i['price'])
-                poitemObj.save()
+                    # set inflight in stock
+                    stockObj = Stock.objects.get_or_create(
+                        inventory=inventory,
+                        product__jancode=i['jancode'],
+                        defaults={'preallocation': 0,
+                                  'inflight': 0})
+                    stockObj.inflight = F('inflight') + int(i['quantity'])
+                    stockObj.save()
 
-                # set inflight in stock
-                stockObj = Stock.objects.get(
-                    inventory=inventory, product__jancode=i['jancode'])
-                stockObj.inflight = F('inflight') + int(i['quantity'])
-                stockObj.save()
-
-                orders = Order.objects.filter(
-                    inventory=inventory, jancode=i['jancode'], status='待采购')
-                for o in orders:
-                    o.purchaseorder = poObj
-                    o.status = '已采购'
-                    o.save(update_fields=['status', 'purchaseorder'])
-
-            return Response(status=status.HTTP_201_CREATED)
-
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+                    orders = Order.objects.filter(
+                        inventory=inventory,
+                        jancode=i['jancode'],
+                        status='待采购').order_by('id')
+                    c = int(i['quantity'])
+                    for o in orders:
+                        if orders.need_purchase > c:
+                            break
+                        o.purchaseorder = poObj
+                        o.status = '已采购'
+                        o.save(update_fields=['status', 'purchaseorder'])
+                        c = c - orders.need_purchase
+                return Response(status=status.HTTP_201_CREATED)
+        except IntegrityError:
+            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 删除采购单
