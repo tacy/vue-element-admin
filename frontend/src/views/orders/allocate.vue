@@ -104,9 +104,15 @@
     </div>
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
+      <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 650px; margin-left:50px;'>
         <el-form-item label="条码">
           <el-input v-model.trim="temp.jancode"></el-input>
+        </el-form-item>
+        <el-form-item label="商品名称">
+          <el-input v-model.trim="temp.product_title"></el-input>
+        </el-form-item>
+        <el-form-item label="商品规格">
+          <el-input v-model.trim="temp.sku_properties_name"></el-input>
         </el-form-item>
         <el-form-item label="收件人">
           <el-input v-model.trim="temp.receiver_name"></el-input>

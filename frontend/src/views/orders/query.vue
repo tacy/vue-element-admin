@@ -6,10 +6,16 @@
 
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品名称" v-model="listQuery.product_title">
-      </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="条码" v-model="listQuery.jancode">
       </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品名称" v-model="listQuery.product_title">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品规格" v-model="listQuery.sku_properties_name">
+      </el-input>
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="订单状态">
+        <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
+        </el-option>
+      </el-select>
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.delivery_type" placeholder="运输方式">
         <el-option v-for="item in deliveryTypeOptions" :key="item" :label="item" :value="item">
         </el-option>
@@ -314,10 +320,10 @@
 	dialogCreateVisible: false,
 	dialogMarkVisible: false,
         inventoryOptions: [],
+	statusOptions: ['待处理','待采购','待发货','已采购','需介入','已发货','已删除'],
 	channelOptions: ['洋码头', '京东'],
 	sellerOptions: ['东京彩虹桥', '妈妈宝宝日本馆', '天狗'],
 	deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
-	statusOptions: ['在途', '删除', '入库'],
         listQuery: {
           page: 1,
           limit: 10,
@@ -326,7 +332,9 @@
 	  receiver_name: undefined,
 	  jancode: undefined,
 	  orderid: undefined,
+	  status: undefined,
 	  product_title: undefined,
+	  sku_properties_name: undefined,
 	  delivery_type: undefined,
         },
 	orderData: {

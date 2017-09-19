@@ -15,7 +15,7 @@
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.supplier" placeholder="采购渠道">
+      <el-select clearable filterable style="width: 120px" class="filter-item" v-model="listQuery.supplier" placeholder="采购渠道">
         <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
       </el-select>
@@ -241,7 +241,8 @@
         })
       },
       getSupplier() {
-        fetchSupplier().then(response => {
+        const query = { limit: 50 }
+        fetchSupplier(query).then(response => {
           this.supplierOptions = response.data.results;
         })
       },
