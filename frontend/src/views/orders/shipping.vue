@@ -19,6 +19,8 @@
       <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '5'">
       </el-input>
 
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item"  placeholder="商品规格" v-model="listQuery.sku_properties_name">
+      </el-input>
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
         <el-option v-for="item in shippingOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
@@ -64,6 +66,9 @@
 	    </el-form-item>
 	    <el-form-item label="产品名">
 	      <span>{{ p.product_title }}</span>
+	    </el-form-item>
+	    <el-form-item label="规格">
+	      <span>{{ p.sku_properties_name }}</span>
 	    </el-form-item>
 	  </el-form>
 	</template>
@@ -275,7 +280,7 @@
 	}],
         listQuery: {
           page: 1,
-          limit: 10,
+          limit: 50,
 	  labelVal: '1',
 	  status: "待处理",
           inventory: undefined,
@@ -285,6 +290,7 @@
 	  db_number: undefined,
 	  delivery_no: undefined,
 	  product_title: undefined,
+	  sku_properties_name: undefined,
 	  jancode: undefined,
         },
 	queryOrderItems: {
@@ -323,13 +329,14 @@
 	    this.list[index].stockStatus = '在库';
 	    const tmp = [];
 	    for (const o of t.order) {
-	      const ordinfo = o.split(',');
+	      const ordinfo = o.split('@');
 	      tmp.push({
 		'id': ordinfo[0],
 		'orderid': ordinfo[1],
 		'status': ordinfo[2],
 		'purchaseorder': ordinfo[3],
-		'product_title': ordinfo[4]
+		'product_title': ordinfo[4],
+		'sku_properties_name': ordinfo[5]
 	      });
 	      if ( ordinfo[2] !== '待发货' ) {
 	        this.list[index].stockStatus = '在途';

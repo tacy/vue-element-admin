@@ -43,7 +43,7 @@
 
 	<el-table-column align="center" label="渠道" width="150">
 	  <template scope="scope">
-	    <el-select clearable v-model="scope.row.supplier" placeholder="渠道">
+	    <el-select clearable filterable v-model="scope.row.supplier" placeholder="渠道">
 	      <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id">
 	      </el-option>
 	    </el-select>
@@ -165,7 +165,8 @@
         })
       },
       getSupplier() {
-        fetchSupplier().then(response => {
+        const query = {limit: 50}
+        fetchSupplier(query).then(response => {
           this.supplierOptions = response.data.results;
         })
       },

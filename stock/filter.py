@@ -26,6 +26,7 @@ class OrderFilter(FilterSet):
             'shipping',
             'shippingdb',
             'unshippingdb',
+            'sku_properties_name',
             'delivery_type',
         ]
 
@@ -56,6 +57,8 @@ class ShippingDBFilter(FilterSet):
     jancode = CharFilter(name='order__jancode')
     product_title = CharFilter(
         name='order__product_title', lookup_expr='icontains')
+    sku_properties_name = CharFilter(
+        name='order__sku_properties_name', lookup_expr='icontains')
     receiver_name = CharFilter(name='order__receiver_name')
 
     class Meta:

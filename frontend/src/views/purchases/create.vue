@@ -25,7 +25,7 @@
 	    </el-col>
 	    <el-col :span="6">
 	      <el-form-item label-width="60px" label="供应商" class="postInfo-container-item">
-		<el-select clearable style="width: 120px" class="filter-item" v-model="postForm.supplier" v-on:change="getSupplier()" placeholder="供应商">
+		<el-select clearable style="width: 180px" filterable class="filter-item" v-model="postForm.supplier" v-on:change="getSupplier()" placeholder="供应商">
 		  <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id">
 		  </el-option>
 		</el-select>
@@ -122,7 +122,8 @@
           this.fetchSuccess = false;
           console.log(err);
         });
-        fetchSupplier().then(response => {
+	const query = {limit:50};
+        fetchSupplier(query).then(response => {
           this.supplierOptions = response.data.results;
         }).catch(err => {
           this.fetchSuccess = false;
