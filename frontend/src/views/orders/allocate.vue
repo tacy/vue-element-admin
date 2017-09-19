@@ -98,7 +98,7 @@
     </div>
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 650px; margin-left:50px;'>
+      <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
         <el-form-item label="条码">
           <el-input v-model.trim="temp.jancode"></el-input>
         </el-form-item>
