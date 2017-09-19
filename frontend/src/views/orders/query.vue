@@ -6,7 +6,8 @@
 
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
       </el-input>
-
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品名称" v-model="listQuery.product_title">
+      </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="条码" v-model="listQuery.jancode">
       </el-input>
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.delivery_type" placeholder="运输方式">
@@ -325,6 +326,7 @@
 	  receiver_name: undefined,
 	  jancode: undefined,
 	  orderid: undefined,
+	  product_title: undefined,
 	  delivery_type: undefined,
         },
 	orderData: {
