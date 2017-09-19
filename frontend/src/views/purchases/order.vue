@@ -211,7 +211,7 @@
  	    const index = this.list.indexOf(t);
 	    const tmp = [];
 	    for (const o of t.purchaseorderitem) {
-	      const poi = o.split(',')
+	      const poi = o.split('@')
 	      const qty = null
 	      const disabledStatus = false
 	      if ( poi[5]==='已入库' ) {

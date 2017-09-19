@@ -131,7 +131,7 @@ class PurchaseOrderItem(models.Model):
 
     def __str__(self):
         """Return a human readable representation of the model instance."""
-        return "{},{},{},{},{},{}".format(
+        return "{}@{}@{}@{}@{}@{}".format(
             self.product.jancode, self.product.name,
             self.product.specification, self.quantity, self.price, self.status)
 
