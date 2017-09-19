@@ -1108,7 +1108,6 @@ class NoOrderPurchase(views.APIView):
     # },
     #
     def put(self, request, format=None):
-        print(request.data)
         data = request.data
         inventory = data['inventory']
         results = {}
@@ -1125,7 +1124,6 @@ class NoOrderPurchase(views.APIView):
                     create_time=createtime,
                     status='在途', )
                 poObj.save()
-
                 for i in data['items']:
                     # add purchase item
                     try:
@@ -1140,12 +1138,17 @@ class NoOrderPurchase(views.APIView):
                         price=i['price'])
                     poitemObj.save()
 
-                    # set inflight in stock
-                    stockObj, _ = Stock.objects.get_or_create(
-                        inventory__id=inventory,
-                        product__jancode=i['jancode'],
-                        defaults={'preallocation': 0,
-                                  'inflight': 0})
+                    try:
+                        stockObj = Stock.objects.get(
+                            inventory=inventoryObj,
+                            product__jancode=i['jancode'])
+                    except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
+                        stockObj = Stock(
+                            product=productObj,
+                            inventory=inventoryObj,
+                            quantity=0,
+                            inflight=0,
+                            preallocation=0)
                     stockObj.inflight = F('inflight') + int(i['quantity'])
                     stockObj.save()
 
