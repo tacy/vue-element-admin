@@ -192,6 +192,7 @@
 	  pois: [],
 	},
 	listItem: {
+	  limit:50,
 	  purchaseorder: undefined
 	},
         itemData: [],
