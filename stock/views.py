@@ -1158,12 +1158,12 @@ class NoOrderPurchase(views.APIView):
                         status='待采购').order_by('id')
                     c = int(i['quantity'])
                     for o in orders:
-                        if orders.need_purchase > c:
+                        if o.need_purchase > c:
                             break
                         o.purchaseorder = poObj
                         o.status = '已采购'
                         o.save(update_fields=['status', 'purchaseorder'])
-                        c = c - orders.need_purchase
+                        c = c - o.need_purchase
                 return Response(status=status.HTTP_201_CREATED)
         except IntegrityError:
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
