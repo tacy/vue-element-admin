@@ -1142,7 +1142,7 @@ class NoOrderPurchase(views.APIView):
 
                     # set inflight in stock
                     stockObj, _ = Stock.objects.get_or_create(
-                        inventory=inventory,
+                        inventory__id=inventory,
                         product__jancode=i['jancode'],
                         defaults={'preallocation': 0,
                                   'inflight': 0})
@@ -1150,7 +1150,7 @@ class NoOrderPurchase(views.APIView):
                     stockObj.save()
 
                     orders = Order.objects.filter(
-                        inventory=inventory,
+                        inventory__id=inventory,
                         jancode=i['jancode'],
                         status='待采购').order_by('id')
                     c = int(i['quantity'])
