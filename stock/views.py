@@ -971,6 +971,7 @@ class OrderAllocate(views.APIView):
             orderInfo.pop('shipping_name')
             orderInfo.pop('db_number')
             orderInfo.pop('purchaseorder_orderid')
+            logger.info('派单调试:', orderInfo)
             o = Order(**orderInfo)
             o.save()
 
