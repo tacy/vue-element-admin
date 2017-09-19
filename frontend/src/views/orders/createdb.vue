@@ -426,7 +426,7 @@
       createShippingDB() {
         this.xloboData.orders = this.selectRow;
         let shipping_type = this.selectRow[0].shipping_name;
-        if ( shipping_type==='直邮电商' ) {
+        if ( shipping_type==='直邮电商' | shipping_type==='贝海直邮电商' ) {
           createNoVerification(this.xloboData).then(response => {
             this.dialogFormVisible = false
             this.getOrder();

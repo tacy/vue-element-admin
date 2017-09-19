@@ -310,7 +310,7 @@ class XloboDeleteDBNumber(views.APIView):
         # construct api msg
         data = request.data
         db_number = data['db_number']
-        if data['shipping_name'] in ['虚仓电商', '直邮电商']:
+        if data['shipping_name'] in ['虚仓电商', '直邮电商', '贝海直邮电商']:
             msg = {'BillCode': db_number}
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
