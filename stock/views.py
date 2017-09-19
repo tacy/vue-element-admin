@@ -1149,7 +1149,7 @@ class NoOrderPurchase(views.APIView):
                             quantity=0,
                             inflight=0,
                             preallocation=0)
-                    stockObj.inflight = F('inflight') + int(i['quantity'])
+                    stockObj.inflight = stockObj.inflight + int(i['quantity'])
                     stockObj.save()
 
                     orders = Order.objects.filter(
