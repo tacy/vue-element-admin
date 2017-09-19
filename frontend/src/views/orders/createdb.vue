@@ -1,14 +1,24 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
+      <el-select v-model="listQuery.labelVal" style="width: 120px;" class="filter-item" placeholder="请选择">
+	<el-option
+	    v-for="item in selectedOptions"
+	    :label="item.label"
+	    :value="item.value">
+	</el-option>
+      </el-select>
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="输入订单号" v-model="listQuery.orderid" v-show="listQuery.labelVal == '1'">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="输入商品名" v-model="listQuery.product_title" v-show="listQuery.labelVal == '2'">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item"  placeholder="输入商品条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '3'">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '4'">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item"  placeholder="输入注文编号" v-model="listQuery.purchaseorder__orderid" v-show="listQuery.labelVal == '5'">
       </el-input>
 
-      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
-      </el-input>
-
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="注文编号" v-model="listQuery.purchaseorder__orderid">
-      </el-input>
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
         <el-option v-for="item in shippingOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
@@ -217,6 +227,22 @@
 	  {key:'跨境空运杂货线路', value:24},
 	  {key:'空运关税补贴线', value:26}
 	],
+        selectedOptions: [{
+          value: '1',
+	  label: '订单号'
+	}, {
+	  value: '2',
+	  label: '商品名称'
+	}, {
+	  value: '3',
+	  label: '商品条码'
+	}, {
+	  value: '4',
+	  label: '收件人'
+	}, {
+	  value: '5',
+	  label: '注文编号'
+	}],
 	selectRow: [],
 	isUEX: false,
 	logisticOptions: [],
@@ -244,12 +270,14 @@
         listQuery: {
           page: 1,
           limit: 10,
+	  labelVal: '1',
 	  status: "待发货,待采购,已采购,需介入",
           inventory: undefined,
 	  purchaseorder__orderid: undefined,
 	  channel_name: undefined,
 	  receiver_name: undefined,
 	  orderid: undefined,
+	  shipping: undefined,
 	  unshippingdb:2
         },
 	xloboData: {
