@@ -653,17 +653,17 @@ class ManualAllocateDBNumber(views.APIView):
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
-                status = '待处理'
+                dbStatus = '待处理'
                 orderStatus = None
                 if '贝海' in inventoryObj.name and 'EMS' in shippingObj.name:  # 贝海EMS无需我们打包
-                    status = '已出库'
+                    dbStatus = '已出库'
                     orderStatus = '已发货'  # TODO: 采购可能没有到库
                 if '拼邮' in shippingObj.name:  # 拼邮不进入待发货列表, 但是需打包发货
-                    status = '已出库'
+                    dbStatus = '已出库'
                 shippingdbObj = ShippingDB(
                     db_number=db_number,
                     # status='已出库' if '拼邮' in delivery_type else '待处理',   # 如果是拼邮订单, 只是需要一个面单回填, 无需做国外发货处理
-                    status=status,
+                    status=dbStatus,
                     channel_name=channel_name,
                     shipping=shippingObj,
                     inventory=inventoryObj)
