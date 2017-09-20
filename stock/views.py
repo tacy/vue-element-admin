@@ -320,7 +320,6 @@ class XloboDeleteDBNumber(views.APIView):
             result = loop.run_until_complete(xloboapi.deleteDBNumber(msg))
             loop.close()
             logger.debug('XloboDeleteDBNumber', result)
-            print(result)
             if result['ErrorCount'] > 0:
                 errmsg = {
                     'errmsg': result['ErrorInfoList'][0]['ErrorDescription']
@@ -344,7 +343,6 @@ class XloboGetPDF(views.APIView):
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         # construct api msg
-        print(self.request.GET)
         # drf can't get query list
         # data = {'BillCodes': request.query_params.get('BillCodes[]')}
         data = {'BillCodes': self.request.GET.getlist("BillCodes[]")}
@@ -525,7 +523,6 @@ class ExportDomesticOrder(views.APIView):
 class SyncStock(views.APIView):
     def post(self, request, format=None):
         data = request.data
-        print(data)
         impInventory = data['inventory_name']
         gsp = 'virtualstock-products' if '贝海' in impInventory else u'国内库存出入库流水.xls'
         wks = 'stock' if '贝海' in impInventory else u'库存表'
@@ -656,10 +653,17 @@ class ManualAllocateDBNumber(views.APIView):
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
+                status = '待处理'
+                orderStatus = None
+                if '贝海' in inventoryObj.name and 'EMS' in shippingObj.name:  # 贝海EMS无需我们打包
+                    status = '已出库'
+                    orderStatus = '已发货'  # TODO: 采购可能没有到库
+                if '拼邮' in shippingObj.name:  # 拼邮不进入待发货列表, 但是需打包发货
+                    status = '已出库'
                 shippingdbObj = ShippingDB(
                     db_number=db_number,
                     # status='已出库' if '拼邮' in delivery_type else '待处理',   # 如果是拼邮订单, 只是需要一个面单回填, 无需做国外发货处理
-                    status='待处理',
+                    status=status,
                     channel_name=channel_name,
                     shipping=shippingObj,
                     inventory=inventoryObj)
@@ -667,7 +671,17 @@ class ManualAllocateDBNumber(views.APIView):
             for o in ords:
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
-                orderObj.save(update_fields=['shippingdb'])
+                if orderStatus:
+                    orderObj.status = orderStatus
+                    stockObj = Stock.objects.get(
+                        product__jancode=orderObj.jancode,
+                        inventory=orderObj.inventory)
+                    stockObj.quantity = F(
+                        'quantity') - orderObj.quantity  # 扣减库存
+                    stockObj.preallocation = F(
+                        'preallocation') - orderObj.quantity
+                    stockObj.save()
+                orderObj.save(update_fields=['shippingdb', 'status'])
 
         return Response(status=status.HTTP_200_OK)
 
@@ -751,14 +765,12 @@ class OrderItemGet(views.APIView):
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
         db_number = request.query_params.get('shippingdb_id')
-        print(request.query_params)
         with connection.cursor() as c:
             c.execute(sql, (db_number, ))
             results = dictfetchall(c)
             data = {
                 'results': results,
             }
-            # print(data)
             return Response(data=data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -803,7 +815,6 @@ class CategoryGet(views.APIView):
             data = {
                 'results': sortData,
             }
-            # print(data)
             return Response(data=data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -998,12 +1009,10 @@ class OrderPurchaseList(views.APIView):
         with connection.cursor() as c:
             c.execute(sql, [inventory])
             results = dictfetchall(c)
-            print(inventory, results, request.query_params)
             data = {
                 'data': results,
                 'queryTime': arrow.now().format('YYYY-MM-DD HH:mm:ss')
             }
-            print(data)
             return Response(data=data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1019,7 +1028,6 @@ class OrderPurchase(views.APIView):
     #   4. 修改关联库存记录, 增加在途库存.
     #
     def put(self, request, format=None):
-        print(request.data)
         data = request.data.get('data')
         queryTime = request.data.get('queryTime')
         inventory = request.data.get('inventory')
@@ -1181,7 +1189,6 @@ class PurchaseOrderDelete(views.APIView):
     #
     #   request param: id
     def put(self, request, format=None):
-        print(request.data)
         id = request.data.get('id')
         poObj = PurchaseOrder.objects.get(id=id)  # 采购单
         poitemObjs = poObj.purchaseorderitem.all()  # 关联采购商品
@@ -1220,7 +1227,6 @@ class PurchaseOrderClear(views.APIView):
     #   3. 标记订单待发货.
     # 需要支持部分入库
     def put(self, request, format=None):
-        print(request.data)
         id = request.data.get('id')
         inventory_id = request.data.get('inventory')
         pois = request.data.get('pois')
@@ -1278,7 +1284,6 @@ class OrderMarkConflict(views.APIView):
     #   2. 标记订单状态conflict字段
     #
     def put(self, request, format=None):
-        print(request.data)
         data = request.data
 
         with transaction.atomic():
@@ -1306,7 +1311,6 @@ class OrderMarkConflict(views.APIView):
 # 注意: 换货意味着重新派单, 需要设置派单时间
 class OrderConflict(views.APIView):
     def put(self, request, format=None):
-        print(request.data)
         data = request.data
 
         with transaction.atomic():
@@ -1396,7 +1400,6 @@ class OrderConflict(views.APIView):
 #
 class OrderDelete(views.APIView):
     def put(self, request, format=None):
-        print(request.data)
         data = request.data
 
         orderObj = Order.objects.get(id=data['id'])
@@ -1432,7 +1435,6 @@ class OrderDelete(views.APIView):
 # 更新条码需要同步更新库存表和订单表
 class ProductUpdateJancode(views.APIView):
     def post(self, request, format=None):
-        print(request.data)
         data = request.data
 
         with transaction.atomic():
