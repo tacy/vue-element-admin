@@ -107,10 +107,10 @@ export const asyncRouterMap = [
       { path: 'query', component: ordersQuery, name: '查订单' },
       { path: 'allocate', component: ordersAllocate, name: '预处理', meta: { role: ['admin'] } },
       { path: 'purchase', component: ordersPurchase, name: '待采购', meta: { role: ['admin'] } },
-      { path: 'conflict', component: ordersConflict, name: '需介入' },
+      { path: 'conflict', component: ordersConflict, name: '需介入', meta: { role: ['admin', 'normal'] } },
       { path: 'createdb', component: ordersCreateDB, name: '出面单', meta: { role: ['admin'] } },
-      { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin'] } },
-      { path: 'needexport', component: ordersNeedExport, name: '拼邮&保税' }
+      { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin', 'tokyo'] } },
+      { path: 'needexport', component: ordersNeedExport, name: '拼邮&保税', meta: { role: ['admin', 'normal'] } }
     ]
   },
   {
@@ -120,8 +120,8 @@ export const asyncRouterMap = [
     name: '采购',
     icon: 'zujian',
     children: [
-      { path: 'order', component: purchasesorder, name: '采购单', meta: { role: ['admin'] } },
-      { path: 'create', component: purchasescreate, name: '新采购', meta: { role: ['admin'] } }
+      { path: 'order', component: purchasesorder, name: '采购单', meta: { role: ['admin', 'tokyo'] } },
+      { path: 'create', component: purchasescreate, name: '新采购', meta: { role: ['admin', 'tokyo'] } }
     ]
   },
   {
