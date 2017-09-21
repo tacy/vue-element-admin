@@ -651,6 +651,8 @@ class ManualAllocateDBNumber(views.APIView):
             shippingdbObj = None
             try:
                 shippingdbObj = ShippingDB.objects.get(db_number=db_number)
+                if shippingdbObj.status == '已出库':
+                    orderStatus = '已发货'
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
