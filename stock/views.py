@@ -647,14 +647,16 @@ class ManualAllocateDBNumber(views.APIView):
         channel_name = ords[0]['channel_name']
         # delivery_type = ords[0]['delivery_type']
         with transaction.atomic():
+            orderStatus = None
             shippingdbObj = None
             try:
                 shippingdbObj = ShippingDB.objects.get(db_number=db_number)
+                if shippingdbObj.status == '已出库':
+                    orderStatus = '已发货'
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
                 dbStatus = '待处理'
-                orderStatus = None
                 if '贝海' in inventoryObj.name and 'EMS' in shippingObj.name:  # 贝海EMS无需我们打包
                     dbStatus = '已出库'
                     orderStatus = '已发货'  # TODO: 采购可能没有到库
