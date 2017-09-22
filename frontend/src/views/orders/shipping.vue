@@ -398,6 +398,7 @@
 	    type: 'success',
 	    duration: 2000
 	  });
+          this.getShippingDB();
 	});
       },
       handleDelete(row) {
