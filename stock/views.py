@@ -369,8 +369,7 @@ class XloboGetPDF(views.APIView):
             ordsData = None
 
             with connection.cursor() as c:
-                shippingdbObj = ShippingDB.objects.get(
-                    db_number=b['BillCode']).id
+                shippingdbObj = ShippingDB.objects.get(db_number=b['BillCode'])
                 c.execute(sql, (shippingdbObj.id, shippingdbObj.inventory__id))
                 # c.execute(sql, (8, ))
                 ordsData = c.cursor.fetchall()
