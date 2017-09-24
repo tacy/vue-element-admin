@@ -156,15 +156,18 @@ async def syncTGOrder(tgapi, sellerName, pool):
         orderItems = await tgapi.orderItem(o['id'])
         if not orderItems:
             return
-        for oi in orderItems['data']:
+        for i, oi in enumerate(orderItems['data']):
             # 柴单:
             #    1. jancode (jancode*1+jancode*1)
             #    2. payment根据jancode数量平分
             #    3. price根据num平分
             #    4. quantity = num*数量
-
+            if i:
+                orderid = orderid + '-' + str(i)
             js = oi['barcode'].split('+')
-            for j in js:
+            for k, j in enumerate(js):
+                if k:
+                    orderid = orderid + '-' + str(k)
                 jinfo = j.split('*')
                 jancode = jinfo[0][2:]  # remove JH
                 num = oi['quantity']
