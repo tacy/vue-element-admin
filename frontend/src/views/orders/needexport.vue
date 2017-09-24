@@ -12,6 +12,11 @@
         </el-option>
       </el-select>
 
+      <el-select style="width: 120px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
+        <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
+        </el-option>
+      </el-select>
+
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="状态">
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
