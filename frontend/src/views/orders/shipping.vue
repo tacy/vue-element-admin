@@ -109,12 +109,6 @@
 	  <!--el-tag :type="scope.row.status">{{scope.row.status}}</el-tag-->
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="渠道发货">
-	<template scope="scope">
-	  <span>{{scope.row.ymatou}}</span>
-	  <!--el-tag :type="scope.row.status">{{scope.row.status}}</el-tag-->
-	</template>
-      </el-table-column>
       <el-table-column align="center" label="运单号">
 	<template scope="scope">
 	  <span>{{scope.row.delivery_no}}</span>

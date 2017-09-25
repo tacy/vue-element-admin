@@ -89,6 +89,9 @@
 	    <el-form-item label="反馈:" label-width="50px">
 	      <span>{{ scope.row.conflict_feedback }}</span>
 	    </el-form-item>
+	    <el-form-item label="渠道发货:" label-width="80px">
+	      <span>{{ scope.row.channel_delivery_status }}</span>
+	    </el-form-item>
 	  </el-form>
 	</template>
       </el-table-column>
