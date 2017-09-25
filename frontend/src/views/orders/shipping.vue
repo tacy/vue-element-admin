@@ -308,8 +308,9 @@
     filters: {
       stockStatusFilter(stockStatus) {
         const stockStatusMap = {
-          在库: 'success',
-	  在途: 'danger',
+          在库: 'primary',
+	  出库: 'success',
+	  在途: 'danger'
         };
         return stockStatusMap[stockStatus]
       }
@@ -338,8 +339,11 @@
 		'product_title': ordinfo[4],
 		'sku_properties_name': ordinfo[5]
 	      });
-	      if ( ordinfo[2] !== '待发货' ) {
+	      if ( ordinfo[2] === '已采购' ) {
 	        this.list[index].stockStatus = '在途';
+	      };
+	      if ( ordinfo[2] === '已发货' ) {
+	        this.list[index].stockStatus = '出库';
 	      };
 	    };
 	    this.list[index].info = tmp;
