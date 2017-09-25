@@ -329,6 +329,21 @@
     methods: {
       getOrder() {
         this.listLoading = true;
+	if ( this.listQuery.labelVal !== '1' ) {
+	  this.listQuery.orderid=undefined
+	}
+	if ( this.listQuery.labelVal !== '2' ) {
+	  this.listQuery.product_title=undefined
+	}
+	if ( this.listQuery.labelVal !== '3' ) {
+	  this.listQuery.jancode=undefined
+	}
+	if ( this.listQuery.labelVal !== '4' ) {
+	  this.listQuery.receiver_name=undefined
+	}
+	if ( this.listQuery.labelVal !== '5' ) {
+	  this.listQuery.purchaseorder__orderid=undefined
+	}
 	if ( ! this.listQuery.status ) {
 	  this.listQuery.status="待发货,待采购,已采购,需介入"
 	}
