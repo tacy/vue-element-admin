@@ -421,6 +421,18 @@
     methods: {
       getOrder() {
         this.listLoading = true;
+	if ( this.listQuery.labelVal !== '1' ) {
+	  this.listQuery.orderid=undefined
+	}
+	if ( this.listQuery.labelVal !== '2' ) {
+	  this.listQuery.product_title=undefined
+	}
+	if ( this.listQuery.labelVal !== '3' ) {
+	  this.listQuery.jancode=undefined
+	}
+	if ( this.listQuery.labelVal !== '4' ) {
+	  this.listQuery.receiver_name=undefined
+	}
         fetchOrder(this.listQuery).then(response => {
           this.list = response.data.results;
           this.total = response.data.count;

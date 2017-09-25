@@ -323,6 +323,21 @@
     methods: {
       getShippingDB() {
         this.listLoading = true;
+	if ( this.listQuery.labelVal !== '1' ) {
+	  this.listQuery.db_number=undefined
+	}
+	if ( this.listQuery.labelVal !== '2' ) {
+	  this.listQuery.product_title=undefined
+	}
+	if ( this.listQuery.labelVal !== '3' ) {
+	  this.listQuery.jancode=undefined
+	}
+	if ( this.listQuery.labelVal !== '4' ) {
+	  this.listQuery.delivery_no=undefined
+	}
+	if ( this.listQuery.labelVal !== '5' ) {
+	  this.listQuery.receiver_name=undefined
+	}
         fetchShippingDB(this.listQuery).then(response => {
 	  this.list = response.data.results;
           for (const t of this.list) {
