@@ -313,25 +313,22 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
 # automatic process ymatou order delivery
 async def deliveryYmtOrder(ymtapi, pool):
     # 订单渠道是洋码头, 并且db单中的ymatou字段为空
-    sql = (
-        "select a.orderid, b.db_number, c.delivery_company from stock_order as a "
-        "inner join stock_shippingdb as b on a.shippingdb_id=b.id "
-        "and b.channel_name='洋码头' and b.ymatou is null "
-        "inner join stock_shipping as c on a.shipping_id=c.id")
+    sql = "select orderid, db_number, delivery_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='洋码头' and channel_delivery_status is null) as t on s.id=t.shipping_id"
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(sql)
             rs = await cur.fetchall()
             for i in rs:
-                r = await ymtapi.deliver(i[0], i[1], i[2])
+                orderid = i[0].split('-')[0]
+                r = await ymtapi.deliver(orderid, i[1], i[2])
                 if not r:
                     continue
                 if '0000' in r.get('code') and r.get('content'):
                     info = r['content']['results']
                     if info[0]['exec_success']:
                         await cur.execute(
-                            "update stock_shippingdb set ymatou='已发货' where db_number=%s",
-                            (i[1], ))
+                            "update stock_order set channel_delivery_status='已发货' where orderid=%s",
+                            (i[0], ))
                         await conn.commit()
                     else:
                         logging.error(
@@ -345,16 +342,14 @@ async def deliveryTgOrder(tgapi, pool):
     result = await tgapi.login()
     if not result:
         return
-    sql = (
-        "select a.orderid, c.tiangou_company, b.db_number from stock_order as a "
-        "inner join stock_shippingdb as b on a.shippingdb_id=b.id "
-        "and b.channel_name='京东' and b.ymatou is null and a.seller_name='天狗' "
-        "inner join stock_shipping as c on a.shipping_id=c.id")
+    sql = "select orderid, db_number, delivery_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='洋码头' and channel_delivery_status is null and seller_name='天狗') as t on s.id=t.shipping_id"
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(sql)
             rs = await cur.fetchall()
             for i in rs:
+                if '-' in i[0]:  # 补发单子是否需要发货
+                    continue
                 payload = {
                     'orderId': i[0],
                     'deliveryVendorId': i[1],
@@ -368,8 +363,8 @@ async def deliveryTgOrder(tgapi, pool):
                     continue
                 if r['success']:
                     await cur.execute(
-                        "update stock_shippingdb set ymatou='已发货' where db_number=%s",
-                        (i[2], ))
+                        "update stock_order set channel_delivery_status='已发货' where orderid=%s",
+                        (i[0], ))
                     await conn.commit()
                 else:
                     logging.error('deliveryTgOrder:%s failed, ErrMsg: %s' %
