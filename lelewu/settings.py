@@ -164,6 +164,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'stock': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
 }
 
