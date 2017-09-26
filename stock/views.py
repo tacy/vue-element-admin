@@ -148,7 +148,7 @@ class XloboCreateNoVerification(views.APIView):
         xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
                                       client_id)
         result = loop.run_until_complete(xloboapi.createNoVerification(data))
-        logger.debug('XloboCreateNoVerification', result)
+        logger.debug('XloboCreateNoVerification: %s', result)
         if result['ErrorCount'] > 0:
             errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -270,7 +270,7 @@ class XloboCreateFBXBill(views.APIView):
         xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
                                       client_id)
         result = loop.run_until_complete(xloboapi.createFBXBill(data))
-        logger.debug('XloboCreateFBXBill', result)
+        logger.debug('XloboCreateFBXBill: %s', result)
         if result['ErrorCount'] > 0:
             errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -319,7 +319,7 @@ class XloboDeleteDBNumber(views.APIView):
                                           client_id)
             result = loop.run_until_complete(xloboapi.deleteDBNumber(msg))
             loop.close()
-            logger.debug('XloboDeleteDBNumber', result)
+            logger.debug('XloboDeleteDBNumber: %s', result)
             if result['ErrorCount'] > 0:
                 errmsg = {
                     'errmsg': result['ErrorInfoList'][0]['ErrorDescription']
@@ -357,7 +357,7 @@ class XloboGetPDF(views.APIView):
                                       client_id)
         result = loop.run_until_complete(xloboapi.getPDF(data))
         loop.close()
-        logger.debug('XloboGetPDF', result)
+        logger.debug('XloboGetPDF: %s', result)
         if result['ErrorCount'] > 0:
             errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -588,7 +588,7 @@ class UexStockOut(views.APIView):
         result = loop.run_until_complete(uexapi.login())
         result = loop.run_until_complete(uexapi.stockOut(payload))
         loop.close()
-        logger.debug('UexStockOut', result)
+        logger.debug('UexStockOut: %s', result)
         result = json.loads(result)
         if not result['code']:
             errmsg = {'errmsg': result['msg']}
