@@ -319,7 +319,7 @@
       },
       createProduct() {
         this.tempProduct.name = this.temp.product_title,
-	this.tempProduct.jancode = this.temp.jancode,
+	this.tempProduct.jancode = this.temp.jancode.trim(),
 	this.tempProduct.brand = this.temp.brand,
 	this.tempProduct.category = this.temp.category[1],
 	this.tempProduct.specification = this.temp.sku_properties_name,
@@ -360,6 +360,7 @@
             break;
           }
         }
+	this.temp.jancode=this.temp.jancode.trim()
         updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
           this.dialogFormVisible = false;
           this.$notify({

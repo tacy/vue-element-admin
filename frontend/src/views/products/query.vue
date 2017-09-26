@@ -255,6 +255,7 @@
         if ( this.selectCategory ) {
           this.temp.category = this.selectCategory[1];
 	}
+	this.temp.jancode=this.temp.jancode.trim();
         updateProductJancode(this.temp).then(response => {
 	  for (const v of this.list) {
 	    if (v.id === this.temp.id) {
@@ -276,6 +277,7 @@
         if ( this.selectCategory ) {
           this.temp.category = this.selectCategory[1];
 	}
+	this.temp.jancode=this.temp.jancode.trim();
         createProduct(this.temp).then(response => {
 	  this.$notify({
 	    title: '成功',

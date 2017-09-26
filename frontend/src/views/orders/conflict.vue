@@ -153,6 +153,10 @@
 	this.dialogDeleteVisible = true;
       },
       conflict() {
+        this.temp.jancode=this.temp.jancode.trim();
+	this.temp.receiver_name=this.temp.receiver_name.trim();
+	this.temp.receiver_mobile=this.temp.receiver_mobile.trim();
+	this.temp.receiver_address=this.temp.receiver_address.trim();
         orderConflict(this.temp).then(response => {
           // 刷新列表数据
           for (const v of this.list) {

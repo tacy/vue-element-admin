@@ -163,11 +163,11 @@ async def syncTGOrder(tgapi, sellerName, pool):
             #    3. price根据num平分
             #    4. quantity = num*数量
             if i:
-                orderid = orderid + '-' + str(i)
+                orderid = str(orderid) + '-' + str(i)
             js = oi['barcode'].split('+')
             for k, j in enumerate(js):
                 if k:
-                    orderid = orderid + '-' + str(k)
+                    orderid = str(orderid) + '-' + str(k)
                 jinfo = j.split('*')
                 jancode = jinfo[0][2:]  # remove JH
                 num = oi['quantity']
