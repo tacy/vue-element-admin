@@ -352,11 +352,11 @@ async def deliveryTgOrder(tgapi, pool):
                     continue
                 payload = {
                     'orderId': i[0],
-                    'deliveryVendorId': i[1],
-                    'trackingNo': i[2],  # db_number
+                    'deliveryVendorId': i[2],
+                    'trackingNo': i[1],  # db_number
                     'weight': 500,
                     'shipAmount': 80,
-                    'deliveryId': i[1]
+                    'deliveryId': i[2]
                 }
                 r = await tgapi.matchAndShip(payload)
                 if not r:
