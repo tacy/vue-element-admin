@@ -350,6 +350,7 @@
         this.list.splice(index, 1);
       },
       update() {
+	this.temp.jancode=this.temp.jancode.trim()
         for (const v of this.list) {
           if (v.id === this.temp.id) {
 	    if (v.payment !== this.temp.payment) {
@@ -360,7 +361,6 @@
             break;
           }
         }
-	this.temp.jancode=this.temp.jancode.trim()
         updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
           this.dialogFormVisible = false;
           this.$notify({
