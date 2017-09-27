@@ -51,13 +51,13 @@
 
       <el-table-column width="100px" align="center" label="收件人" show-overflow-tooltip>
         <template scope="scope">
-          <span>{{scope.row.receiver_name}}</span>
+          <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.receiver_name}}</span>
         </template>
       </el-table-column>
 
       <el-table-column label="地址" align="center" show-overflow-tooltip>
         <template scope="scope">
-          <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.receiver_address}}</span>
+          <span>{{scope.row.receiver_address}}</span>
         </template>
       </el-table-column>
 
@@ -350,6 +350,7 @@
         this.list.splice(index, 1);
       },
       update() {
+	this.temp.jancode=this.temp.jancode.trim()
         for (const v of this.list) {
           if (v.id === this.temp.id) {
 	    if (v.payment !== this.temp.payment) {
@@ -360,7 +361,6 @@
             break;
           }
         }
-	this.temp.jancode=this.temp.jancode.trim()
         updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
           this.dialogFormVisible = false;
           this.$notify({

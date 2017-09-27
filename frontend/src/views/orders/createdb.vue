@@ -71,9 +71,9 @@
 	</template>
       </el-table-column>
       <el-table-column align="center" label="收件人" width="95px">
-	<template scope="scope">
-	  <span>{{scope.row.receiver_name}}</span>
-	</template>
+        <template scope="scope">
+          <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.receiver_name}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="电话" width="115px" show-overflow-tooltip>
 	<template scope="scope">
@@ -138,7 +138,7 @@
     </el-dialog>
 
     <el-dialog title="生成面单" size="small" :visible.sync="dialogFormVisible">
-      <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
+      <el-form class="small-space" :model="xloboData" label-position="left" label-width="80px">
         <el-row>
 	  <el-col :span="12">
 	    <el-form-item label="货栈:">
@@ -172,7 +172,7 @@
 
 
     <el-dialog title="生成面单" size="small" :visible.sync="dialogUEXVisible">
-      <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
+      <el-form class="small-space" :model="uexData" label-position="left" label-width="80px">
 	<el-form-item label="线路:">
 	  <el-select clearable style="width: 180px" v-model="uexData.ship_id" placeholder="线路选择">
 	    <el-option v-for="item in shipTypeOptions" :key="item.key" :label="item.key" :value="item.value">
@@ -190,7 +190,7 @@
     </el-dialog>
 
     <el-dialog title="面单回填" size="small" :visible.sync="dialogDBInputVisible">
-      <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
+      <el-form class="small-space" :model="xloboData" label-position="left" label-width="80px">
         <el-form-item label="面单号">
           <el-input v-model.trim="xloboData.Comment"></el-input>
         </el-form-item>
@@ -201,12 +201,33 @@
       </div>
     </el-dialog>
 
+    <el-dialog title="变更收件人信息" :visible.sync="dialogUpdateVisible">
+      <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
+        <el-form-item label="收件人">
+          <el-input v-model.trim="temp.receiver_name"></el-input>
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model.trim="temp.receiver_mobile"></el-input>
+        </el-form-item>
+        <el-form-item label="证件">
+          <el-input v-model.trim="temp.receiver_idcard"></el-input>
+        </el-form-item>
+        <el-form-item label="地址">
+          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="temp.receiver_address"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogUpdateVisible = false">取 消</el-button>
+        <el-button type="primary" @click="update">确 定</el-button>
+      </div>
+    </el-dialog>
+
   </div>
 </template>
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchShipping, fetchOrder, fetchLogistic, createNoVerification, createfbxbill, manualallocatedb, createUexDB} from 'api/orders';
+  import { fetchInventory, fetchShipping, fetchOrder, updateOrder, fetchLogistic, createNoVerification, createfbxbill, manualallocatedb, createUexDB} from 'api/orders';
   import { fetchPurchaseOrderItem, purchaseOrderDelete } from 'api/purchases';
 
   export default {
@@ -217,6 +238,7 @@
         total: null,
         dialogItemVisible: false,
 	dialogFormVisible: false,
+	dialogUpdateVisible: false,
 	dialogUEXVisible: false,
 	dialogDBInputVisible: false,
         inventoryOptions: [],
@@ -299,9 +321,11 @@
 	  Comment: undefined,
 	  orders: []
 	},
-	temp: {
-          id: undefined,
-	  status: undefined
+        temp: {
+	  id: undefined,
+          receiver_name: undefined,
+	  receiver_mobile: undefined,
+	  receiver_idcard: undefined
         },
 	listItem: {
 	  purchaseorder: undefined
@@ -383,8 +407,30 @@
       handleSelect(val) {
         this.selectRow = val;
       },
+      handleUpdate(row) {
+        this.temp = Object.assign({}, row);
+        this.dialogUpdateVisible = true;
+      },
       checkSelectable(row) {
         return row.status !== '待采购' & row.status !== '需介入'
+      },
+      update() {
+        for (const v of this.list) {
+          if (v.id === this.temp.id) {
+            const index = this.list.indexOf(v);
+            this.list.splice(index, 1, this.temp);
+            break;
+          }
+        };
+        updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
+          this.dialogUpdateVisible = false;
+          this.$notify({
+            title: '成功',
+            message: '更新成功',
+            type: 'success',
+            duration: 2000
+          });
+        });
       },
       handleCreate() {
         this.xloboData.IsRePacking=0;
