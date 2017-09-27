@@ -997,9 +997,12 @@ class OrderAllocate(views.APIView):
 class OrderPurchaseList(views.APIView):
     # TODO: 分页
     # 需要返回查询时间, 创建采购单的时候, 我们需要用这个时间来和订单的派单时间做对比, 看看是否能关联相关订单
+    # 国内的拼邮单, 采购之前需要看看东京仓库是否有货.
     #
     def get(self, request, format=None):
-        sql = "select p.jancode, p.name product_name, p.specification sku_properties_name, min(piad_time) piad_time, max(o.price) product_price, sum(o.need_purchase) qty from stock_product p inner join stock_order o on o.jancode=p.jancode and o.status='待采购' and o.inventory_id=%s group by jancode order by o.id"
+        sql = "select p.jancode, p.name product_name, p.specification sku_properties_name, min(piad_time) piad_time, max(o.price) product_price, sum(o.need_purchase) qty from stock_product p inner join stock_order o on o.jancode=p.jancode where o.status='待采购' and o.inventory_id=%s group by jancode order by o.id"
+        sql2 = "select quantity+inflight-preallocation tokyo_stock from stock_stock where inventory_id='4' and product_id=(select id from stock_product where jancode=%s)"
+        sql3 = "select jancode from stock_order where seller_name='天狗' and status='待采购' and jancode=%s"
 
         def dictfetchall(cursor):
             "Return all rows from a cursor as a dict"
@@ -1010,6 +1013,17 @@ class OrderPurchaseList(views.APIView):
         with connection.cursor() as c:
             c.execute(sql, [inventory])
             results = dictfetchall(c)
+            for i, r in enumerate(results):
+                c.execute(sql3, [r['jancode']])
+                isTiangou = c.fetchall()
+                results[i]['isTiangou'] = '是' if isTiangou else '否'
+                if int(inventory) == 3:  # 需要查东京库存
+                    c.execute(sql2, [r['jancode']])
+                    rt = c.fetchone()
+                    results[i]['tokyo_stock'] = rt[0] if rt else 0
+                else:
+                    results[i]['tokyo_stock'] = 0
+            logger.debug('orderPurchaseList: %s', results)
             data = {
                 'data': results,
                 'queryTime': arrow.now().format('YYYY-MM-DD HH:mm:ss')
@@ -1027,6 +1041,7 @@ class OrderPurchase(views.APIView):
     #   2. 同时生成purchaseitem.
     #   3. 标记关联订单状态:已采购, 并标注关联purchaseorder. (这里需要考虑采购和派单同时进行情况, 关联订单时需要比较时间)
     #   4. 修改关联库存记录, 增加在途库存.
+    #   5. 采购渠道是东京, 占用库存
     #
     def put(self, request, format=None):
         data = request.data.get('data')
@@ -1074,6 +1089,15 @@ class OrderPurchase(views.APIView):
                         product__jancode=jancode, )
                     stock.inflight = F('inflight') + int(i['quantity'])
                     stock.save()
+
+                    # preallocation stock if supplier is tokyo
+                    if '东京仓' in supplierOb.name:
+                        stockTokyo = Stock.objects.get(
+                            inventory=Inventory.objects.get(name='东京'),
+                            product__jancode=jancode, )
+                        stockTokyo.preallocation = F('preallocation') + int(
+                            i['quantity'])
+                        stockTokyo.save()
 
                     # 1. update order, notes: may qty != quantity
                     # 2. if allocate_time > querytime, don't relation it.
@@ -1162,6 +1186,15 @@ class NoOrderPurchase(views.APIView):
                     stockObj.inflight = stockObj.inflight + int(i['quantity'])
                     stockObj.save()
 
+                    # preallocation stock if supplier is tokyo
+                    if '东京仓' in supplierObj.name:
+                        stockTokyo = Stock.objects.get(
+                            inventory=Inventory.objects.get(name='东京'),
+                            product__jancode=i['jancode'], )
+                        stockTokyo.preallocation = F('preallocation') + int(
+                            i['quantity'])
+                        stockTokyo.save()
+
                     orders = Order.objects.filter(
                         inventory__id=inventory,
                         jancode=i['jancode'],
@@ -1212,6 +1245,14 @@ class PurchaseOrderDelete(views.APIView):
                     'inflight',
                 ])
 
+                # rollback tokyo stock if supplier is tokyo
+                if '东京仓' in poObj.supplier.name:
+                    stockTokyo = Stock.objects.get(
+                        inventory=Inventory.objects.get(name='东京'),
+                        product=poi.product, )
+                    stockTokyo.preallocation = F('preallocation') - poi.quantity
+                    stockTokyo.save()
+
             # mark purchaseorder status as '删除'
             poObj.status = '删除'
             poObj.save(update_fields=['status'])
@@ -1259,6 +1300,19 @@ class PurchaseOrderClear(views.APIView):
                     stockObj.quantity = F('quantity') + poiObj.quantity
                 stockObj.inflight = F('inflight') - poiObj.quantity
                 stockObj.save()
+
+                # tokyo stock out if supplier is tokyo
+                if '东京仓' in poObj.supplier.name:
+                    stockTokyo = Stock.objects.get(
+                        inventory=Inventory.objects.get(name='东京'),
+                        product__jancode=poi['jancode'], )
+                    stockTokyo.preallocation = F(
+                        'preallocation') - poiObj.quantity
+                    if poiObj.quantity < poi['qty']:
+                        stockTokyo.quantity = F('quantity') - poi['qty']
+                    else:
+                        stockTokyo.quantity = F('quantity') - poiObj.quantity
+                    stockTokyo.save()
 
                 poObj.order.filter(
                     jancode=poi['jancode'], status='已采购').update(status='待发货')
