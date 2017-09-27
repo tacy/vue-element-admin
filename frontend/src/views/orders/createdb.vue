@@ -209,11 +209,14 @@
         <el-form-item label="电话">
           <el-input v-model.trim="temp.receiver_mobile"></el-input>
         </el-form-item>
-        <el-form-item label="证件">
+        <el-form-item label="身份证">
           <el-input v-model.trim="temp.receiver_idcard"></el-input>
         </el-form-item>
         <el-form-item label="地址">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="temp.receiver_address"></el-input>
+        </el-form-item>
+        <el-form-item label="邮编">
+          <el-input v-model.trim="temp.receiver_zip"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -325,7 +328,9 @@
 	  id: undefined,
           receiver_name: undefined,
 	  receiver_mobile: undefined,
-	  receiver_idcard: undefined
+	  receiver_idcard: undefined,
+	  receiver_address: undefined,
+	  receiver_zip: undefined
         },
 	listItem: {
 	  purchaseorder: undefined
