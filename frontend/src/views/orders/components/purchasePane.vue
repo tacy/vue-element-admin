@@ -3,45 +3,50 @@
       <div class="filter-container">
 	<el-button class="filter-item" style="float:right" @click="handlePurchase" type="primary" icon="edit">保存采购单</el-button>
       </div>
-      <el-table :data="postData.data" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
-
+      <el-table :data="postData.data" v-loading.body="listLoading" :row-class-name="tableRowClassName" border fit highlight-current-row style="width: 100%">
 	<el-table-column align="center" label="条码" width="120">
 	  <template scope="scope">
 	    <span class="link-type" @click="getOrder(scope.row)">{{scope.row.jancode}}</span>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="商品名称">
+	<el-table-column align="center" label="商品名称" width="200px">
 	  <template scope="scope">
 	    <span>{{scope.row.product_name}}</span>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="规格" width="120">
+	<el-table-column align="center" label="规格" width="120px">
 	  <template scope="scope">
 	    <span>{{scope.row.sku_properties_name}}</span>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="支付时间" width="100">
+	<el-table-column align="center" label="支付时间" width="100px">
 	  <template scope="scope">
 	    <span>{{scope.row.piad_time}}</span>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="售价" width="65">
+	<el-table-column align="center" label="售价" width="65px">
 	  <template scope="scope">
 	    <span>{{scope.row.product_price}}</span>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="待采" width="65">
+	<el-table-column align="center" label="待采" width="65px">
 	  <template scope="scope">
 	    <span>{{scope.row.qty}}</span>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="渠道" width="150">
+	<el-table-column align="center" v-if='inventory===3' label="东京仓" width="80px">
+	  <template scope="scope">
+	    <span>{{scope.row.tokyo_stock}}</span>
+	  </template>
+	</el-table-column>
+
+	<el-table-column align="center" label="渠道" width="150px">
 	  <template scope="scope">
 	    <el-select clearable filterable v-model="scope.row.supplier" placeholder="渠道">
 	      <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id">
@@ -50,19 +55,19 @@
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="实采" width="100">
+	<el-table-column align="center" label="实采" width="100px">
 	  <template scope="scope">
 	    <el-input size="small" v-model.number="scope.row.quantity" type="number"></el-input>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="价格" width="120">
+	<el-table-column align="center" label="价格" width="120px">
 	  <template scope="scope">
 	    <el-input size="small" v-model.number="scope.row.price" type="number"></el-input>
 	  </template>
 	</el-table-column>
 
-	<el-table-column align="center" label="注文编号" width="190">
+	<el-table-column align="center" label="注文编号" width="200px">
 	  <template scope="scope">
 	    <el-input size="small" v-model.trim="scope.row.purchaseorderid"></el-input>
 	  </template>
@@ -107,6 +112,12 @@
 
   </div>
 </template>
+
+<style>
+  .el-table .tiangou-row {
+    background: #e2f0e4;
+  }
+</style>
 
 <script>
   import { fetchPurchase, fetchOrder, fetchSupplier, orderPurchase, orderMarkConflict } from 'api/orders';
@@ -178,6 +189,12 @@
         fetchOrder(this.orderQuery).then(response => {
           this.orderData = response.data.results;
         })
+      },
+      tableRowClassName(row, index) {
+        if (row.isTiangou === '是') {
+          return 'tiangou-row';
+	}
+        return '';
       },
       handlePurchase() {
         this.postData.queryTime = this.queryTime;
