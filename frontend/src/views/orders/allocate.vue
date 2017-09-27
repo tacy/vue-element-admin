@@ -51,13 +51,13 @@
 
       <el-table-column width="100px" align="center" label="收件人" show-overflow-tooltip>
         <template scope="scope">
-          <span>{{scope.row.receiver_name}}</span>
+          <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.receiver_name}}</span>
         </template>
       </el-table-column>
 
       <el-table-column label="地址" align="center" show-overflow-tooltip>
         <template scope="scope">
-          <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.receiver_address}}</span>
+          <span>{{scope.row.receiver_address}}</span>
         </template>
       </el-table-column>
 
