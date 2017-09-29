@@ -320,9 +320,10 @@ class XloboDeleteDBNumber(views.APIView):
             result = loop.run_until_complete(xloboapi.deleteDBNumber(msg))
             loop.close()
             logger.debug('XloboDeleteDBNumber: %s', result)
-            if result['ErrorCount'] > 0:
+            if result['Result']['ErrorCount'] > 0:
                 errmsg = {
-                    'errmsg': result['ErrorInfoList'][0]['ErrorDescription']
+                    'errmsg':
+                    result['Result']['ErrorInfoList'][0]['ErrorDescription']
                 }
                 return Response(
                     data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -983,7 +984,7 @@ class OrderAllocate(views.APIView):
             orderInfo.pop('shipping_name')
             orderInfo.pop('db_number')
             orderInfo.pop('purchaseorder_orderid')
-            logger.info('派单调试:', orderInfo)
+            logger.debug('派单调试: %s', orderInfo)
             o = Order(**orderInfo)
             o.save()
 
