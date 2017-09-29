@@ -313,7 +313,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
 # automatic process ymatou order delivery
 async def deliveryYmtOrder(ymtapi, pool):
     # 订单渠道是洋码头, 并且db单中的ymatou字段为空
-    sql = "select orderid, db_number, delivery_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='洋码头' and o.channel_delivery_status is null) as t on s.id=t.shipping_id"
+    sql = "select orderid, db_number, delivery_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='洋码头' and o.channel_delivery_status<>'已发货') as t on s.id=t.shipping_id"
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(sql)
@@ -342,7 +342,7 @@ async def deliveryTgOrder(tgapi, pool):
     result = await tgapi.login()
     if not result:
         return
-    sql = "select orderid, db_number, tiangou_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='京东' and channel_delivery_status is null and seller_name='天狗') as t on s.id=t.shipping_id"
+    sql = "select orderid, db_number, tiangou_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='京东' and channel_delivery_status<>'已发货' and seller_name='天狗') as t on s.id=t.shipping_id"
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(sql)
