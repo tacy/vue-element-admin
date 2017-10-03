@@ -103,7 +103,7 @@
         list: [],
         listLoading: true,
         total: null,
-	syncInvOptions: ['贝海', '广州'],
+	syncInvOptions: ['贝海', '广州', '东京'],
 	dialogSyncVisible: false,
 	inventoryOptions: [],
 	submitting: false,

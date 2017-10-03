@@ -524,8 +524,13 @@ class SyncStock(views.APIView):
     def post(self, request, format=None):
         data = request.data
         impInventory = data['inventory_name']
-        gsp = 'virtualstock-products' if '贝海' in impInventory else u'国内库存出入库流水.xls'
-        wks = 'stock' if '贝海' in impInventory else u'库存表'
+        inv_dict = {
+            '贝海': ['virtualstock-products', 'stock'],
+            '广州': [u'国内库存出入库流水.xls', u'库存表'],
+            '东京': ['tokyo_stock.xls', 'new'],
+        }
+        gsp = inv_dict[impInventory][0]
+        wks = inv_dict[impInventory][1]
         inventoryObj = Inventory.objects.get(name=impInventory)
         syncer = utils.GoogleSpread()
         syncer.open_google_doc(gsp)
@@ -543,7 +548,10 @@ class SyncStock(views.APIView):
                 try:
                     stockObj = Stock.objects.get(
                         product=productObj, inventory=inventoryObj)
-                    stockObj.quantity = i[2]
+                    if '东京' in impInventory:
+                        stockObj.quantity = F('quantity') + i[2]
+                    else:
+                        stockObj.quantity = i[2]
                     stockObj.save(update_fields=['quantity'])
                 except Stock.DoesNotExist:
                     stockObj = Stock(
