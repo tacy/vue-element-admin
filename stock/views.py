@@ -1164,7 +1164,9 @@ class NoOrderPurchase(views.APIView):
                     try:
                         productObj = Product.objects.get(jancode=i['jancode'])
                     except Product.DoesNotExist:
-                        results = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
+                        results = {
+                            'errmsg': '商品库中无该商品%s, 请先创建产品资料' % (i['jancode'], )
+                        }
                         raise IntegrityError
                     poitemObj = PurchaseOrderItem(
                         product=productObj,
@@ -1209,7 +1211,11 @@ class NoOrderPurchase(views.APIView):
                         o.save(update_fields=['status', 'purchaseorder'])
                         c = c - o.need_purchase
                 return Response(status=status.HTTP_201_CREATED)
-        except IntegrityError:
+        except IntegrityError as e:
+            if e.args and e.args[0] == 1062:
+                return Response(
+                    data={'errmsg': '同一产品需合并录入'},
+                    status=status.HTTP_400_BAD_REQUEST)
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
 
