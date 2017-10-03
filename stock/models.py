@@ -128,6 +128,9 @@ class PurchaseOrderItem(models.Model):
     status = models.CharField(max_length=8, null=True)  # 已入库
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
 
+    class Meta:
+        unique_together = ('purchaseorder', 'product')
+
     def __str__(self):
         """Return a human readable representation of the model instance."""
         return "{}@{}@{}@{}@{}@{}".format(
