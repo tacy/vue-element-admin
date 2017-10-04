@@ -283,6 +283,7 @@
         this.listShippingQuery.inventory = this.temp.inventory;
         fetchShipping(this.listShippingQuery).then(response => {
           this.shippingOptions = response.data.results;
+	  this.temp.shipping = null;
         })
       },
       handleFilter() {

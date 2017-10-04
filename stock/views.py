@@ -908,93 +908,80 @@ class OrderAllocate(views.APIView):
             results = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
-        # 检查被指派的仓库, 是否该产品已经在仓库中存在, 如果不存在, 创建
-        stockObj = None
-        try:
-            stockObj = Stock.objects.get(
-                inventory=paramInventory, product__id=productObj.id)
-        except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
-            stockObj = Stock(
-                product=productObj,
-                inventory=relate_inventory,
-                quantity=0,
-                inflight=0,
-                preallocation=0)
-            stockObj.save()
-        dborder = Order.objects.get(id=orderInfo['id'])
-        dbinventory = dborder.inventory
-
-        rollbackstock = ''
-        isStockUpdate = True
-        # 计算库存变化
-        if not dbinventory:  # 派单
-            stockObj.preallocation = F(
-                'preallocation') + orderInfo['quantity']  # 分配订单需要占库存
-        else:  # 重新派单
-            if dbinventory.id != paramInventory:  # 重派单, 订单派给了新的仓库, 需要回滚之前的库存占用
-                rollbackstock = Stock.objects.get(
-                    inventory=dbinventory.id, product__id=productObj.id)
-                rollbackstock.preallocation = F(
-                    'preallocation') - orderInfo['quantity']
-                stockObj.preallocation = F(
-                    'preallocation') + orderInfo['quantity']
-            else:  # 重派单, 但是仓库没有改变, 无需对库存做更新
-                if dborder.shipping == orderInfo[
-                        'shipping']:  # 派单信息没有变化, 无需处理.
-                    return status.HTTP_200_OK
-                isStockUpdate = False
-
         with transaction.atomic():
-            # 计算订单状态
-            if isStockUpdate:
-                # if not stockInfo['inflight']:
-                #     stockInfo['inflight'] = 0
+            # 检查被指派的仓库, 是否该产品已经在仓库中存在, 如果不存在, 创建
+            stockObj = None
+            try:
+                stockObj = Stock.objects.get(
+                    inventory=paramInventory, product__id=productObj.id)
+            except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
+                stockObj = Stock(
+                    product=productObj,
+                    inventory=relate_inventory,
+                    quantity=0,
+                    inflight=0,
+                    preallocation=0)
                 stockObj.save()
-                # 使用F操作models, save之后需要从数据库刷新, 否则值不能使用
-                stockObj.refresh_from_db()
+            dborder = Order.objects.get(id=orderInfo['id'])
+            dbinventory = dborder.inventory
 
-                orderInfo[
-                    'allocate_time'] = allocate_time  # 如果更新库存表, 就需要更新派单时间
-                purchaseQuantity = stockObj.preallocation - (
-                    stockObj.quantity + stockObj.inflight)
-                if purchaseQuantity > 0:  # 订单需采购
-                    if purchaseQuantity < orderInfo['quantity']:
-                        orderInfo['need_purchase'] = purchaseQuantity
-                    else:
-                        orderInfo['need_purchase'] = orderInfo['quantity']
-                    orderInfo['status'] = '待采购'
+            rollbackstock = ''
+            # 计算库存变化
+            if not dbinventory:  # 派单
+                stockObj.preallocation = F(
+                    'preallocation') + orderInfo['quantity']  # 分配订单需要占库存
+            else:  # 重新派单
+                if dbinventory.id != paramInventory:  # 重派单, 订单派给了新的仓库, 需要回滚之前的库存占用
+                    rollbackstock = Stock.objects.get(
+                        inventory=dbinventory.id, product__id=productObj.id)
+                    rollbackstock.preallocation = F(
+                        'preallocation') - orderInfo['quantity']
+                    stockObj.preallocation = F(
+                        'preallocation') + orderInfo['quantity']
+                else:  # 重派单, 但是仓库没有改变, 无需对库存做更新
+                    if dborder.shipping.id == orderInfo[
+                            'shipping']:  # 派单信息没有变化, 无需处理.
+                        return Response(status=status.HTTP_200_OK)
+                    dborder.shipping = Shipping.objects.get(
+                        id=orderInfo['shipping'])
+                    dborder.save(update_fields=[
+                        'shipping',
+                    ])
+                    return Response(status=status.HTTP_200_OK)
+
+            # 计算订单状态
+            stockObj.save()
+            # 使用F操作models, save之后需要从数据库刷新, 否则值不能使用
+            stockObj.refresh_from_db()
+
+            dborder.allocate_time = allocate_time  # 如果更新库存表, 就需要更新派单时间
+            purchaseQuantity = stockObj.preallocation - (
+                stockObj.quantity + stockObj.inflight)
+            if purchaseQuantity > 0:  # 订单需采购
+                if purchaseQuantity < orderInfo['quantity']:
+                    dborder.need_purchase = purchaseQuantity
                 else:
-                    # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
-                    # 在途的采购单绑定, 同时标记状态为已采购
-                    if stockObj.preallocation > stockObj.quantity:
-                        orderInfo['status'] = '已采购'
-                        # 找到最新的采购单
-                        id = PurchaseOrder.objects.filter(
-                            purchaseorderitem__product__jancode=orderInfo[
-                                'jancode'],
-                            status='在途').aggregate(Max('id'))
-                        orderInfo['purchaseorder'] = PurchaseOrder.objects.get(
-                            id=id['id__max'])
-                    else:
-                        orderInfo['status'] = '待发货'
+                    dborder.need_purchase = orderInfo['quantity']
+                dborder.status = '待采购'
+            else:
+                # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
+                # 在途的采购单绑定, 同时标记状态为已采购
+                if stockObj.preallocation > stockObj.quantity:
+                    dborder.status = '已采购'
+                    # 找到最新的采购单
+                    id = PurchaseOrder.objects.filter(
+                        purchaseorderitem__product__jancode=orderInfo[
+                            'jancode'],
+                        status='在途').aggregate(Max('id'))
+                    dborder.purchaseorder = PurchaseOrder.objects.get(
+                        id=id['id__max'])
+                else:
+                    dborder.status = '待发货'
 
             # 更新订单和仓库信息
-            # relate_inventory = Inventory.objects.get(id=orderInfo['inventory'])
-            relate_shipping = Shipping.objects.get(id=orderInfo['shipping'])
-            # relate_purchaseorder = PurchaseOrder.objects.get(
-            #     id=orderInfo['purchaseorder'])
-            orderInfo['inventory'] = relate_inventory
-            orderInfo['shipping'] = relate_shipping
-            # orderInfo['purchaseorder'] = relate_purchaseorder
-
-            # question: how to serializ dict
-            orderInfo.pop('inventory_name')
-            orderInfo.pop('shipping_name')
-            orderInfo.pop('db_number')
-            orderInfo.pop('purchaseorder_orderid')
-            logger.debug('派单调试: %s', orderInfo)
-            o = Order(**orderInfo)
-            o.save()
+            dborder.shipping = Shipping.objects.get(id=orderInfo['shipping'])
+            dborder.inventory = relate_inventory
+            dborder.save()
 
             if rollbackstock:
                 rollbackstock.save()
