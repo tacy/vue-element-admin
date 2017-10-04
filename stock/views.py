@@ -973,8 +973,9 @@ class OrderAllocate(views.APIView):
                         purchaseorderitem__product__jancode=orderInfo[
                             'jancode'],
                         status='在途').aggregate(Max('id'))
-                    dborder.purchaseorder = PurchaseOrder.objects.get(
-                        id=id['id__max'])
+                    if id:
+                        dborder.purchaseorder = PurchaseOrder.objects.get(
+                            id=id['id__max'])
                 else:
                     dborder.status = '待发货'
 
