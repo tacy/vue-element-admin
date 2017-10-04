@@ -894,6 +894,7 @@ class OrderAllocate(views.APIView):
     #
     def put(self, request, format=None):
         orderInfo = request.data
+        logging.debug('派单调试:%s', orderInfo)
         allocate_time = arrow.now().format('YYYY-MM-DD HH:mm:ss')
         paramInventory = orderInfo['inventory']
         relate_inventory = Inventory.objects.get(id=paramInventory)
@@ -973,9 +974,8 @@ class OrderAllocate(views.APIView):
                         purchaseorderitem__product__jancode=orderInfo[
                             'jancode'],
                         status='在途').aggregate(Max('id'))
-                    if id:
-                        dborder.purchaseorder = PurchaseOrder.objects.get(
-                            id=id['id__max'])
+                    dborder.purchaseorder = PurchaseOrder.objects.get(
+                        id=id['id__max'])
                 else:
                     dborder.status = '待发货'
 
