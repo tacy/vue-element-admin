@@ -973,7 +973,8 @@ class OrderAllocate(views.APIView):
                     id = PurchaseOrder.objects.filter(
                         purchaseorderitem__product__jancode=orderInfo[
                             'jancode'],
-                        status='在途').aggregate(Max('id'))
+                        purchaseorderitem__status__isnull=True,
+                        status__in=('在途', '部分入库')).aggregate(Max('id'))
                     dborder.purchaseorder = PurchaseOrder.objects.get(
                         id=id['id__max'])
                 else:
