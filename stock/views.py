@@ -83,7 +83,7 @@ class XloboCreateNoVerification(views.APIView):
                     ymtapi.getOrderInfo(ords[0]['orderid']))
                 # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
                 for oi in result['content']['order_info']['order_items_info']:
-                    if oi['refund_id']:
+                    if oi['refund_id'] == 0 or oi['refund_id'] == 1:
                         errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -209,7 +209,7 @@ class XloboCreateFBXBill(views.APIView):
                     ymtapi.getOrderInfo(ords[0]['orderid']))
                 # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
                 for oi in result['content']['order_info']['order_items_info']:
-                    if oi['refund_id']:
+                    if oi['refund_id'] == 0 or oi['refund_id'] == 1:
                         errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
@@ -646,7 +646,7 @@ class ManualAllocateDBNumber(views.APIView):
                 ymtapi.getOrderInfo(ords[0]['orderid']))
             # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
             for oi in result['content']['order_info']['order_items_info']:
-                if oi['refund_id']:
+                if oi['refund_id'] == 0 or oi['refund_id'] == 1:
                     errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
                     return Response(
                         data=errmsg, status=status.HTTP_400_BAD_REQUEST)
