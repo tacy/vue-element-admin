@@ -70,6 +70,9 @@
 	    <el-form-item label="规格">
 	      <span>{{ p.sku_properties_name }}</span>
 	    </el-form-item>
+	    <el-form-item label="订单时间">
+	      <span>{{ p.piad_time }}</span>
+	    </el-form-item>
 	  </el-form>
 	</template>
       </el-table-column>
@@ -88,7 +91,7 @@
 	  <span>{{scope.row.channel_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="仓库">
+      <el-table-column align="center" label="仓库" width='100px'>
 	<template scope="scope">
 	  <span>{{scope.row.inventory_name}}</span>
 	</template>
@@ -96,6 +99,11 @@
       <el-table-column align="center" label="发货方式">
 	<template scope="scope">
 	  <span>{{scope.row.shipping_name}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="订单时间" width="200px">
+	<template scope="scope">
+	  <span>{{scope.row.info[0].piad_time}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="库存">
@@ -346,7 +354,8 @@
 		'status': ordinfo[2],
 		'purchaseorder': ordinfo[3],
 		'product_title': ordinfo[4],
-		'sku_properties_name': ordinfo[5]
+		'sku_properties_name': ordinfo[5],
+		'piad_time': ordinfo[6]
 	      });
 	      if ( ordinfo[2] === '已采购' ) {
 	        this.list[index].stockStatus = '在途';
