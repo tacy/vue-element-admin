@@ -121,7 +121,7 @@ class XloboCreateNoVerification(views.APIView):
             'IdCode': ords[0].get('receiver_idcard')
         }
         billSupplyInfo = {
-            'OrderCode': ords[0]['orderid'],
+            'OrderCode': ','.join(set([o['orderid'] for o in ords])),
             'TradingNo': '11111111',
             'ChannelName': channel_name
         }
