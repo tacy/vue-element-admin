@@ -134,6 +134,8 @@ class XloboAPI():
             'sign': sign_str,
         }
 
+        log.debug('xlobo api debug %s', payload)
+
         h = {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'X-Requested-With': 'XMLHttpRequest'
