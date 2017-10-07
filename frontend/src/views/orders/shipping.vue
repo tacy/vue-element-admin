@@ -73,6 +73,18 @@
 	    <el-form-item label="订单时间">
 	      <span>{{ p.piad_time }}</span>
 	    </el-form-item>
+	    <el-form-item label="收件人">
+	      <span>{{ p.receiver_name }}</span>
+	    </el-form-item>
+	    <el-form-item label="地址">
+	      <span>{{ p.receiver_address }}</span>
+	    </el-form-item>
+	    <el-form-item label="电话">
+	      <span>{{ p.receiver_mobile }}</span>
+	    </el-form-item>
+	    <el-form-item label="邮编">
+	      <span>{{ p.receiver_zip }}</span>
+	    </el-form-item>
 	  </el-form>
 	</template>
       </el-table-column>
@@ -355,7 +367,11 @@
 		'purchaseorder': ordinfo[3],
 		'product_title': ordinfo[4],
 		'sku_properties_name': ordinfo[5],
-		'piad_time': ordinfo[6]
+		'piad_time': ordinfo[6],
+		'receiver_name': ordinfo[7],
+		'receiver_address': ordinfo[8],
+		'receiver_mobile': ordinfo[9],
+		'receiver_zip': ordinfo[10],
 	      });
 	      if ( ordinfo[2] === '已采购' ) {
 	        this.list[index].stockStatus = '在途';
