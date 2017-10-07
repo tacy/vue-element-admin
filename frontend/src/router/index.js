@@ -108,7 +108,7 @@ export const asyncRouterMap = [
       { path: 'allocate', component: ordersAllocate, name: '预处理', meta: { role: ['admin'] } },
       { path: 'purchase', component: ordersPurchase, name: '待采购', meta: { role: ['admin'] } },
       { path: 'conflict', component: ordersConflict, name: '需介入', meta: { role: ['admin', 'normal'] } },
-      { path: 'createdb', component: ordersCreateDB, name: '出面单', meta: { role: ['admin'] } },
+      { path: 'createdb', component: ordersCreateDB, name: '出面单', meta: { role: ['admin', 'tokyo'] } },
       { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin', 'tokyo'] } },
       { path: 'needexport', component: ordersNeedExport, name: '拼邮&保税', meta: { role: ['admin', 'normal'] } }
     ]
