@@ -430,13 +430,25 @@
       },
       stockOut() {
         stockOut(this.stockOutData).then(response => {
+	  const dbs = this.stockOutData.db_numbers.split('\n')
+	  for (const d of dbs) {
+	    for (const v of this.list) {
+	      if (v.db_number === d) {
+		const index = this.list.indexOf(v);
+		// this.list.splice(index, 1);
+		this.list[index].status='出库'
+		this.list[index].delivery_no=this.stockOutData.delivery_no
+		break;
+	      }
+	    };
+	  };
 	  this.$notify({
 	    title: '成功',
 	    message: '出库完成',
 	    type: 'success',
 	    duration: 2000
 	  });
-          this.getShippingDB();
+	  this.dialogStockOutVisible=false;
 	});
       },
       handleDelete(row) {
