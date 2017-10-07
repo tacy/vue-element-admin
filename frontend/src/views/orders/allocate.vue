@@ -209,10 +209,10 @@
         },
         temp: {
           id: undefined,
-          inventory: 0,
-          shipping: 0,
-          jancode: '',
-          status: '',
+          inventory: undefined,
+          shipping: undefined,
+          jancode: undefined,
+          status: undefined,
 	  brand: undefined,
 	  channel_name: undefined,
 	  payment: undefined,
@@ -352,18 +352,18 @@
       },
       update() {
 	this.temp.jancode=this.temp.jancode.trim()
-        for (const v of this.list) {
-          if (v.id === this.temp.id) {
-	    if (v.payment !== this.temp.payment) {
-	      this.temp.price = this.temp.payment/v.quantity;
-	    }
-            const index = this.list.indexOf(v);
-            this.list.splice(index, 1, this.temp);
-            break;
-          }
-        }
+	if ( this.temp.payment && this.temp.quantity ) {
+	  this.temp.price = this.temp.payment/this.temp.quantity
+	}
         updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
           this.dialogFormVisible = false;
+	  for (const v of this.list) {
+	    if (v.id === this.temp.id) {
+	      const index = this.list.indexOf(v);
+	      this.list.splice(index, 1, this.temp);
+	      break;
+	    }
+	  }
           this.$notify({
             title: '成功',
             message: '更新成功',
