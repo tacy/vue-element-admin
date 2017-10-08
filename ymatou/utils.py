@@ -44,7 +44,6 @@ class PDFTool:
             # ],
         ]
         for o in orders:
-            print(o)
             prodname = '<font name="wqy">{}</font>'.format(
                 o[0].replace(' ', ','))
             sku_properties_name = '<font name="wqy">{}/{}</font>'.format(
@@ -55,6 +54,7 @@ class PDFTool:
                 o[3],
                 o[4],
             ])
+        logging.debug('getpdf orderData %s', data)
         t = Table(
             data,
             colWidths=[
