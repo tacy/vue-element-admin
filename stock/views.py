@@ -374,6 +374,9 @@ class XloboGetPDF(views.APIView):
                 c.execute(sql, (shippingdbObj.id, shippingdbObj.inventory.id))
                 # c.execute(sql, (8, ))
                 ordsData = c.cursor.fetchall()
+                logger.debug('XloboGetPDF param[%s, %s], ordsData: %s',
+                             b['BillCode'], shippingdbObj.inventory.id,
+                             ordsData)
             # inp2 = BytesIO(pdftool.createShippingPDF(b['BillCode'], ordsData))
             # inp2 = open(
             #     '/home/tacy/workspace/python/lelewu/ymatou/simple_table.pdf',
