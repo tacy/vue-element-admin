@@ -54,7 +54,7 @@ class PDFTool:
                 o[3],
                 o[4],
             ])
-        logging.debug('getpdf orderData %s', data)
+        log.debug('getpdf orderData %s', data)
         t = Table(
             data,
             colWidths=[
