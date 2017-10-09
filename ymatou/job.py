@@ -93,15 +93,15 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                       o['receiver_mobile'], receiver_idcard, o['seller_memo'],
                       o['buyer_remark'], jancode, num, price, payment, dt,
                       o['paid_time'], oi['product_title'], sku_properties_name,
-                      '待处理', '')
+                      '待处理', '', oi['product_id'])
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
         '(seller_name, channel_name, orderid, receiver_name, receiver_address, '
         'receiver_zip, receiver_mobile, receiver_idcard, seller_memo, buyer_remark, jancode, '
         'quantity, price, payment, delivery_type, piad_time, product_title, '
-        'sku_properties_name, status, channel_delivery_status) '
-        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        'sku_properties_name, status, channel_delivery_status, product_id) '
+        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     )
     insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, start_time, export_time, count) values (%s, %s, %s, %s)'
 
@@ -157,7 +157,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
         if not orderItems:
             return
         for i, oi in enumerate(orderItems['data']):
-            # 柴单:
+            # 拆单:
             #    1. jancode (jancode*1+jancode*1)
             #    2. payment根据jancode数量平分
             #    3. price根据num平分
@@ -174,6 +174,8 @@ async def syncTGOrder(tgapi, sellerName, pool):
                 payment = oi['fenTanAmount']
                 price = payment / num
                 product_title = oi['name']
+                product_id = oi[
+                    'activityToProductId']  # https://m.51tiangou.com/product/listing.html?id=11811435
                 sku_properties_name = oi['attrSku'] if oi['attrSku'] else '无'
                 if len(jinfo) == 2:
                     num = num * int(jinfo[1])
@@ -183,14 +185,14 @@ async def syncTGOrder(tgapi, sellerName, pool):
                       receiver_address, '100101', receiver_mobile,
                       receiver_idcard, jancode, num, price, payment, '第三方',
                       createTime, product_title, sku_properties_name, '待处理',
-                      '')
+                      '', product_id)
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
         '(seller_name, channel_name, orderid, receiver_name, receiver_address, '
         'receiver_zip, receiver_mobile, receiver_idcard, jancode, quantity, '
-        'price, payment, delivery_type, piad_time, product_title, sku_properties_name, status, channel_delivery_status) '
-        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        'price, payment, delivery_type, piad_time, product_title, sku_properties_name, status, channel_delivery_status, product_id) '
+        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     )
     insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, start_time, export_time, count) values (%s, %s, %s, %s)'
 
