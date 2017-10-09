@@ -105,6 +105,7 @@ class XloboCreateNoVerification(views.APIView):
         # construct api msg
         channel_name = ords[0]['channel_name']
         address = ords[0]['receiver_address'].split(',')
+        order_piad_time = ords[0]['piad_time']
         billSenderInfo = {
             'Name': ords[0]['seller_name'],
             'Address': '中央区新富1-3-15　京橋プリズムビル　４階',
@@ -163,6 +164,7 @@ class XloboCreateNoVerification(views.APIView):
             shippingdbObj = ShippingDB(
                 db_number=result['Result']['BillCode'],
                 status='待处理',
+                order_piad_time=order_piad_time,
                 channel_name=channel_name,
                 shipping=shippingObj,
                 inventory=inventoryObj)
@@ -230,6 +232,7 @@ class XloboCreateFBXBill(views.APIView):
         # construct api msg
         channel_name = ords[0]['channel_name']
         address = ords[0]['receiver_address'].split(',')
+        order_piad_time = ords[0]['piad_time']
         billSenderInfo = {
             'Name': ords[0]['seller_name'],
             'Address': '中央区新富1-3-15　京橋プリズムビル　４階',
@@ -285,6 +288,7 @@ class XloboCreateFBXBill(views.APIView):
             shippingdbObj = ShippingDB(
                 db_number=result['Result']['BillCode'],
                 status='已出库',
+                order_piad_time=order_piad_time,
                 channel_name=channel_name,
                 shipping=shippingObj,
                 inventory=inventoryObj)
@@ -402,6 +406,10 @@ class XloboGetPDF(views.APIView):
             },
         ]
         res.close()
+
+        # update shippingdb print_status
+        ShippingDB.objects.filter(db_number__in=data['BillCodes']).update(print_status='已打印')
+
         return Response(data=result, status=status.HTTP_200_OK)
         # response = HttpResponse(content_type='application/pdf')
         # # response[
@@ -656,6 +664,7 @@ class ManualAllocateDBNumber(views.APIView):
 
         db_number = request.data['Comment']
         channel_name = ords[0]['channel_name']
+        order_piad_time = ords[0]['piad_time']
         # delivery_type = ords[0]['delivery_type']
         with transaction.atomic():
             orderStatus = None
@@ -678,6 +687,7 @@ class ManualAllocateDBNumber(views.APIView):
                     # status='已出库' if '拼邮' in delivery_type else '待处理',   # 如果是拼邮订单, 只是需要一个面单回填, 无需做国外发货处理
                     status=dbStatus,
                     channel_name=channel_name,
+                    order_piad_time=order_piad_time,
                     shipping=shippingObj,
                     inventory=inventoryObj)
                 shippingdbObj.save()
