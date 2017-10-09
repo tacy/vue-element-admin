@@ -1,8 +1,12 @@
-from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter
+from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter, NumberFilter
 from .models import Order, Product, Stock, ShippingDB, PurchaseOrder
 
 
 class CharInFilter(BaseInFilter, CharFilter):
+    pass
+
+
+class NumberRangeFilter(BaseInFilter, NumberFilter):
     pass
 
 
@@ -45,6 +49,11 @@ class ProductFilter(FilterSet):
 
 class StockFilter(FilterSet):
     jancode = CharFilter(name='product__jancode')
+    product_title = CharFilter(name='product__name', lookup_expr='icontains')
+    sku_properties = CharFilter(
+        name='product__specification', lookup_expr='icontains')
+    brand = CharFilter(name='product__brand', lookup_expr='icontains')
+    quantity__range = NumberRangeFilter(name='quantity', lookup_expr='range')
 
     class Meta:
         model = Stock

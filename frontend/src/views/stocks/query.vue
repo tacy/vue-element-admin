@@ -1,12 +1,24 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="商品条码" v-model="listQuery.jancode">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品条码" v-model="listQuery.jancode">
       </el-input>
-      <el-select clearable style="width: 200px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
+      <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item" placeholder="商品名称" v-model="listQuery.product_title">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item" placeholder="规格" v-model="listQuery.sku_properties">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item" placeholder="品牌" v-model="listQuery.brand">
+      </el-input>
+      <el-select clearable style="width: 100px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
         <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
       </el-select>
+      <el-button class="filter-item" size="large" plain="true" style="width: 80px;" type="text">库存范围:</el-button>
+      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="库存最小值" v-model="listQuery.quantity_l">
+      </el-input>
+      <i class="el-icon-minus"></i>
+      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="库存最大值" v-model="listQuery.quantity_g">
+      </el-input>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
       <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleSync">同步库存</el-button>
@@ -111,7 +123,13 @@
           page: 1,
           limit: 10,
 	  jancode: undefined,
-	  inventory: undefined
+	  inventory: undefined,
+	  product_title: undefined,
+	  sku_properties: undefined,
+	  brand: undefined,
+	  quantity_g: undefined,
+	  quantity__range: undefined,
+	  quantity_l: undefined
         },
 	temp: {
 	  inventory_name: undefined
@@ -126,6 +144,9 @@
     methods: {
       getStock() {
         this.listLoading = true;
+	if ( this.listQuery.quantity_g && this.listQuery.quantity_l ) {
+	  this.listQuery.quantity__range=this.listQuery.quantity_l+','+this.listQuery.quantity_g
+	}
         fetchStock(this.listQuery).then(response => {
           // this.list = response.data.results;
           this.list = response.data.results.map(v => {

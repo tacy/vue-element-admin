@@ -110,12 +110,12 @@
 	  <span>{{scope.row.shipping_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="订单时间" width="160px">
+      <el-table-column align="center" label="订单时间" width="180px">
 	<template scope="scope">
 	  <span>{{scope.row.order_piad_time}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="库存" width="80px">
+      <el-table-column align="center" label="库存" width="100px">
 	<template scope="scope">
 	  <el-tag :type="scope.row.stockStatus | stockStatusFilter" hit>{{scope.row.stockStatus}}</el-tag>
 	</template>
