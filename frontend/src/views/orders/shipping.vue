@@ -70,9 +70,6 @@
 	    <el-form-item label="规格">
 	      <span>{{ p.sku_properties_name }}</span>
 	    </el-form-item>
-	    <el-form-item label="订单时间">
-	      <span>{{ p.piad_time }}</span>
-	    </el-form-item>
 	    <el-form-item label="收件人">
 	      <span>{{ p.receiver_name }}</span>
 	    </el-form-item>
@@ -98,35 +95,40 @@
 	  <span>{{scope.row.db_number}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="渠道" width="100px">
+      <el-table-column align="center" label="渠道" width="80px">
 	<template scope="scope">
 	  <span>{{scope.row.channel_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="仓库" width='100px'>
+      <el-table-column align="center" label="仓库" width='80px'>
 	<template scope="scope">
 	  <span>{{scope.row.inventory_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="发货方式">
+      <el-table-column align="center" label="发货方式" width="100px">
 	<template scope="scope">
 	  <span>{{scope.row.shipping_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="订单时间" width="200px">
+      <el-table-column align="center" label="订单时间" width="160px">
 	<template scope="scope">
-	  <span>{{scope.row.info[0].piad_time}}</span>
+	  <span>{{scope.row.order_piad_time}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="库存">
+      <el-table-column align="center" label="库存" width="80px">
 	<template scope="scope">
 	  <el-tag :type="scope.row.stockStatus | stockStatusFilter" hit>{{scope.row.stockStatus}}</el-tag>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="状态">
+      <el-table-column align="center" label="状态" width="80px">
 	<template scope="scope">
 	  <span>{{scope.row.status}}</span>
 	  <!--el-tag :type="scope.row.status">{{scope.row.status}}</el-tag-->
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="打印" width="80px">
+	<template scope="scope">
+	  <span>{{scope.row.print_status}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="运单号">
@@ -367,11 +369,10 @@
 		'purchaseorder': ordinfo[3],
 		'product_title': ordinfo[4],
 		'sku_properties_name': ordinfo[5],
-		'piad_time': ordinfo[6],
-		'receiver_name': ordinfo[7],
-		'receiver_address': ordinfo[8],
-		'receiver_mobile': ordinfo[9],
-		'receiver_zip': ordinfo[10],
+		'receiver_name': ordinfo[6],
+		'receiver_address': ordinfo[7],
+		'receiver_mobile': ordinfo[8],
+		'receiver_zip': ordinfo[9],
 	      });
 	      if ( ordinfo[2] === '已采购' ) {
 	        this.list[index].stockStatus = '在途';
@@ -517,6 +518,15 @@
 	  // link.download = "report.pdf"
 	  // link.click()
 	  window.open(link);
+          for (const o of this.list) {
+	    for (const s of this.selectRow ) {
+	      if (o.id===s.id) {
+	        const index = this.list.indexOf(o);
+	        this.list[index].print_status = '已打印';
+		break;
+	      }
+	    }
+	  }
 	});
       },
       handlePDF(row) {
