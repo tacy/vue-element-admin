@@ -82,6 +82,9 @@
 	    <el-form-item label="邮编">
 	      <span>{{ p.receiver_zip }}</span>
 	    </el-form-item>
+	    <el-form-item label="销售链接">
+              <el-button type="text" size="small"><a :href="p.product_id" target="_blank">售卖地址</a></el-button>
+	    </el-form-item>
 	  </el-form>
 	</template>
       </el-table-column>
@@ -362,6 +365,10 @@
 	    const tmp = [];
 	    for (const o of t.order) {
 	      const ordinfo = o.split('@');
+	      const product_id='http://m.ymatou.com/item/page/index/'+ordinfo[10]
+	      if ( ordinfo[10].length<10 ) {
+	        product_id='https://m.51tiangou.com/product/listing.html?id='+ordinfo[10]
+	      }
 	      tmp.push({
 		'id': ordinfo[0],
 		'orderid': ordinfo[1],
@@ -373,6 +380,7 @@
 		'receiver_address': ordinfo[7],
 		'receiver_mobile': ordinfo[8],
 		'receiver_zip': ordinfo[9],
+		'product_id': product_id,
 	      });
 	      if ( ordinfo[2] === '已采购' ) {
 	        this.list[index].stockStatus = '在途';

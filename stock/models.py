@@ -163,6 +163,7 @@ class Order(models.Model):
     delivery_type = models.CharField(max_length=32, null=False)
     piad_time = models.DateTimeField()
     product_title = models.CharField(max_length=255, null=False)
+    product_id = models.CharField(max_length=64, null=False)
     sku_properties_name = models.CharField(
         max_length=64, null=True, default='')
     inventory = models.ForeignKey(Inventory, related_name='order', null=True)
@@ -185,11 +186,12 @@ class Order(models.Model):
         ordering = ['id', 'piad_time', 'receiver_mobile']
 
     def __str__(self):
-        return '%d@%s@%s@%s@%s@%s@%s@%s@%s@%s' % (
+        return '%d@%s@%s@%s@%s@%s@%s@%s@%s@%s@%s' % (
             self.id, self.orderid, self.status, self.purchaseorder.orderid
             if self.purchaseorder else 'none', self.product_title,
             self.sku_properties_name, self.receiver_name,
-            self.receiver_address, self.receiver_mobile, self.receiver_zip, )
+            self.receiver_address, self.receiver_mobile, self.receiver_zip,
+            self.product_id)
 
     # Todo:订单需要拆分
     # 订单状态:
