@@ -364,7 +364,8 @@ class XloboGetPDF(views.APIView):
         loop.close()
         logger.debug('XloboGetPDF: %s', result)
         if result['ErrorCount'] > 0:
-            errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
+            info = result['ErrorInfoList'][0]
+            errmsg = {'errmsg': info['Identity'] + ':' + info['ErrorDescription']}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
         merger = PdfFileMerger()
         pdftool = utils.PDFTool()

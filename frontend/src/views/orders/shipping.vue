@@ -82,6 +82,9 @@
 	    <el-form-item label="邮编">
 	      <span>{{ p.receiver_zip }}</span>
 	    </el-form-item>
+	    <el-form-item label="销售链接">
+              <el-button type="text" size="small"><a :href="p.product_id" target="_blank">售卖地址</a></el-button>
+	    </el-form-item>
 	  </el-form>
 	</template>
       </el-table-column>
@@ -110,12 +113,12 @@
 	  <span>{{scope.row.shipping_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="订单时间" width="160px">
+      <el-table-column align="center" label="订单时间" width="180px">
 	<template scope="scope">
 	  <span>{{scope.row.order_piad_time}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="库存" width="80px">
+      <el-table-column align="center" label="库存" width="100px">
 	<template scope="scope">
 	  <el-tag :type="scope.row.stockStatus | stockStatusFilter" hit>{{scope.row.stockStatus}}</el-tag>
 	</template>
@@ -362,6 +365,10 @@
 	    const tmp = [];
 	    for (const o of t.order) {
 	      const ordinfo = o.split('@');
+	      const product_id='http://m.ymatou.com/item/page/index/'+ordinfo[10]
+	      if ( ordinfo[10].length<10 ) {
+	        product_id='https://m.51tiangou.com/product/listing.html?id='+ordinfo[10]
+	      }
 	      tmp.push({
 		'id': ordinfo[0],
 		'orderid': ordinfo[1],
@@ -373,6 +380,7 @@
 		'receiver_address': ordinfo[7],
 		'receiver_mobile': ordinfo[8],
 		'receiver_zip': ordinfo[9],
+		'product_id': product_id,
 	      });
 	      if ( ordinfo[2] === '已采购' ) {
 	        this.list[index].stockStatus = '在途';
