@@ -54,7 +54,10 @@ class Product(models.Model):
     unit = models.CharField(max_length=2, null=True)
     expired = models.CharField(max_length=8, null=True)
     weight = models.DecimalField(max_digits=5, null=True, decimal_places=2)
-
+    purchase_link1 = models.CharField(max_length=255, null=True)
+    purchase_link2 = models.CharField(max_length=255, null=True)    
+    purchase_link3 = models.CharField(max_length=255, null=True)
+    
 
 class BondedProduct(models.Model):
     product_name = models.CharField(max_length=255, null=False)
