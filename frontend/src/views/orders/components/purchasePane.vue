@@ -13,6 +13,9 @@
 	<el-table-column align="center" label="商品名称" width="200px">
 	  <template scope="scope">
 	    <span>{{scope.row.product_name}}</span>
+            <el-button v-if="scope.row.purchase_link1!==null" type="text" size="small"><a :href="scope.row.purchase_link1" target="_blank">采购1</a></el-button>
+            <el-button v-if="scope.row.purchase_link2!==null" type="text" size="small"><a :href="scope.row.purchase_link2" target="_blank">采购2</a></el-button>
+            <el-button v-if="scope.row.purchase_link3!==null" type="text" size="small"><a :href="scope.row.purchase_link3" target="_blank">采购3</a></el-button>
 	  </template>
 	</el-table-column>
 

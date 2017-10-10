@@ -1009,7 +1009,7 @@ class OrderPurchaseList(views.APIView):
     # 国内的拼邮单, 采购之前需要看看东京仓库是否有货.
     #
     def get(self, request, format=None):
-        sql = "select p.jancode, p.name product_name, p.specification sku_properties_name, min(piad_time) piad_time, max(o.price) product_price, sum(o.need_purchase) qty from stock_product p inner join stock_order o on o.jancode=p.jancode where o.status='待采购' and o.inventory_id=%s group by jancode order by o.id"
+        sql = "select p.jancode, p.name product_name, p.purchase_link1, p.purchase_link2, p.purchase_link3, p.specification sku_properties_name, min(piad_time) piad_time, max(o.price) product_price, sum(o.need_purchase) qty from stock_product p inner join stock_order o on o.jancode=p.jancode where o.status='待采购' and o.inventory_id=%s group by jancode order by o.id"
         sql2 = "select quantity+inflight-preallocation tokyo_stock from stock_stock where inventory_id='4' and product_id=(select id from stock_product where jancode=%s)"
         sql3 = "select jancode from stock_order where seller_name='天狗' and status='待采购' and jancode=%s"
 
