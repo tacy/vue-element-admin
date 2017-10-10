@@ -64,18 +64,18 @@
     </div>
 
     <el-dialog :title="textMap[dialogStatus]" size="small" :visible.sync="dialogFormVisible">
-      <el-form class="small-space" :model="temp" label-position="left" label-width="80px">
-	<el-form-item label="名称:" label-width="50px">
+      <el-form :rules="rules" ref="form" class="small-space" :model="temp" label-position="left" label-width="80px">
+	<el-form-item label="名称:" label-width="60px" prop="name">
 	  <el-input style="width: 500px" v-model.trim="temp.name"></el-input>
 	</el-form-item>
 	<el-row>
           <el-col :span="12">
-	    <el-form-item label="条码:" label-width="50px">
+	    <el-form-item label="条码:" label-width="60px" prop="jancode">
 	      <el-input style="width: 200px" v-model.trim="temp.jancode"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
-	    <el-form-item label="类目:" label-width="50px">
+	    <el-form-item label="类目:" label-width="60px">
 	      <el-cascader :options="categoryOptions" v-model="selectCategory" style='width: 200px;' filterable show-all-levels placeholder="类目">
               </el-cascader>
 	    </el-form-item>
@@ -83,55 +83,64 @@
 	</el-row>
 	<el-row>
           <el-col :span="12">
-	    <el-form-item label="品牌:" label-width="50px">
+	    <el-form-item label="品牌:" label-width="60px" prop="brand">
 	      <el-input style="width: 200px" v-model.trim="temp.brand"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
-	    <el-form-item label="规格:" label-width="50px">
+	    <el-form-item label="规格:" label-width="60px" prop="specification">
 	      <el-input style="width: 200px" v-model.trim="temp.specification"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
 	<el-row>
           <el-col :span="12">
-	    <el-form-item label="产地:" label-width="50px">
+	    <el-form-item label="产地:" label-width="60px">
 	      <el-input style="width: 200px" v-model.trim="temp.origin"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
-	    <el-form-item label="型号:" label-width="50px">
+	    <el-form-item label="颜色:" label-width="60px">
 	      <el-input style="width: 200px" v-model.trim="temp.model"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
 	<el-row>
           <el-col :span="12">
-	    <el-form-item label="材质:" label-width="50px">
+	    <el-form-item label="材质:" label-width="60px">
 	      <el-input style="width: 200px" v-model.trim="temp.size"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
-	    <el-form-item label="单位:" label-width="50px">
+	    <el-form-item label="单位:" label-width="60px">
 	      <el-input style="width: 200px" v-model.trim="temp.unit"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
 	<el-row>
           <el-col :span="12">
-	    <el-form-item label="重量:" label-width="50px">
+	    <el-form-item label="重量(g):" label-width="60px">
 	      <el-input style="width: 200px" v-model.number="temp.weight" type="number"></el-input>
 	    </el-form-item>
 	  </el-col>
           <el-col :span="12">
-	    <el-form-item label="保质期:" label-width="50px">
+	    <el-form-item label="保质期:" label-width="60px">
 	      <el-input style="width: 200px" v-model.trim="temp.expired"></el-input>
 	    </el-form-item>
 	  </el-col>
 	</el-row>
-        <el-form-item label="描述:" label-width="50px">
+        <el-form-item label="描述:" label-width="60px">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" style="width: 500px" v-model.trim="temp.proddesc"></el-input>
         </el-form-item>
+	<el-form-item label="采购1:" label-width="60px" prop="purchase_link1">
+	  <el-input style="width: 500px" v-model.trim="temp.purchase_link1"></el-input>
+	</el-form-item>
+	<el-form-item label="采购2:" label-width="60px" prop="purchase_link2">
+	  <el-input style="width: 500px" v-model.trim="temp.purchase_link2"></el-input>
+	</el-form-item>
+	<el-form-item label="采购3:" label-width="60px" prop="purchase_link3">
+	  <el-input style="width: 500px" v-model.trim="temp.purchase_link3"></el-input>
+	</el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible=false">取消</el-button>
@@ -182,9 +191,26 @@
 	  proddesc: undefined,
 	  unit: undefined,
 	  expired: undefined,
-          weight: undefined
-        }
-      }
+          weight: undefined,
+	  purchase_link1: undefined,
+	  purchase_link2: undefined,
+	  purchase_link3: undefined
+        },
+        rules: {
+	  name: [
+	    {required: true, message: '请输入产品名', trigger: 'blur'}
+	  ],
+	  jancode: [
+	      {required: true, message: '请输入产品条码', trigger: 'blur'}
+	  ],
+	  brand: [
+	      {required: true, message: '请输入品牌', trigger: 'blur'}
+	  ],
+	  specification: [
+	      {required: true, message: '请输入产品规格', trigger: 'blur'}
+	  ]
+	}
+      };
     },
     created() {
       this.getCategory();
@@ -246,7 +272,10 @@
 	  proddesc: undefined,
 	  unit: undefined,
 	  expired: undefined,
-          weight: undefined
+          weight: undefined,
+	  purchase_link1: undefined,
+	  purchase_link2: undefined,
+	  purchase_link3: undefined
 	},
         this.dialogStatus = 'create';
 	this.dialogFormVisible = true;
