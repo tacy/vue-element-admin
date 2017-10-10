@@ -89,6 +89,8 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only=False, required=False, allow_null=True, allow_blank=True)
     channel_delivery_status = serializers.CharField(
         read_only=False, required=False, allow_null=True, allow_blank=True)
+    product_id = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)    
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
