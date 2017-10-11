@@ -142,7 +142,6 @@ async def syncTGOrder(tgapi, sellerName, pool):
         return
     for o in rs['data']['rows']:
         delty = o['deliveryAddress']
-        orderid = o['id']
         receiver_name = delty['receiver']
         receiver_address = ','.join([
             delty['province'], delty['city'],
@@ -162,6 +161,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
             #    2. payment根据jancode数量平分
             #    3. price根据num平分
             #    4. quantity = num*数量
+            orderid = o['id']
             if i:
                 orderid = str(orderid) + '-' + str(i)
             js = oi['barcode'].split('+')
