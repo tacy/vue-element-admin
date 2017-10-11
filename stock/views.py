@@ -720,6 +720,12 @@ class StockOut(views.APIView):
             with transaction.atomic():
                 for db in dbs:
                     shippingdbObj = ShippingDB.objects.get(db_number=db)
+                    if '已出库' in shippingdbObj.status:
+                        results = {
+                            'errmsg':
+                            '面单:{}已出库, 请确认订单是否已发货'.format(db)
+                            }
+                        raise IntegrityError
                     shippingdbObj.status = '已出库'
                     shippingdbObj.delivery_no = delivery_no
                     shippingdbObj.save(update_fields=['status', 'delivery_no'])
