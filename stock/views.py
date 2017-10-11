@@ -365,7 +365,9 @@ class XloboGetPDF(views.APIView):
         logger.debug('XloboGetPDF: %s', result)
         if result['ErrorCount'] > 0:
             info = result['ErrorInfoList'][0]
-            errmsg = {'errmsg': info['Identity'] + ':' + info['ErrorDescription']}
+            errmsg = {
+                'errmsg': info['Identity'] + ':' + info['ErrorDescription']
+            }
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
         merger = PdfFileMerger()
         pdftool = utils.PDFTool()
@@ -406,7 +408,8 @@ class XloboGetPDF(views.APIView):
         res.close()
 
         # update shippingdb print_status
-        ShippingDB.objects.filter(db_number__in=data['BillCodes']).update(print_status='已打印')
+        ShippingDB.objects.filter(db_number__in=data['BillCodes']).update(
+            print_status='已打印')
 
         return Response(data=result, status=status.HTTP_200_OK)
         # response = HttpResponse(content_type='application/pdf')
@@ -723,7 +726,12 @@ class StockOut(views.APIView):
                     if '已出库' in shippingdbObj.status:
                         results = {
                             'errmsg':
-                            '面单:{}已出库, 请确认订单是否已发货'.format(db)
+                            '面单:{} 已出库, 运单号:{}, 请确认订单是否已发货'.format(
+                                db, shippingdbObj.delivery_no)
+                        }
+                        if shippingdbObj.delivery_no == delivery_no:
+                            results = {
+                                'errmsg': '面单:{} 重复录入或重复打包, 请检查'.format(db)
                             }
                         raise IntegrityError
                     shippingdbObj.status = '已出库'
