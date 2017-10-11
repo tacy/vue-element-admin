@@ -63,12 +63,14 @@ class StockFilter(FilterSet):
 
 
 class ShippingDBFilter(FilterSet):
-    jancode = CharFilter(name='order__jancode')
+    jancode = CharFilter(name='order__jancode', distinct=True)
     product_title = CharFilter(
-        name='order__product_title', lookup_expr='icontains')
+        name='order__product_title', lookup_expr='icontains', distinct=True)
     sku_properties_name = CharFilter(
-        name='order__sku_properties_name', lookup_expr='icontains')
-    receiver_name = CharFilter(name='order__receiver_name')
+        name='order__sku_properties_name',
+        lookup_expr='icontains',
+        distinct=True)
+    receiver_name = CharFilter(name='order__receiver_name', distinct=True)
 
     class Meta:
         model = ShippingDB
@@ -84,9 +86,12 @@ class ShippingDBFilter(FilterSet):
 
 class PurchaseOrderFilter(FilterSet):
     orderid = CharFilter(lookup_expr='icontains')
-    jancode = CharFilter(name='purchaseorderitem__product__jancode')
+    jancode = CharFilter(
+        name='purchaseorderitem__product__jancode', distinct=True)
     product_name = CharFilter(
-        name='purchaseorderitem__product__name', lookup_expr='icontains')
+        name='purchaseorderitem__product__name',
+        lookup_expr='icontains',
+        distinct=True)
 
     class Meta:
         model = PurchaseOrder
