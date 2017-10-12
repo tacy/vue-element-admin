@@ -1,5 +1,5 @@
 from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter, NumberFilter
-from .models import Order, Product, Stock, ShippingDB, PurchaseOrder
+from .models import Order, Product, Stock, ShippingDB, PurchaseOrder, PurchaseOrderItem
 
 
 class CharInFilter(BaseInFilter, CharFilter):
@@ -39,12 +39,11 @@ class ProductFilter(FilterSet):
     # https://docs.djangoproject.com/en/dev/ref/models/lookups/#module-django.db.models.lookups
     name = CharFilter(lookup_expr='icontains')
     brand = CharFilter(lookup_expr='icontains')
+    jancode = CharFilter(lookup_expr='icontains')
 
     class Meta:
         model = Product
-        fields = [
-            'jancode',
-        ]
+        fields = []
 
 
 class StockFilter(FilterSet):
@@ -98,5 +97,28 @@ class PurchaseOrderFilter(FilterSet):
         fields = [
             'inventory',
             'supplier',
+            'status',
+        ]
+
+
+class PurchaseOrderItemFilter(FilterSet):
+    inventory = CharFilter(name='purchaseorder__inventory__id')
+    orderid = CharFilter(
+        name='purchaseorder__orderid', lookup_expr='icontains')
+    product_name = CharFilter(
+        name='product__name',
+        lookup_expr='icontains', )
+    product_specification = CharFilter(
+        name='product__specification',
+        lookup_expr='icontains', )
+    jancode = CharFilter(
+        name='product__jancode',
+        lookup_expr='icontains', )
+
+    class Meta:
+        model = PurchaseOrderItem
+        fields = [
+            'delivery_no',
+            'purchaseorder',
             'status',
         ]

@@ -55,9 +55,9 @@ class Product(models.Model):
     expired = models.CharField(max_length=8, null=True)
     weight = models.DecimalField(max_digits=5, null=True, decimal_places=2)
     purchase_link1 = models.CharField(max_length=255, null=True)
-    purchase_link2 = models.CharField(max_length=255, null=True)    
+    purchase_link2 = models.CharField(max_length=255, null=True)
     purchase_link3 = models.CharField(max_length=255, null=True)
-    
+
 
 class BondedProduct(models.Model):
     product_name = models.CharField(max_length=255, null=False)
@@ -133,7 +133,8 @@ class PurchaseOrderItem(models.Model):
         PurchaseOrder, related_name='purchaseorderitem')
     product = models.ForeignKey(Product, related_name='purchaseorderitem')
     quantity = models.IntegerField(null=False)
-    status = models.CharField(max_length=8, null=True)  # 已入库
+    status = models.CharField(max_length=8, null=True)  # 已入库/东京仓/转运中
+    delivery_no = models.CharField(max_length=32, null=True)  # 转运单号
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
 
     class Meta:

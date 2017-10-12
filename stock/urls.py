@@ -12,7 +12,7 @@ from .views import (
     ManualAllocateDBNumber, OrderItemGet, StockOut, OrderTPRCreate,
     PurchaseOrderClear, UexStockOut, ExportBondedOrder, BondedProductList,
     BondedProductDetail, ProductUpdateJancode, SyncStock, ExportDomesticOrder,
-    OrderOut)
+    OrderOut, PurchaseOrderTransform, DomesticStockIn)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -80,6 +80,12 @@ urlpatterns = {
     url(r'^purchase/clear/$',
         PurchaseOrderClear.as_view(),
         name="purchaseOrderClear"),
+    url(r'^purchase/transform/$',
+        PurchaseOrderTransform.as_view(),
+        name="purchaseOrderTransform"),
+    url(r'^purchase/domesticstockin/$',
+        DomesticStockIn.as_view(),
+        name="domesticStockIn"),
     url(r'^common/manualallocatedb/$',
         ManualAllocateDBNumber.as_view(),
         name="allocatedbnumber"),
