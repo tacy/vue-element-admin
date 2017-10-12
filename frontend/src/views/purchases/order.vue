@@ -215,7 +215,7 @@
 	      const poi = o.split('@')
 	      const qty = null
 	      const disabledStatus = false
-	      if ( poi[5]==='已入库' ) {
+	      if ( poi[5] !== 'None' ) {
 	        qty = poi[3]
 		disabledStatus = true
 	      }

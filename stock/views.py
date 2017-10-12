@@ -19,7 +19,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
 from .filter import (OrderFilter, ProductFilter, PurchaseOrderFilter,
-                     ShippingDBFilter, StockFilter)
+                     ShippingDBFilter, StockFilter, PurchaseOrderItemFilter)
 from .models import (BondedProduct, Inventory, Order, Product, PurchaseOrder,
                      PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier)
 from .serializers import (BondedProductSerializer, InventorySerializer,
@@ -1297,6 +1297,10 @@ class PurchaseOrderClear(views.APIView):
     #   2. stock入库(减inflight, 增加quantity).
     #   3. 标记订单待发货.
     # 需要支持部分入库
+    # 采购流程中, 国内采购需要增加转运, 流程如下:
+    #   1. 采购商品到达东京, 东京仓库入库, 这个入库只是标记purchaseorderitem状态为"东京仓", 不做其他操作
+    #   2. 增加页面, 显示所有状态为东京仓的purchaseorderitem, 东京仓库根据这个页面转运商品, 关联转运单号
+    #   3. 广州仓人员收到转运包括, 做入库操作
     def put(self, request, format=None):
         id = request.data.get('id')
         inventory_id = request.data.get('inventory')
@@ -1314,6 +1318,14 @@ class PurchaseOrderClear(views.APIView):
                     product__jancode=poi['jancode'])
                 if not poi['qty'] or '已入库' == poiObj.status:
                     continue
+
+                if inventory_id == 3:  # 如果是广州仓库, 只标记订单明细状态
+                    if poiObj.status in ['东京仓', '转运中']:
+                        continue
+                    poiObj.status = '东京仓'
+                    poiObj.save()
+                    continue
+
                 poiObj.status = '已入库'
                 poiObj.save()
 
@@ -1346,17 +1358,75 @@ class PurchaseOrderClear(views.APIView):
                 poObj.order.filter(
                     jancode=poi['jancode'], status='已采购').update(status='待发货')
 
-            if poObj.purchaseorderitem.filter(
-                    status='已入库').count() < len(pois):
-                poObj.status = '部分入库'
-            else:
-                poObj.status = '入库'
-            poObj.save(update_fields=[
-                'status',
-            ])
+            count = poObj.purchaseorderitem.filter(status='已入库').count()
+            if count > 0:
+                if count != len(pois):
+                    poObj.status = '部分入库'
+                else:
+                    poObj.status = '入库'
+                poObj.save(update_fields=[
+                    'status',
+                ])
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class PurchaseOrderTransform(views.APIView):
+    # 标记purchaseorderitem状态, 记录转运单号
+    def post(self, request, format=None):
+        data = request.data
+        with transaction.atomic():
+            for i in data['purchaseorderitems']:
+                poiObj = PurchaseOrderItem.objects.get(id=i['id'])
+                poiObj.status = '转运中'
+                poiObj.edlivery_no = data['delivery_no']
+                poiObj.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+class DomesticStockIn(views.APIView):
+    def post(self, request, format=None):
+        data = request.data
+        with transaction.atomic():
+            poiObj = PurchaseOrderItem.objects.get(id=data['id'])
+            poObj = poiObj.purchaseorder
+            if '转运中' in poiObj.status:
+                poiObj.status = '已入库'
+                poiObj.save()
+
+                inventory = poObj.inventory
+                stockObj = Stock.objects.get(
+                    product=poiObj.product, inventory=inventory)
+                stockObj.quantity = F('quantity') + poiObj.quantity
+                stockObj.inflight = F('inflight') - poiObj.quantity
+                stockObj.save()
+
+                # tokyo stock out if supplier is tokyo
+                if '东京仓' in poObj.supplier.name:
+                    stockTokyo = Stock.objects.get(
+                        inventory=Inventory.objects.get(name='东京'),
+                        product=poiObj.product, )
+                    stockTokyo.preallocation = F(
+                        'preallocation') - poiObj.quantity
+                    stockTokyo.quantity = F('quantity') - poiObj.quantity
+                    stockTokyo.save()
+
+                poObj.order.filter(
+                    jancode=poiObj.product.jancode, status='已采购').update(
+                        status='待发货')
+
+            count = poObj.purchaseorderitem.filter(status='已入库').count()
+            total = poObj.purchaseorderitem.all().count()
+            if count > 0:
+                if count != total:
+                    poObj.status = '部分入库'
+                else:
+                    poObj.status = '入库'
+                poObj.save(update_fields=[
+                    'status',
+                ])
+            return Response(status=status.HTTP_200_OK)
 
 
 # 采购标记订单疑难
@@ -1577,7 +1647,7 @@ class PurchaseOrderItemList(generics.ListCreateAPIView):
     queryset = PurchaseOrderItem.objects.all()
     serializer_class = PurchaseOrderItemSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
-    filter_fields = ('purchaseorder', )
+    filter_class = PurchaseOrderItemFilter
 
 
 class PurchaseOrderItemDetail(generics.RetrieveUpdateDestroyAPIView):

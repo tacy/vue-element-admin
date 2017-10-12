@@ -24,6 +24,22 @@ export function purchaseOrderDelete(data) {
   });
 }
 
+export function purchaseOrderTransform(data) {
+  return fetch({
+    url: '/purchase/transform/',
+    method: 'post',
+    data
+  });
+}
+
+export function domesticStockIn(data) {
+  return fetch({
+    url: '/purchase/domesticstockin/',
+    method: 'post',
+    data
+  });
+}
+
 export function purchaseOrderClear(data) {
   return fetch({
     url: '/purchase/clear/',

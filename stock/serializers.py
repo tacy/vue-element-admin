@@ -22,7 +22,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = PurchaseOrder
-        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
         fields = '__all__'
 
 
@@ -30,11 +29,13 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
     jancode = serializers.ReadOnlyField(source='product.jancode')
     product_name = serializers.ReadOnlyField(source='product.name')
+    product_specification = serializers.ReadOnlyField(
+        source='product.specification')
+    orderid = serializers.ReadOnlyField(source='purchaseorder.orderid')
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = PurchaseOrderItem
-        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
         fields = '__all__'
 
 
@@ -92,7 +93,7 @@ class OrderSerializer(serializers.ModelSerializer):
     product_id = serializers.CharField(
         read_only=False, required=False, allow_null=True, allow_blank=True)
     seller_memo = serializers.CharField(
-        read_only=False, required=False, allow_null=True, allow_blank=True)        
+        read_only=False, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""

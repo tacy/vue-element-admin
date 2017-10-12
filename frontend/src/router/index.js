@@ -28,6 +28,7 @@ const ordersNeedExport = _import('orders/needexport');
 /* purchase */
 const purchasesorder = _import('purchases/order');
 const purchasescreate = _import('purchases/create');
+const purchasestransform = _import('purchases/transform');
 
 /* product */
 const productsquery = _import('products/query');
@@ -121,6 +122,7 @@ export const asyncRouterMap = [
     icon: 'zujian',
     children: [
       { path: 'order', component: purchasesorder, name: '采购单', meta: { role: ['admin', 'tokyo'] } },
+      { path: 'transform', component: purchasestransform, name: '转运国内', meta: { role: ['admin', 'tokyo'] } },
       { path: 'create', component: purchasescreate, name: '新采购', meta: { role: ['admin', 'tokyo'] } }
     ]
   },
