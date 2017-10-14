@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import logging
+import decimal
 
 import aiohttp
 import async_timeout
@@ -35,6 +36,7 @@ class UbayAPI():
 
     async def pushOrder(self, orders):
         url = 'http://open.nxubay.com/API/OrderInfo/createOrder.html'
+        rate = decimal.Decimal('0.8')
 
         address = orders[0]['receiver_address']
         msg = {
@@ -54,9 +56,9 @@ class UbayAPI():
                     'ZipCode': orders[0]['receiver_zip'],
                     'BuyerName': orders[0]['receiver_name'],
                     'IdCard': orders[0]['receiver_idcard'],
-                    'OrderPayment': (orders[0]['payment']) * 0.8,
+                    'OrderPayment': (orders[0]['payment']) * rate,
                     'PostFee': 0,
-                    'BuyerPayment': (orders[0]['payment']) * 0.8,
+                    'BuyerPayment': (orders[0]['payment']) * rate,
                     'InsuranceFee': 0,
                     'TaxAmount': 0,
                     'TariffAmount': 0,
@@ -77,9 +79,9 @@ class UbayAPI():
                 'Detail': {
                     'ProductNumberCode': o['jancode'],
                     'SaleGoodsName': o['product_title'],
-                    'SaleGoodsPrice': (o['price']) * 0.8,
+                    'SaleGoodsPrice': (o['price']) * rate,
                     'SaleNumber': o['quantity'],
-                    'SaleSubTotal': (o['price']) * 0.8 * o['quantity'],
+                    'SaleSubTotal': (o['price']) * rate * o['quantity'],
                 }
             }
             details.append(item)
