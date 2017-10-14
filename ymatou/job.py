@@ -342,7 +342,7 @@ async def deliveryYmtOrder(ymtapi, pool):
 
 # 推送宁波保税仓订单
 async def pushUbayBondedOrder(ubayapi, pool):
-    sql = "select * from stock_order o inner join stock_bonedproduct b on o.jancode=b.jancode where o.status='待处理' and b.bonded_name='宁波保税'"
+    sql = "select * from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.status='待处理' and b.bonded_name='宁波保税'"
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(sql)
