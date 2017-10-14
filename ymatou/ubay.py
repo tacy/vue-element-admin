@@ -39,7 +39,7 @@ class UbayAPI():
         url = 'http://open.nxubay.com/API/OrderInfo/createOrder.html'
         rate = decimal.Decimal('0.8')
 
-        address = orders[0]['receiver_address']
+        address = orders[0]['receiver_address'].split(',')
         msg = {
             'Message': {
                 'Body': {
