@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 
 import tiangouAPI
 import ymatouapi
+import ubay
 
 REQUEST_TIMEOUT = 60
 access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
@@ -339,6 +340,107 @@ async def deliveryYmtOrder(ymtapi, pool):
                             (i[0], info[0]['msg']))
 
 
+# 推送宁波保税仓订单
+async def pushUbayBondedOrder(ubayapi, pool):
+    sql = "select * from stock_order o inner join stock_bonedproduct b on o.jancode=b.jancode where o.status='待处理' and b.bonded_name='宁波保税'"
+    async with pool.acquire() as conn:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute(sql)
+            rs = await cur.fetchall()
+
+            # 购物车订单需要合并推送
+            ts = set(map(lambda x: x['orderid'], rs))
+            nrs = [[y for y in rs if y['orderid'] == x] for x in ts]
+
+            for i in nrs:
+                r = await ubayapi.pushOrder(i)
+                if not r:
+                    continue
+                if 'T' in r['Message']['Result']:
+                    await cur.execute(
+                        "update stock_order set export_status='已推送' where orderid=%s",
+                        (i[0]['orderid'], ))
+                    await conn.commit()
+                else:
+                    logging.error(
+                        'pushUbayBondedOrder: %s failed, ErrMsg:%s' %
+                        (i[0]['orderid'], r['Message']['ResultMsg']), )
+
+
+# 获取宁波保税订单运单号
+async def getUbayBondedOrderStatus(ubayapi, pool):
+    sql = "select orderid from stock_order where delivery_type='第三方保税' and export_status='已推送' and status='待处理' group by orderid"
+    expressCompany = {
+        "贝海国际速递（上海保税专用）": "Y125",
+        "中通快递-中国件（ZTO Express）": "Y129",
+        "圆通速递-中国件（YTO Express）": "Y130",
+        "天天快递-中国件（TTK Express）": "Y131",
+        "宅急送-中国件（ZJS Express）": "Y132",
+        "申通快递-中国件（STO Express）": "Y133",
+        "百世汇通-中国件（800bestex）": "Y134",
+        "韵达快递-中国件（Yundaex）": 'Y135',
+        "顺丰速运-中国件（SF-Express）": 'Y136',
+        "乐天速递": 'Y138',
+        "汇通快递": 'Y140',
+        "全峰快递": 'Y141',
+        "优速物流": 'Y027',
+        "中邮物流（CNPL Express）": "Y024",
+        "EMS（中国件）": 'Y013',
+        "德邦物流（Deppon ）": 'Y102',
+        "全峰快递（Quanfeng）": 'Y029',
+    }
+
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(sql)
+            rs = await cur.fetchall()
+
+            for i in rs:
+                r = await ubayapi.getDeliveryNo(i)
+                if not r:
+                    continue
+                msg = r['Message']
+                if 'T' in msg['Result'] and msg['Status'] not in ['00', '01']:
+                    ec = ''
+                    for i, k in expressCompany.items():
+                        if msg['Logistics'] in i:
+                            ec = k
+                    delivery_no = msg['LogisticsNumber']
+                    await cur.execute(
+                        "update stock_order set status='已发货',domestic_delivery_no=%s,domestic_delivery_company=%s where orderid=%s",
+                        (i, delivery_no, ec))
+                    await conn.commit()
+                else:
+                    logging.error(
+                        'Ubay getDeliveryNo: orderid=%s failed, ErrMsg:%s' %
+                        (i, r['Message']['ResultMsg']), )
+
+
+# automatic process ymatou bonded order delivery
+async def deliveryYmtBondedOrder(ymtapi, pool):
+    # 订单渠道是洋码头, 并且db单中的ymatou字段为空
+    sql = "select orderid, domestic_delivery_no, domestic_delivery_company from stock_order where domestic_delivery_no is not null and domestic_delivery_company is not null group by orderid, domestic_delivery_no, domestic_delivery_company"
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(sql)
+            rs = await cur.fetchall()
+            for i in rs:
+                r = await ymtapi.deliver(i[0], i[1], i[2], domestic=True)
+                if not r:
+                    continue
+                if '0000' in r.get('code') and r.get('content'):
+                    info = r['content']['results']
+                    if info[0]['exec_success']:
+                        await cur.execute(
+                            "update stock_order set channel_delivery_status='已发货' where orderid=%s",
+                            (i[0], ))
+                        await conn.commit()
+                    else:
+                        logging.error(
+                            'deliveryYmtOrder: %s failed, ErrMsg:%s' %
+                            (i[0], info[0]['msg']))
+
+
 # automatic process tiangou order delivery
 async def deliveryTgOrder(tgapi, pool):
     # 订单渠道是京东, 并且db单中的ymatou字段为空
@@ -451,6 +553,11 @@ async def main(loop):
             asyncio.ensure_future(
                 periodic.start(deliveryYmtOrder, interval['deliveryymtorder'],
                                ymtapi, pool)))
+        # 宁波保税仓发货
+        task.append(
+            asyncio.ensure_future(
+                periodic.start(deliveryYmtBondedOrder, interval[
+                    'deliveryymtorder'], ymtapi, pool)))
 
     # sync ymtorder to xlobo
     sessXlobo = aiohttp.ClientSession(loop=loop)
@@ -467,6 +574,21 @@ async def main(loop):
         asyncio.ensure_future(
             periodic.start(syncTpoOrdToXlobo, interval['impordtoxlobo'],
                            xloboapi, pool)))
+
+    # push bondedOrder to Ubay
+    sessUbay = aiohttp.ClientSession(loop=loop)
+    user_code = 'jingdongcaihongqiao'
+    password = 'chq123456'
+    key = '1013'
+    ubayapi = ubay.UbayAPI(sessUbay, user_code, password, key)
+    task.append(
+        asyncio.ensure_future(
+            periodic.start(pushUbayBondedOrder, interval['pushorder'], ubayapi,
+                           pool)))
+    task.append(
+        asyncio.ensure_future(
+            periodic.start(getUbayBondedOrderStatus, interval['getdeliveryno'],
+                           ubayapi, pool)))
 
     task.append(
         asyncio.ensure_future(
