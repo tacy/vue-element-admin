@@ -29,7 +29,7 @@ class YmatouAPI():
         sign = hashlib.md5(signOrgStr.encode('utf-8')).hexdigest().upper()
         return sign
 
-    async def callAPI(self, method, biz_content):
+    async def callAPI(self, method, biz_content=None):
         randomstr = ''.join(
             random.choice(string.ascii_letters + string.digits)
             for _ in range(32))
@@ -39,8 +39,11 @@ class YmatouAPI():
             'method': method,
             'timestamp': arrow.now().format('YYYY-MM-DD HH:mm:ss'),
             'nonce_str': randomstr,
-            'biz_content': json.dumps(biz_content)
+            # 'biz_content': json.dumps(biz_content)
         }
+        if biz_content:
+            payload['biz_content'] = json.dumps(biz_content)
+
         payload['sign'] = self.getSign(payload)
         url = self.urltpl.format(self.appid, method)
         try:
@@ -107,6 +110,11 @@ class YmatouAPI():
             'order_id': orderid,
         }
         result = await self.callAPI(method, biz_content)
+        return result
+
+    async def getLogisticCompany(self):
+        method = 'ymatou.logistics.companies.get'
+        result = await self.callAPI(method)
         return result
 
 

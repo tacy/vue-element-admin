@@ -180,6 +180,8 @@ class Order(models.Model):
         max_length=3, null=True, default='')  # 已发货/null
     importstatus = models.CharField(max_length=3, null=True)  # 是否已经导入贝海后台
     export_status = models.CharField(max_length=3, null=True)  # 导出发货
+    domestic_delivery_no = models.CharField(max_length=64, null=True)
+    domestic_delivery_company = models.CharField(max_length=64, null=True)
     conflict = models.CharField(max_length=8, null=True)  # 换货/退款
     conflict_memo = models.CharField(max_length=128, null=True)
     conflict_feedback = models.CharField(max_length=128, null=True)

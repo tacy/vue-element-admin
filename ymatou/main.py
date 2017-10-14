@@ -10,8 +10,7 @@ import pymysql.cursors
 from bs4 import BeautifulSoup
 
 from tiangouAPI import TiangouAPI
-from utils import SyncStock
-from ymatouapi import XloboAPI
+from ymatouapi import XloboAPI, YmatouAPI
 
 REQUEST_TIMEOUT = 120
 db_password = '12345678'
@@ -334,6 +333,23 @@ def importLogistic():
 
 
 @click.command()
+def importLogisticCompany():
+    appid = 'llzlHWWDTkEsUUjwKf'
+    appsecret = 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox'
+    authcode = 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk'
+    loop = asyncio.get_event_loop()
+    sessYmt = aiohttp.ClientSession(
+        loop=loop, headers={'Content-Type': 'application/json'})
+    ymtapi = YmatouAPI(sessYmt, appid, appsecret, authcode)
+    result = loop.run_until_complete(ymtapi.getLogisticCompany())
+
+    # Let's also finish all running tasks:
+    pending = asyncio.Task.all_tasks()
+    loop.run_until_complete(asyncio.gather(*pending))
+    print(result)
+
+
+@click.command()
 def importProduct():
     loop = asyncio.get_event_loop()
     # breaks because of the first url
@@ -415,6 +431,7 @@ cli.add_command(importLogistic)
 cli.add_command(importTpoToXlobo)
 cli.add_command(importYmtToXlobo)
 cli.add_command(exportStock)
+cli.add_command(importLogisticCompany)
 
 if __name__ == '__main__':
     cli()
