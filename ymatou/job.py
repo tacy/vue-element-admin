@@ -354,6 +354,7 @@ async def pushUbayBondedOrder(ubayapi, pool):
 
             for i in nrs:
                 r = await ubayapi.pushOrder(i)
+                logging.debug('pushUbayBondedOrder Result: %s', r)
                 if not r:
                     continue
                 if 'T' in r['Message']['Result']:
@@ -397,10 +398,13 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
 
             for i in rs:
                 r = await ubayapi.getDeliveryNo(i)
+                logging.debug('getBondedOrderDeliveryNo Result: %s', r)
                 if not r:
                     continue
                 msg = r['Message']
-                if 'T' in msg['Result'] and msg['Status'] not in ['00', '01']:
+                if 'T' in msg['Result']:
+                    if msg['Status'] in ['00', '01']:
+                        continue
                     ec = ''
                     for i, k in expressCompany.items():
                         if msg['Logistics'] in i:
