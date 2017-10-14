@@ -26,6 +26,7 @@ class UbayAPI():
             'xml': xml,
             'sign': sign,
         }
+        log.debug('ubayapi call msg %s', data)
         try:
             with async_timeout.timeout(REQUEST_TIMEOUT):
                 async with self.session.post(url, data=data) as response:
