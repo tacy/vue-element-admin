@@ -342,7 +342,7 @@ async def deliveryYmtOrder(ymtapi, pool):
 
 # 推送宁波保税仓订单
 async def pushUbayBondedOrder(ubayapi, pool):
-    sql = "select * from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.status='待处理' and b.bonded_name='宁波保税'"
+    sql = "select * from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.status='待处理' and export_status is null and channel_name='洋码头' and  b.bonded_name='宁波保税'"
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(sql)
@@ -369,7 +369,7 @@ async def pushUbayBondedOrder(ubayapi, pool):
 
 # 获取宁波保税订单运单号
 async def getUbayBondedOrderStatus(ubayapi, pool):
-    sql = "select orderid from stock_order where delivery_type='第三方保税' and export_status='已推送' and status='待处理' group by orderid"
+    sql = "select orderid from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.delivery_type='第三方保税' and b.bonded_name='宁波保税' and o.export_status='已推送' and o.status='待处理' and o.channel_name='洋码头' group by orderid"
     expressCompany = {
         "贝海国际速递（上海保税专用）": "Y125",
         "中通快递-中国件（ZTO Express）": "Y129",
