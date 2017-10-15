@@ -94,14 +94,14 @@ class ShippingDB(models.Model):
         max_length=32, unique=True,
         null=False)  # xloboDBNumber, uexDBNumber, EMSNumber
     channel_name = models.CharField(max_length=16, null=False)
-    order_piad_time = models.DateTimeField()
+    order_piad_time = models.DateTimeField(null=True)
     delivery_no = models.CharField(max_length=32, null=True)  # delivery number
     shipping = models.ForeignKey(
         Shipping, related_name='shippingdb', null=False)
     inventory = models.ForeignKey(
         Inventory, related_name='shippingdb', null=False)
     status = models.CharField(max_length=8, null=True)  # 待处理/已删除/已出库
-    delivery_time = models.DateTimeField()
+    delivery_time = models.DateTimeField(null=True)
     print_status = models.CharField(max_length=8, null=True)  # 已打印
 
     class Meta:
