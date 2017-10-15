@@ -80,6 +80,7 @@ class ShippingDBFilter(FilterSet):
             'shipping',
             'delivery_no',
             'inventory',
+            'delivery_time',
         ]
 
 

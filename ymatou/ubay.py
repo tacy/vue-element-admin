@@ -112,12 +112,15 @@ class UbayAPI():
 
 
 async def main(loop):
-    user_code = 'ubay_test'
-    password = '123456'
-    key = '0000'
+    # user_code = 'ubay_test'
+    # password = '123456'
+    # key = '0000'
+    user_code = 'jingdongcaihongqiao'
+    password = 'chq123456'
+    key = '1013'
     session = aiohttp.ClientSession(loop=loop)
     ubayapi = UbayAPI(session, user_code, password, key)
-    result = await ubayapi.getDeliveryNo('100110102')
+    result = await ubayapi.getDeliveryNo('127710065')
     # result = await ubayapi.pushOrder('')
     print(result)
 
