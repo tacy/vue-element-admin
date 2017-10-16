@@ -65,7 +65,7 @@ class UbayAPI():
                     'TariffAmount': 0,
                     'AddedValueTaxAmount': 0,
                     'ConsumptionDutyAmount': 0,
-                    'PaymentMethod': '29',
+                    'PaymentMethod': '27',
                     'PaymentCode': orders[0]['orderid'],
                     'PaymentOrderSeq': '122',
                     'CreateTime': orders[0]['piad_time'],
@@ -120,7 +120,7 @@ async def main(loop):
     key = '1013'
     session = aiohttp.ClientSession(loop=loop)
     ubayapi = UbayAPI(session, user_code, password, key)
-    result = await ubayapi.getDeliveryNo('127730292-1')
+    result = await ubayapi.getDeliveryNo('127710065')
     # result = await ubayapi.pushOrder('')
     print(result)
 

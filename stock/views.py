@@ -736,7 +736,8 @@ class StockOut(views.APIView):
                         raise IntegrityError
                     shippingdbObj.status = '已出库'
                     shippingdbObj.delivery_no = delivery_no
-                    shippingdbObj.delivery_time = arrow.now()
+                    shippingdbObj.delivery_time = arrow.now().format(
+                        'YYYY-MM-DD HH:mm:ss')
                     shippingdbObj.save(update_fields=[
                         'status', 'delivery_no', 'delivery_time'
                     ])
