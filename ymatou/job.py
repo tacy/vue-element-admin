@@ -386,7 +386,7 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
         "全峰快递": 'Y141',
         "优速物流": 'Y027',
         "中邮物流（CNPL Express）": "Y024",
-        "EMS（中国件）": 'Y013',
+        "邮政- EMS（中国件）": 'Y013',
         "德邦物流（Deppon ）": 'Y102',
         "全峰快递（Quanfeng）": 'Y029',
     }
@@ -407,7 +407,7 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
                         continue
                     ec = ''
                     for i, k in expressCompany.items():
-                        if msg['Logistics'] in i:
+                        if msg['Logistics'][:2] in i:
                             ec = k
                     delivery_no = msg['LogisticsNumber']
                     await cur.execute(
