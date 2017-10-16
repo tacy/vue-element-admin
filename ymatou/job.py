@@ -603,7 +603,7 @@ logpre = os.path.abspath(__file__)
 logging.basicConfig(
     filename='%s.log' % logpre,
     format='%(asctime)s %(levelname)s:%(message)s',
-    level=logging.INFO)
+    level=logging.DEBUG)
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
