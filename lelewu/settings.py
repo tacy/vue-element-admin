@@ -169,6 +169,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'ymatou': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
 }
 
