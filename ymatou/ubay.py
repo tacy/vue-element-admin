@@ -78,7 +78,7 @@ class UbayAPI():
         for o in orders:
             item = {
                 'Detail': {
-                    'ProductNumberCode': o['jancode'],
+                    'ProductNumberCode': o['filing_no'],
                     'SaleGoodsName': o['product_title'],
                     'SaleGoodsPrice': (o['price']) * rate,
                     'SaleNumber': o['quantity'],
