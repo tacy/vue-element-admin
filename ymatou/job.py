@@ -407,7 +407,7 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
                         continue
                     ec = ''
                     for i, k in expressCompany.items():
-                        if msg['Logistics'].decode('utf-8')[:2] in i:
+                        if msg['Logistics'][:2] in i:
                             ec = k
                     delivery_no = msg['LogisticsNumber']
                     await cur.execute(
