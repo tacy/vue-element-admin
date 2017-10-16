@@ -372,23 +372,23 @@ async def pushUbayBondedOrder(ubayapi, pool):
 async def getUbayBondedOrderStatus(ubayapi, pool):
     sql = "select orderid from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.delivery_type='第三方保税' and b.bonded_name='宁波保税' and o.export_status='已推送' and o.status='待处理' and o.channel_name='洋码头' group by orderid"
     expressCompany = {
-        "贝海国际速递（上海保税专用）": "Y125",
-        "中通快递-中国件（ZTO Express）": "Y129",
-        "圆通速递-中国件（YTO Express）": "Y130",
-        "天天快递-中国件（TTK Express）": "Y131",
-        "宅急送-中国件（ZJS Express）": "Y132",
-        "申通快递-中国件（STO Express）": "Y133",
-        "百世汇通-中国件（800bestex）": "Y134",
-        "韵达快递-中国件（Yundaex）": 'Y135',
-        "顺丰速运-中国件（SF-Express）": 'Y136',
-        "乐天速递": 'Y138',
-        "汇通快递": 'Y140',
-        "全峰快递": 'Y141',
-        "优速物流": 'Y027',
-        "中邮物流（CNPL Express）": "Y024",
-        "邮政- EMS（中国件）": 'Y013',
-        "德邦物流（Deppon ）": 'Y102',
-        "全峰快递（Quanfeng）": 'Y029',
+        u"贝海国际速递（上海保税专用）": "Y125",
+        u"中通快递-中国件（ZTO Express）": "Y129",
+        u"圆通速递-中国件（YTO Express）": "Y130",
+        u"天天快递-中国件（TTK Express）": "Y131",
+        u"宅急送-中国件（ZJS Express）": "Y132",
+        u"申通快递-中国件（STO Express）": "Y133",
+        u"百世汇通-中国件（800bestex）": "Y134",
+        u"韵达快递-中国件（Yundaex）": 'Y135',
+        u"顺丰速运-中国件（SF-Express）": 'Y136',
+        u"乐天速递": 'Y138',
+        u"汇通快递": 'Y140',
+        u"全峰快递": 'Y141',
+        u"优速物流": 'Y027',
+        u"中邮物流（CNPL Express）": "Y024",
+        u"邮政- EMS（中国件）": 'Y013',
+        u"德邦物流（Deppon ）": 'Y102',
+        u"全峰快递（Quanfeng）": 'Y029',
     }
 
     async with pool.acquire() as conn:
@@ -407,7 +407,7 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
                         continue
                     ec = ''
                     for i, k in expressCompany.items():
-                        if msg['Logistics'][:2] in i:
+                        if msg['Logistics'].decode('utf-8')[:2] in i:
                             ec = k
                     delivery_no = msg['LogisticsNumber']
                     await cur.execute(
