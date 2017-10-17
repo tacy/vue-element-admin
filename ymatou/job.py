@@ -412,7 +412,7 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
                     delivery_no = msg['LogisticsNumber']
                     await cur.execute(
                         "update stock_order set status='已发货',domestic_delivery_no=%s,domestic_delivery_company=%s where orderid=%s",
-                        (i, delivery_no, ec))
+                        (delivery_no, ec, i, ))
                     await conn.commit()
                 else:
                     logging.error(
