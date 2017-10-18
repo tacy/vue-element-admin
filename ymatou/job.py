@@ -88,7 +88,12 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                 dt = deliveryType[oi['delivery_type']]
                 receiver_idcard = ''
                 if u'第三方保税' in dt:
-                    receiver_idcard = o['id_cards'][0]['receiver_id_no']
+                    try:
+                        receiver_idcard = o['id_cards'][0]['receiver_id_no']
+                    except TypeError as e:
+                        logging.exception('emergy msg', oi)
+                        raise Exception
+
                 it = (o['seller_id'], '洋码头', o['order_id'], o['receiver_name'],
                       o['receiver_address'], o['receiver_zip'],
                       o['receiver_mobile'], receiver_idcard, o['seller_memo'],
@@ -291,10 +296,10 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                     'ChannelName': r[1],
                     'OrderCode': r[2],
                     'ReceiverName': r[3],
-                    'ReceiverProvince': ai[0],
-                    'ReceiverCity': ai[1],
-                    'ReceiverDistrict': ai[2],
-                    'ReceiverAddress': ai[3],
+                    'ReceiverProvince': ai[0].strip(),
+                    'ReceiverCity': ai[1].strip(),
+                    'ReceiverDistrict': ai[2].strip(),
+                    'ReceiverAddress': ai[3].strip(),
                     'receiverMobile': r[5],
                     'ReceiverPostCode': r[6],
                     'ReceiverIdCode': r[7],
