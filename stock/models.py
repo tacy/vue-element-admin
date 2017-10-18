@@ -72,7 +72,7 @@ class Stock(models.Model):
     quantity = models.IntegerField(null=True, default=0)  # 库存
     inflight = models.IntegerField(null=True, default=0)  # 在途数量
     preallocation = models.IntegerField(null=True, default=0)  # 分配到该仓库商品的订单
-    location = models.CharField(max_length=8, null=True)  # 库存位置
+    location = models.CharField(max_length=10, null=True)  # 库存位置
 
     class Meta:
         unique_together = ('inventory', 'product')
