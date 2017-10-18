@@ -10,24 +10,34 @@ connection = pymysql.connect(
     charset='utf8mb4',
     cursorclass=pymysql.cursors.DictCursor)
 
-with open('/home/tacy/kuwei.csv', newline='') as f:
+with open('./kuwei.csv', newline='') as f:
     reader = csv.reader(f)
-    locale = ''
+    location = ''
     sql = 'update stock_stock s inner join stock_product p on s.product_id=p.id set location=%s where p.jancode=%s and s.inventory_id=4'
+    query_sql = 'select p.jancode, s.location from stock_stock s inner join stock_product p on s.product_id=p.id where s.inventory_id=4 and p.jancode=%s'
 
     try:
         with connection.cursor() as cursor:
             for row in reader:
                 if row[1]:
-                    locate = row[1]
+                    location = row[1]
                 # Create a new record
-                affected_rows = cursor.execute(sql, (locate, row[0]))
-                if not affected_rows:
-                    print('update locate failed, jancode:{}, locate:{}'.format(
-                        row[0], locate))
+
+                cursor.execute(query_sql, (row[0]))
+                result = cursor.fetchall()
+                if not result:
+                    print('jancode does not exist: %s' % (row[0]))
+                    continue
+                db_location = result[0]['location']
+                if db_location and location not in db_location:
+                    db_location = db_location + ',' + location
+                else:
+                    db_location = location
+                cursor.execute(sql, (db_location, row[0]))
+                connection.commit()
 
         # connection is not autocommit by default. So you must commit to save
         # your changes.
-        connection.commit()
+
     finally:
         connection.close()
