@@ -95,7 +95,8 @@ class ShippingDB(models.Model):
         null=False)  # xloboDBNumber, uexDBNumber, EMSNumber
     channel_name = models.CharField(max_length=16, null=False)
     order_piad_time = models.DateTimeField(null=True)
-    delivery_no = models.CharField(max_length=32, null=True)  # delivery number
+    delivery_no = models.CharField(
+        max_length=128, null=True)  # delivery number
     shipping = models.ForeignKey(
         Shipping, related_name='shippingdb', null=False)
     inventory = models.ForeignKey(
