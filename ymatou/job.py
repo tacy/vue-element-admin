@@ -91,7 +91,7 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                     try:
                         receiver_idcard = o['id_cards'][0]['receiver_id_no']
                     except TypeError as e:
-                        logging.exception('emergy msg', oi)
+                        logging.exception('emergy msg orderid %s' % (jancode))
                         raise Exception
 
                 it = (o['seller_id'], '洋码头', o['order_id'], o['receiver_name'],
