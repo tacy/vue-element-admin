@@ -102,6 +102,7 @@ class ShippingDB(models.Model):
     inventory = models.ForeignKey(
         Inventory, related_name='shippingdb', null=False)
     status = models.CharField(max_length=8, null=True)  # 待处理/已删除/已出库
+    # error_msg = models.CharField(max_length=256, null=True)  # 如果打印面单出错, 需要记录
     delivery_time = models.DateTimeField(null=True)
     print_status = models.CharField(max_length=8, null=True)  # 已打印
 
