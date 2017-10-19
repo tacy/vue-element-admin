@@ -17,7 +17,6 @@
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '4'">
       </el-input>
 
-      </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品规格" v-model="listQuery.sku_properties_name">
       </el-input>
       <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="订单状态">
@@ -68,10 +67,10 @@
 	    <el-form-item label="面单:" label-width="50px">
 	      <span>{{ scope.row.db_number }}</span>
 	    </el-form-item>
-	    <el-form-item label="注文编号:" label-width="80px">
-	      <span>{{ scope.row.purchaseorder_orderid }}</span>
+	    <el-form-item label="出库时间:" label-width="80px">
+	      <span>{{ scope.row.shippingdb_delivery_time }}</span>
 	    </el-form-item>
-	    <el-form-item label="采购单:" label-width="80px">
+	    <el-form-item label="注文编号:" label-width="80px">
 	      <span>{{ scope.row.purchaseorder_orderid }}</span>
 	    </el-form-item>
 	    <el-form-item label="仓库:" label-width="50px">

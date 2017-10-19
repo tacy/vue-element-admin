@@ -113,9 +113,9 @@
 	  <span>{{scope.row.shipping_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="订单时间" width="180px">
+      <el-table-column align="center" label="订单时间" width="130px">
 	<template scope="scope">
-	  <span>{{scope.row.order_piad_time}}</span>
+	  <span>{{scope.row.order_piad_time|fmDate}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="库存" width="100px">
@@ -332,6 +332,11 @@
 	  在途: 'danger'
         };
         return stockStatusMap[stockStatus]
+      },
+      fmDate(value) {
+	if (!value) return ''
+	value = value.substr(2, 8) + ' ' + value.substr(11, 5)
+	return value
       }
     },
     created() {

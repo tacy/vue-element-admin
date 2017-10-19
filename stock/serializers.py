@@ -80,6 +80,8 @@ class OrderSerializer(serializers.ModelSerializer):
     shipping_name = serializers.ReadOnlyField(source='shipping.name')
     inventory_name = serializers.ReadOnlyField(source='inventory.name')
     db_number = serializers.ReadOnlyField(source='shippingdb.db_number')
+    shippingdb_delivery_time = serializers.ReadOnlyField(
+        source='shippingdb.delivery_time')
     purchaseorder_orderid = serializers.ReadOnlyField(
         source='purchaseorder.orderid')
     buyer_remark = serializers.CharField(
