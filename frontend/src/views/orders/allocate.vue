@@ -186,7 +186,7 @@
 </template>
 
 <script>
-  import { fetchOrder, fetchInventory, fetchCategory, fetchStock, fetchShipping, updateOrder, orderAllocate, productcreate } from 'api/orders';
+  import { fetchOrder, fetchInventory, fetchCategory, fetchStock, fetchShipping, orderAllocateUpdate, orderAllocate, productcreate } from 'api/orders';
   import { parseTime } from 'utils';
 
   export default {
@@ -355,7 +355,7 @@
 	if ( this.temp.payment && this.temp.quantity ) {
 	  this.temp.price = this.temp.payment/this.temp.quantity
 	}
-        updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
+        orderAllocateUpdate(this.temp).then(response => {
           this.dialogFormVisible = false;
 	  for (const v of this.list) {
 	    if (v.id === this.temp.id) {

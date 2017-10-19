@@ -5,7 +5,8 @@ import eventlet
 import gspread
 
 from io import BytesIO
-from oauth2client.client import SignedJwtAssertionCredentials
+# from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.service_account import ServiceAccountCredentials
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
@@ -82,12 +83,13 @@ class GoogleSpread:
 
     def open_google_doc(self, doc_name):
         cdir = os.path.dirname(os.path.abspath(__file__))
-        json_key = json.load(
-            open(os.path.join(cdir, 'tacy-speedsheet-d32988f60e38.json')))
+        json_key = os.path.join(cdir, 'tacy-speedsheet-d32988f60e38.json')
         scope = ['https://spreadsheets.google.com/feeds']
 
-        credentials = SignedJwtAssertionCredentials(
-            json_key['client_email'], json_key['private_key'], scope)
+        # credentials = SignedJwtAssertionCredentials(
+        #     json_key['client_email'], json_key['private_key'], scope)
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(
+            json_key, scope)
         try:
             with eventlet.Timeout(120):
                 gc = gspread.authorize(credentials)

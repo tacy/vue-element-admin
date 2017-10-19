@@ -1020,6 +1020,40 @@ class OrderAllocate(views.APIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+# 在派单页面更新订单需要特殊处理
+class OrderAllocateUpdate(views.APIView):
+    def post(self, request, format=None):
+        updateFields = ['jancode',
+                        'product_title',
+                        'sku_properties_name',
+                        'receiver_name',
+                        'receiver_mobile',
+                        'receiver_address',
+                        'quantity',
+                        'payment',
+                        'price', ]
+        orderInfo = request.data
+        dbOrderObj = Order.objects.get(id=orderInfo['id'])
+        if not dbOrderObj.inventory:  # Not allocation
+            for f in updateFields:
+                setattr(dbOrderObj, f, orderInfo[f])
+            dbOrderObj.save()
+        else:  # rollback allocate
+            with transaction.atomic():
+                productObj = Product.objects.get(jancode=orderInfo['jancode'])
+                stockObj = Stock.objects.get(product=productObj, inventory=dbOrderObj.inventory)
+                stockObj.preallocation = F('preallocation') - dbOrderObj.quantity
+                stockObj.save()
+                for f in updateFields:
+                    setattr(dbOrderObj, f, orderInfo[f])
+                dbOrderObj.status = '待处理'
+                dbOrderObj.need_purchase = None
+                dbOrderObj.shipping = None
+                dbOrderObj.inventory = None
+                dbOrderObj.save()
+        return Response(status=status.HTTP_200_OK)
+
+
 # 获取采购列表
 class OrderPurchaseList(views.APIView):
     # TODO: 分页
