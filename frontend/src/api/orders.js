@@ -177,6 +177,14 @@ export function orderAllocate(data) {
   });
 }
 
+export function orderAllocateUpdate(data) {
+  return fetch({
+    url: '/order/allocateupdate/',
+    method: 'post',
+    data
+  });
+}
+
 export function orderTPRCreate(data) {
   return fetch({
     url: '/order/createtpr/',
