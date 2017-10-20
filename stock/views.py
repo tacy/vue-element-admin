@@ -672,8 +672,10 @@ class ManualAllocateDBNumber(views.APIView):
             shippingdbObj = None
             try:
                 shippingdbObj = ShippingDB.objects.get(db_number=db_number)
-                # if shippingdbObj.status == '已出库':
-                #     orderStatus = '已发货'
+                if '拼邮' not in shippingdbObj.shipping.name:
+                    errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
+                    return Response(
+                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
@@ -1023,15 +1025,17 @@ class OrderAllocate(views.APIView):
 # 在派单页面更新订单需要特殊处理
 class OrderAllocateUpdate(views.APIView):
     def post(self, request, format=None):
-        updateFields = ['jancode',
-                        'product_title',
-                        'sku_properties_name',
-                        'receiver_name',
-                        'receiver_mobile',
-                        'receiver_address',
-                        'quantity',
-                        'payment',
-                        'price', ]
+        updateFields = [
+            'jancode',
+            'product_title',
+            'sku_properties_name',
+            'receiver_name',
+            'receiver_mobile',
+            'receiver_address',
+            'quantity',
+            'payment',
+            'price',
+        ]
         orderInfo = request.data
         dbOrderObj = Order.objects.get(id=orderInfo['id'])
         if not dbOrderObj.inventory:  # Not allocation
@@ -1041,8 +1045,10 @@ class OrderAllocateUpdate(views.APIView):
         else:  # rollback allocate
             with transaction.atomic():
                 productObj = Product.objects.get(jancode=orderInfo['jancode'])
-                stockObj = Stock.objects.get(product=productObj, inventory=dbOrderObj.inventory)
-                stockObj.preallocation = F('preallocation') - dbOrderObj.quantity
+                stockObj = Stock.objects.get(
+                    product=productObj, inventory=dbOrderObj.inventory)
+                stockObj.preallocation = F(
+                    'preallocation') - dbOrderObj.quantity
                 stockObj.save()
                 for f in updateFields:
                     setattr(dbOrderObj, f, orderInfo[f])
@@ -1414,11 +1420,12 @@ class PurchaseOrderTransform(views.APIView):
     # 标记purchaseorderitem状态, 记录转运单号
     def post(self, request, format=None):
         data = request.data
+        logger.debug('purchaseOrderTransform debug: %s', data)
         with transaction.atomic():
             for i in data['purchaseorderitems']:
                 poiObj = PurchaseOrderItem.objects.get(id=i['id'])
                 poiObj.status = '转运中'
-                poiObj.edlivery_no = data['delivery_no']
+                poiObj.delivery_no = data['delivery_no']
                 poiObj.save()
         return Response(status=status.HTTP_200_OK)
 
