@@ -95,9 +95,9 @@
 	  <span>{{scope.row.product_title}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="日期" width="160px">
+      <el-table-column align="center" label="日期" width="130px">
 	<template scope="scope">
-	  <span>{{scope.row.piad_time}}</span>
+	  <span>{{scope.row.piad_time|fmDate}}</span>
 	</template>
       </el-table-column>
       <!--el-table-column align="center" label="规格" show-overflow-tooltip>
@@ -105,6 +105,12 @@
 	  <span>{{scope.row.sku_properties_name}}</span>
 	</template>
       </el-table-column-->
+      <el-table-column align="center" label="操作" width="100">
+        <template scope="scope">
+          <el-button size="small" type="danger" @click="handleRollbackToPreprocess(scope.row)">弹回
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
     <div v-show="!listLoading" class="pagination-container">
@@ -201,6 +207,15 @@
       </div>
     </el-dialog>
 
+    <el-dialog title="弹回待处理" size="tiny" :visible.sync="dialogRollbackToPreprocessVisible">
+      <span style="color:red">你的操作将会把该订单弹回到待处理环节(包括购物车订单),  如果该订单已经采购,  采购关联信息也将丢失,  请妥善处理采购单对应商品!
+      </span>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogRollbackToPreprocessVisible=false">取 消</el-button>
+        <el-button type="primary" @click="rollbackToPreprocess()">确 定</el-button>
+      </div>
+    </el-dialog>
+
     <el-dialog title="变更收件人信息" :visible.sync="dialogUpdateVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
         <el-form-item label="收件人">
@@ -230,7 +245,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchShipping, fetchOrder, updateOrder, fetchLogistic, createNoVerification, createfbxbill, manualallocatedb, createUexDB} from 'api/orders';
+  import { fetchInventory, fetchShipping, fetchOrder, updateOrder, fetchLogistic, orderRollback, createNoVerification, createfbxbill, manualallocatedb, createUexDB} from 'api/orders';
   import { fetchPurchaseOrderItem, purchaseOrderDelete } from 'api/purchases';
 
   export default {
@@ -244,6 +259,7 @@
 	dialogUpdateVisible: false,
 	dialogUEXVisible: false,
 	dialogDBInputVisible: false,
+        dialogRollbackToPreprocessVisible: false,
         inventoryOptions: [],
 	shippingOptions: [],
 	channelOptions: ['洋码头', '京东'],
@@ -336,6 +352,9 @@
 	  purchaseorder: undefined
 	},
         itemData: [],
+	rollbackOrderData: {
+	  orderid: undefined
+	}
       }
     },
     filters: {
@@ -347,6 +366,11 @@
 	  待采购: 'warning',
         };
         return statusMap[status]
+      },
+      fmDate(value) {
+	if (!value) return ''
+	value = value.substr(2, 8) + ' ' + value.substr(11, 5)
+	return value
       }
     },
     created() {
@@ -517,7 +541,29 @@
           this.dialogDBInputVisible = false
           this.getOrder();
         })
+      },
+      handleRollbackToPreprocess(row) {
+        this.rollbackOrderData.orderid = row.orderid;
+        this.dialogRollbackToPreprocessVisible = true;
+      },
+      rollbackToPreprocess() {
+        orderRollback(this.rollbackOrderData).then(response => {
+	  const process_orderid = this.rollbackOrderData.orderid.split('-')[0]
+	  for (const v of this.list) {
+	    if (v.orderid.includes(process_orderid)) {
+	      const index = this.list.indexOf(v);
+	      this.list.splice(index, 1,);
+	    }
+	  };
+          this.dialogRollbackToPreprocessVisible = false;
+          this.$notify({
+            title: '成功',
+            message: '弹回成功, 请到预处理重新派单',
+            type: 'success',
+            duration: 2000
+          });
+        });
       }
-    }
+    },
   }
 </script>

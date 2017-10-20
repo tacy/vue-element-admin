@@ -113,6 +113,14 @@ export function outOrder(data) {
   });
 }
 
+export function orderRollback(data) {
+  return fetch({
+    url: '/order/rollback/',
+    method: 'post',
+    data
+  });
+}
+
 export function createUexDB(data) {
   return fetch({
     url: '/uex/stockout/',

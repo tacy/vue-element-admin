@@ -1060,6 +1060,45 @@ class OrderAllocateUpdate(views.APIView):
         return Response(status=status.HTTP_200_OK)
 
 
+# 把订单拽会到预处理, 回滚派单占用库存(需要考虑购物车订单)
+# 1. 根据提交的订单号, 查询所有满足条件的订单(天狗购物车会拆成id-1,id-2),
+# 2. 订单状态需要在处理中的状态
+# 3. 回滚所有占用的库存
+# 4. 不考虑关联采购单,直接设置为空, 保留了订单派单时间
+# 5. 设置正确的订单状态
+class OrderRollbackToPreprocess(views.APIView):
+    def post(self, request, format=None):
+        orderid = request.data['orderid']
+        dbOrderObjs = Order.objects.filter(
+            orderid__contains=orderid,
+            status__in=[
+                '待处理',
+                '待采购',
+                '已采购',
+                '需介入',
+                '待发货',
+            ], )
+        with transaction.atomic():
+            for dbOrderObj in dbOrderObjs:
+                productObj = Product.objects.get(jancode=dbOrderObj.jancode)
+                try:
+                    stockObj = Stock.objects.get(
+                        product=productObj, inventory=dbOrderObj.inventory)
+                    stockObj.preallocation = F(
+                        'preallocation') - dbOrderObj.quantity
+                    stockObj.save()
+                except Stock.DoesNotExist:
+                    continue
+                dbOrderObj.status = '待处理'
+                dbOrderObj.need_purchase = None
+                dbOrderObj.shipping = None
+                dbOrderObj.inventory = None
+                dbOrderObj.purchaseorder = None
+                dbOrderObj.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
 # 获取采购列表
 class OrderPurchaseList(views.APIView):
     # TODO: 分页

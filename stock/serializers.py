@@ -57,6 +57,12 @@ class ProductSerializer(serializers.ModelSerializer):
         read_only=False, required=False, allow_null=True, allow_blank=True)
     weight = serializers.CharField(
         read_only=False, required=False, allow_null=True, allow_blank=True)
+    purchase_link1 = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    purchase_link2 = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    purchase_link3 = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""

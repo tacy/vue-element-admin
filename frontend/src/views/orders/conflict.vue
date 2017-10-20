@@ -19,6 +19,12 @@
         </template>
       </el-table-column>
 
+      <el-table-column width="180px" align="center" label="订单时间" show-overflow-tooltip>
+        <template scope="scope">
+          <span>{{scope.row.piad_time}}</span>
+        </template>
+      </el-table-column>
+
       <el-table-column width="80px" align="center" label="协调" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.conflict}}</span>
