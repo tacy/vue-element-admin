@@ -161,7 +161,7 @@ class Order(models.Model):
     receiver_idcard = models.CharField(max_length=18, null=True)
     seller_memo = models.CharField(max_length=255, null=True, default='')
     buyer_remark = models.CharField(max_length=255, null=True)
-    jancode = models.CharField(max_length=24, null=True, default='')
+    jancode = models.CharField(max_length=32, null=True, default='')
     quantity = models.IntegerField(null=False)
     need_purchase = models.IntegerField(null=True, default=0)
     allocate_time = models.DateTimeField(null=True)  # 需要根据派单时间, 判断采购单是否能关联该订单
