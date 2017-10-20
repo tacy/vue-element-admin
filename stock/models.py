@@ -137,7 +137,7 @@ class PurchaseOrderItem(models.Model):
     product = models.ForeignKey(Product, related_name='purchaseorderitem')
     quantity = models.IntegerField(null=False)
     status = models.CharField(max_length=8, null=True)  # 已入库/东京仓/转运中
-    delivery_no = models.CharField(max_length=32, null=True)  # 转运单号
+    delivery_no = models.CharField(max_length=128, null=True)  # 转运单号
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
 
     class Meta:

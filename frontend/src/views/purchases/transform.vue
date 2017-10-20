@@ -14,7 +14,7 @@
       </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入商品规格" v-model="listQuery.product_specification" v-show="listQuery.labelVal == '3'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入运单号" v-model="listQuery.delivery_no" v-show="listQuery.labelVal == '4'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入转运单号" v-model="listQuery.delivery_no" v-show="listQuery.labelVal == '4'">
       </el-input>
 
       <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item"  placeholder="商品条码" v-model="listQuery.jancode">
@@ -118,7 +118,7 @@
 	  label: '商品规格'
 	}, {
 	  value: '4',
-	  label: '运单号'
+	  label: '转运单号'
 	}],
         listQuery: {
           page: 1,
@@ -206,6 +206,7 @@
 	      if (o.id===s.id) {
 	        const index = this.list.indexOf(o);
 	        this.list[index].status = '转运中';
+		this.list[index].delivery_no = this.stockInData.delivery_no;
 		break;
 	      }
 	    }
