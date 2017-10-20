@@ -12,7 +12,8 @@ from .views import (
     ManualAllocateDBNumber, OrderItemGet, StockOut, OrderTPRCreate,
     PurchaseOrderClear, UexStockOut, ExportBondedOrder, BondedProductList,
     BondedProductDetail, ProductUpdateJancode, SyncStock, ExportDomesticOrder,
-    OrderOut, PurchaseOrderTransform, DomesticStockIn, OrderAllocateUpdate)
+    OrderOut, PurchaseOrderTransform, DomesticStockIn, OrderAllocateUpdate,
+    OrderRollbackToPreprocess)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -64,6 +65,9 @@ urlpatterns = {
     url(r'^order/createtpr/$', OrderTPRCreate.as_view(),
         name='orderCreateTPR'),
     url(r'^order/items/$', OrderItemGet.as_view(), name="orderItem"),
+    url(r'^order/rollback/$',
+        OrderRollbackToPreprocess.as_view(),
+        name="orderrollback"),
     url(r'^order/markconflict/$',
         OrderMarkConflict.as_view(),
         name="orderMarkConflict"),
