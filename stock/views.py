@@ -309,7 +309,7 @@ class XloboCreateFBXBill(views.APIView):
         return Response(data=result, status=status.HTTP_200_OK)
 
 
-# 删除DB面单, 清理订单的shipping_id字段
+# 删除DB面单, 清理订单的shippingdb_id字段
 class XloboDeleteDBNumber(views.APIView):
     def post(self, request, format=None):
         # construct api msg
@@ -325,13 +325,14 @@ class XloboDeleteDBNumber(views.APIView):
             result = loop.run_until_complete(xloboapi.deleteDBNumber(msg))
             loop.close()
             logger.debug('XloboDeleteDBNumber: %s', result)
-            if result['Result']['ErrorCount'] > 0:
-                errmsg = {
-                    'errmsg':
-                    result['Result']['ErrorInfoList'][0]['ErrorDescription']
-                }
-                return Response(
-                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            # 不检查异常了, 直接默认删除成功
+            # if result['Result']['ErrorCount'] > 0:
+            #     errmsg = {
+            #         'errmsg':
+            #         result['Result']['ErrorInfoList'][0]['ErrorDescription']
+            #     }
+            #     return Response(
+            #         data=errmsg, status=status.HTTP_400_BAD_REQUEST)
         with transaction.atomic():
             shippingdbObj = ShippingDB.objects.get(id=data['id'])
             shippingdbObj.status = '已删除'
@@ -1198,7 +1199,9 @@ class OrderPurchase(views.APIView):
 
                     # add purchase item
                     price = i['price']
-                    if pos[po_id].purchaseorderitem.filter(product=Product.objects.get(jancode=jancode)).count():
+                    if pos[po_id].purchaseorderitem.filter(
+                            product=Product.objects.get(
+                                jancode=jancode)).count():
                         continue  # 之前已经保存过了
 
                     poitem = PurchaseOrderItem(
