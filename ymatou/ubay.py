@@ -120,7 +120,7 @@ async def main(loop):
     key = '1013'
     session = aiohttp.ClientSession(loop=loop)
     ubayapi = UbayAPI(session, user_code, password, key)
-    result = await ubayapi.getDeliveryNo('127848309')
+    result = await ubayapi.getDeliveryNo('127783311')
     expressCompany = {
         u"贝海国际速递（上海保税专用）": "Y125",
         u"中通快递-中国件（ZTO Express）": "Y129",
