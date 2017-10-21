@@ -672,10 +672,11 @@ class ManualAllocateDBNumber(views.APIView):
             shippingdbObj = None
             try:
                 shippingdbObj = ShippingDB.objects.get(db_number=db_number)
-                if '拼邮' not in shippingdbObj.shipping.name:
-                    errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
-                    return Response(
-                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                for o in ords:
+                    if '拼邮' not in o['shipping_name']:
+                        errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
+                        return Response(
+                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
