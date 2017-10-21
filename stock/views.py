@@ -362,7 +362,8 @@ class XloboGetPDF(views.APIView):
                                       client_id)
         result = loop.run_until_complete(xloboapi.getPDF(data))
         loop.close()
-        logger.debug('XloboGetPDF: %s', result)
+        logger.debug('XloboGetPDF: %s, User input: %s: ',
+                     result['ErrorInfoList'], data)
         if result['ErrorCount'] > 0:
             info = result['ErrorInfoList'][0]
             errmsg = {
@@ -721,6 +722,7 @@ class StockOut(views.APIView):
     def post(self, request, format=None):
         delivery_no = request.data['delivery_no']
         dbs = request.data['db_numbers'].split('\n')
+        logger.debug('出库调试, 用户输入:%s', dbs)
         results = None
         try:
             with transaction.atomic():
@@ -736,6 +738,7 @@ class StockOut(views.APIView):
                             results = {
                                 'errmsg': '面单:{} 重复录入或重复打包, 请检查'.format(db)
                             }
+                        logger.debug('出库调试-异常, Errmsg: %s', results['errmsg'])
                         raise IntegrityError
                     shippingdbObj.status = '已出库'
                     shippingdbObj.delivery_no = delivery_no
@@ -752,6 +755,8 @@ class StockOut(views.APIView):
                                 '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
                                     db, o.orderid, o.purchaseorder.orderid)
                             }
+                            logger.debug('出库调试-异常-2, Errmsg: %s',
+                                         results['errmsg'])
                             raise IntegrityError
                         o.status = '已发货'
                         o.save(update_fields=['status'])
@@ -1090,6 +1095,12 @@ class OrderRollbackToPreprocess(views.APIView):
                     stockObj.save()
                 except Stock.DoesNotExist:
                     continue
+                if dbOrderObj.purchaseorder:
+                    if dbOrderObj.purchaseorder.memo:
+                        dbOrderObj.purchaseorder.memo = dbOrderObj.purchaseorder.memo + ',' + dbOrderObj.orderid
+                    else:
+                        dbOrderObj.purchaseorder.memo = dbOrderObj.orderid
+                    dbOrderObj.purchaseorder.save()
                 dbOrderObj.status = '待处理'
                 dbOrderObj.need_purchase = None
                 dbOrderObj.shipping = None

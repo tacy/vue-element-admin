@@ -122,6 +122,8 @@ class PurchaseOrder(models.Model):
     delivery_id = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=255, default='create')  # 在途/入库/部分入库
     create_time = models.DateTimeField(auto_now_add=True)
+    memo = models.CharField(
+        max_length=128, null=True)  # 如果订单派单之后弹回, 订单对应的采购单需要记录他们之间关系, 便于追溯采购异常
 
     def __str__(self):
         """Return a human readable representation of the model instance."""
