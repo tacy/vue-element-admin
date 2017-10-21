@@ -18,6 +18,7 @@ from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
+from .exceptions import InputError
 from .filter import (OrderFilter, ProductFilter, PurchaseOrderFilter,
                      ShippingDBFilter, StockFilter, PurchaseOrderItemFilter)
 from .models import (BondedProduct, Inventory, Order, Product, PurchaseOrder,
@@ -1178,22 +1179,28 @@ class OrderPurchase(views.APIView):
                     if (not i['quantity'] or i['quantity'] < i['qty'] or
                             not i['supplier'] or not i['price']):
                         results = {'errmsg': '请检查输入'}
-                        raise IntegrityError
+                        raise InputError
                     jancode = i['jancode']
                     if po_id not in pos:
                         supplierOb = Supplier.objects.get(id=i['supplier'])
                         inventoryOb = Inventory.objects.get(id=inventory)
-                        po = PurchaseOrder(
-                            orderid=po_id,
-                            supplier=supplierOb,
-                            inventory=inventoryOb,
-                            create_time=createtime,
-                            status='在途', )
-                        po.save()
+                        try:
+                            po = PurchaseOrder.objects.get(orderid=po_id)
+                        except PurchaseOrder.DoesNotExist:
+                            po = PurchaseOrder(
+                                orderid=po_id,
+                                supplier=supplierOb,
+                                inventory=inventoryOb,
+                                create_time=createtime,
+                                status='在途', )
+                            po.save()
                         pos[po_id] = po
 
                     # add purchase item
                     price = i['price']
+                    if pos[po_id].purchaseorderitem.filter(product=Product.objects.get(jancode=jancode)).count():
+                        continue  # 之前已经保存过了
+
                     poitem = PurchaseOrderItem(
                         product=Product.objects.get(jancode=jancode),
                         quantity=i['quantity'],
@@ -1232,7 +1239,8 @@ class OrderPurchase(views.APIView):
                         # orders_qty_sum += o.need_purchase
                         # if orders_qty_sum > int(i['quantity']):
                         #     break
-        except IntegrityError:
+        except (IntegrityError, InputError) as e:
+            logger.exception('保存采购单异常')
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_201_CREATED)
