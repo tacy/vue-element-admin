@@ -50,7 +50,7 @@ class PDFTool:
             sku_properties_name = '<font name="wqy">{}/{}</font>'.format(
                 o[1].replace(' ', ','), o[2])
             location = '<font name="wqy">{}/{}</font>'.format(
-                o[4], o[5].replace(' ', ','))
+                o[4], o[5] if not o[5] else o[5].replace(' ', ','))
             data.append([
                 Paragraph(prodname, styles['Normal']),
                 Paragraph(sku_properties_name, styles['Normal']),
