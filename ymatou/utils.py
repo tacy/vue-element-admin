@@ -45,12 +45,12 @@ class PDFTool:
             # ],
         ]
         for o in orders:
-            prodname = '<font name="wqy">{}</font>'.format(
-                o[0].replace(' ', ','))
+            prodname = '<font name="wqy">{}/{}</font>'.format(
+                o[0].replace(' ', ','), o[5]
+                if not o[5] else o[5].replace(' ', ','))
             sku_properties_name = '<font name="wqy">{}/{}</font>'.format(
                 o[1].replace(' ', ','), o[2])
-            location = '<font name="wqy">{}/{}</font>'.format(
-                o[4], o[5] if not o[5] else o[5].replace(' ', ','))
+            location = '<font name="wqy">{}</font>'.format(o[4])
             data.append([
                 Paragraph(prodname, styles['Normal']),
                 Paragraph(sku_properties_name, styles['Normal']),
