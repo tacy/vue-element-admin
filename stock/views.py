@@ -1272,6 +1272,7 @@ class NoOrderPurchase(views.APIView):
     #
     def put(self, request, format=None):
         data = request.data
+        logger.debug('新建采购单调试:%s', data)
         inventory = data['inventory']
         results = {}
         try:
