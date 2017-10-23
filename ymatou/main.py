@@ -320,7 +320,7 @@ def exportYMTOrder(st, et):
     conn = pymysql.connect(
         user='root',
         host='127.0.0.1',
-        passwd='12345678',
+        passwd=db_password,
         db='ymatou',
         # http://stackoverflow.com/questions/2108824/mysql-incorrect-string-value-error-when-save-unicode-string-in-django
         charset='utf8mb4',
