@@ -300,6 +300,99 @@ def importTGOrder():
 
 
 @click.command()
+@click.argument('st')
+@click.argument('et')
+def exportYMTOrder(st, et):
+    loop = asyncio.get_event_loop()
+    deliveryType = [
+        '', '', u'直邮', u'官方（贝海）直邮', u'第三方保税', u'官方（贝海）保税', '', u'拼邮'
+    ]
+    sessYmt = aiohttp.ClientSession(
+        loop=loop, headers={'Content-Type': 'application/json'})
+    v = {
+        'appid': 'llzlHWWDTkEsUUjwKf',
+        'appsecret': 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox',
+        'authcode': 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk',
+    }
+    ymtapi = YmatouAPI(sessYmt, v['appid'], v['appsecret'], v['authcode'])
+    result = loop.run_until_complete(ymtapi.getOrderList(st, et))
+
+    conn = pymysql.connect(
+        user='root',
+        host='127.0.0.1',
+        passwd='12345678',
+        db='ymatou',
+        # http://stackoverflow.com/questions/2108824/mysql-incorrect-string-value-error-when-save-unicode-string-in-django
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor)
+    try:
+        with conn.cursor() as cursor:
+            # http://bogdan.org.ua/2007/10/18/mysql-insert-if-not-exists-syntax.htm
+            ords = []
+            for o in result:
+                for oi in o['order_items_info']:
+                    # 拆单:
+                    #    1. jancode (jancode*1+jancode*1)
+                    #    2. payment根据jancode数量平分
+                    #    3. price根据num平分
+                    #    4. quantity = num*数量
+                    js = oi['outer_sku_id'].split('+')
+                    for j in js:
+                        jinfo = j.split('*')
+                        jancode = jinfo
+                        num = int(oi['num'])
+                        price = int(oi['price']) / len(js)
+                        payment = int(oi['payment']) / len(js)
+                        sku_properties_name = oi['sku_properties_name'] if oi[
+                            'sku_properties_name'] else '无'
+                        if len(jinfo) == 2:
+                            jancode = jinfo[0]
+                            jc = jinfo[1] if jinfo[
+                                1] else 1  # 可能写成"jancode*", 需要跳过
+                            num = int(oi['num']) * int(jc)
+                            price = price / int(jc)
+                        dt = deliveryType[oi['delivery_type']]
+                        receiver_idcard = ''
+                        if u'第三方保税' in dt:
+                            try:
+                                receiver_idcard = o['id_cards'][0][
+                                    'receiver_id_no']
+                            except TypeError as e:
+                                continue
+
+                        it = (o['seller_id'], '洋码头', o['order_id'],
+                              o['receiver_name'], o['receiver_address'],
+                              o['receiver_zip'], o['receiver_mobile'],
+                              receiver_idcard, o['seller_memo'],
+                              o['buyer_remark'], jancode, num, price, payment,
+                              dt, o['paid_time'], oi['product_title'],
+                              sku_properties_name, '待处理', '', oi['product_id'])
+                        ords.append(it)
+            insertOrderSQL = (
+                'INSERT INTO stock_order '
+                '(seller_name, channel_name, orderid, receiver_name, receiver_address, '
+                'receiver_zip, receiver_mobile, receiver_idcard, seller_memo, buyer_remark, jancode, '
+                'quantity, price, payment, delivery_type, piad_time, product_title, '
+                'sku_properties_name, status, channel_delivery_status, product_id) '
+                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+            )
+            if ords:
+                cursor.executemany(
+                    insertOrderSQL, ords
+                )  # Notes: pymysql insert multiple values by executemany
+                conn.commit()
+
+    finally:
+        conn.close()
+
+    print([v['order_id'] for v in result])
+
+    # Let's also finish all running tasks:
+    pending = asyncio.Task.all_tasks()
+    loop.run_until_complete(asyncio.gather(*pending))
+
+
+@click.command()
 def importCategory():
     access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
     client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
@@ -432,6 +525,7 @@ cli.add_command(importTpoToXlobo)
 cli.add_command(importYmtToXlobo)
 cli.add_command(exportStock)
 cli.add_command(importLogisticCompany)
+cli.add_command(exportYMTOrder)
 
 if __name__ == '__main__':
     cli()
