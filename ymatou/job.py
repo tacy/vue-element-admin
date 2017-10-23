@@ -19,7 +19,7 @@ access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k
 client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
 )
 client_id = '8417db83-360c-4275-974f-cf9a2734d8f8'
-db_password = 'asd12288'
+db_password = '12345678'
 
 # debug
 # access_token = 'ACiYUZ6aKC48faYFD6MpvbOf73BdE9OV5g15q1A6Ghs+i/XIawq/9RHJCzc6Y3UNxA=='
@@ -312,7 +312,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                     }
                 except IndexError:
                     logging.exception(
-                        'emerge msg: 导入天狗订单入贝海失败, orderData is %s' % (r))
+                        '导入天狗订单入贝海失败: data error, orderData is %s' % (r))
                     continue
 
                 result = await xloboapi.importOrder(msg_param)
@@ -324,7 +324,9 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                         (r[0], ))
                     await conn.commit()
                 else:
-                    logging.error(result)
+                    logging.error(
+                        "导入天狗订单入贝海失败: xlobo api result: %s, orderData is: %s" %
+                        (result, r))
 
 
 # automatic process ymatou order delivery
