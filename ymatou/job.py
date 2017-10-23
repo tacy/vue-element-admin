@@ -312,7 +312,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                     }
                 except IndexError:
                     logging.exception(
-                        '导入天狗订单入贝海失败: data error, orderData is %s' % (r))
+                        '导入天狗订单入贝海失败: data error, orderData is {}'.format(r))
                     continue
 
                 result = await xloboapi.importOrder(msg_param)
@@ -325,8 +325,8 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                     await conn.commit()
                 else:
                     logging.error(
-                        "导入天狗订单入贝海失败: xlobo api result: %s, orderData is: %s" %
-                        (result, r))
+                        "导入天狗订单入贝海失败: xlobo api result: {}, orderData is: {}".
+                        format(result, r))
 
 
 # automatic process ymatou order delivery
