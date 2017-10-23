@@ -32,7 +32,8 @@
 
       <el-table-column align="center" label="注文编号" width="150px">
 	<template scope="scope">
-	  <span class="link-type" @click="getItem(scope.row)">{{scope.row.orderid}}</span>
+          <el-input v-show="scope.row.edit" size="small" v-model.trim="scope.row.orderid"></el-input>
+	  <span v-show="!scope.row.edit" class="link-type" @click="getItem(scope.row)">{{scope.row.orderid}}</span>
 	</template>
       </el-table-column>
 
@@ -59,12 +60,14 @@
 	  <span>{{scope.row.create_time}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="操作" width="180">
+      <el-table-column align="center" label="操作" width="240px">
         <template scope="scope">
           <el-button size="small" :disabled="scope.row.status === '入库' ? true:false" type="success" @click="handleStockIn(scope.row)">入 库
 	  </el-button>
           <el-button size="small" :disabled="scope.row.status === '在途' ? false:true" type="danger" @click="handleDelete(scope.row)">删 除
           </el-button>
+          <el-button v-show='!scope.row.edit' type="primary" @click='scope.row.edit=true' size="small" icon="edit">编辑</el-button>
+          <el-button v-show='scope.row.edit' type="success" @click='updatePurchaseOrder(scope.row)' size="small" icon="check">完成</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -158,7 +161,7 @@
 <script>
   import { parseTime } from 'utils';
   import { fetchInventory, fetchSupplier } from 'api/orders';
-  import { fetchPurchaseOrder, fetchPurchaseOrderItem, purchaseOrderDelete, purchaseOrderClear } from 'api/purchases';
+  import { fetchPurchaseOrder, fetchPurchaseOrderItem, purchaseOrderDelete, purchaseOrderClear,updateOrder } from 'api/purchases';
 
   export default {
     data() {
@@ -207,7 +210,11 @@
       getPurchaseOrder() {
         this.listLoading = true;
         fetchPurchaseOrder(this.listQuery).then(response => {
-          this.list = response.data.results;
+          // this.list = response.data.results;
+          this.list = response.data.results.map(v => {
+            v.edit = false;
+            return v
+          });
           for (const t of this.list) {
  	    const index = this.list.indexOf(t);
 	    const tmp = [];
@@ -284,6 +291,18 @@
 	  this.dialogPOItemVisible = false;
 	  this.handleFilter();
 	});
+      },
+      updatePurchaseOrder(row) {
+        const data = {'orderid': row.orderid}
+        updateOrder(data, '/purchase/'+row.id+'/').then(response => {
+	  this.$notify({
+	    title: '成功',
+	    message: '更新成功',
+	    type: 'success',
+	    duration: 2000
+	  });
+	  row.edit = false;
+        })
       },
       deletePurchaseOrder() {
         purchaseOrderDelete(this.temp).then(response => {

@@ -15,9 +15,14 @@ class TokenSerializer(serializers.ModelSerializer):
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
-    purchaseorderitem = serializers.StringRelatedField(many=True)
+    purchaseorderitem = serializers.StringRelatedField(
+        many=True, read_only=True)
     supplier_name = serializers.ReadOnlyField(source='supplier.name')
     inventory_name = serializers.ReadOnlyField(source='inventory.name')
+    inventory = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
+    supplier = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
