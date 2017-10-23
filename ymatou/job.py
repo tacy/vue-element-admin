@@ -293,21 +293,28 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                         'Specification': r[16]
                     },
                 ]
-                msg_param = {
-                    'ChannelName': r[1],
-                    'OrderCode': r[2],
-                    'ReceiverName': r[3],
-                    'ReceiverProvince': ai[0],
-                    'ReceiverCity': ai[1],
-                    'ReceiverDistrict': ai[2],
-                    'ReceiverAddress': ai[3],
-                    'receiverMobile': r[5],
-                    'ReceiverPostCode': r[6],
-                    'ReceiverIdCode': r[7],
-                    'PaymentPrice': str(r[8]),
-                    'OrderPrice': str(r[8]),
-                    'ProductList': productList
-                }
+
+                try:
+                    msg_param = {
+                        'ChannelName': r[1],
+                        'OrderCode': r[2],
+                        'ReceiverName': r[3],
+                        'ReceiverProvince': ai[0].strip(),
+                        'ReceiverCity': ai[1].strip(),
+                        'ReceiverDistrict': ai[2].strip(),
+                        'ReceiverAddress': ai[3].strip(),
+                        'receiverMobile': r[5],
+                        'ReceiverPostCode': r[6],
+                        'ReceiverIdCode': r[7],
+                        'PaymentPrice': str(r[8]),
+                        'OrderPrice': str(r[8]),
+                        'ProductList': productList
+                    }
+                except IndexError:
+                    logging.exception(
+                        'emerge msg: 导入天狗订单入贝海失败, orderData is %s' % (r))
+                    continue
+
                 result = await xloboapi.importOrder(msg_param)
                 if not result:
                     return
