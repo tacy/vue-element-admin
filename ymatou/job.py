@@ -372,7 +372,7 @@ async def pushUbayBondedOrder(ubayapi, pool):
                 logging.debug('pushUbayBondedOrder Result: %s', r)
                 if not r:
                     continue
-                if 'T' in r['Message']['Result']:
+                if 'T' in r['Message']['Result'] or '订单号已存在' in r['Message']['ResultMsg']:
                     await cur.execute(
                         "update stock_order set export_status='已推送' where orderid=%s",
                         (i[0]['orderid'], ))
