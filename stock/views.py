@@ -574,7 +574,8 @@ class SyncStock(views.APIView):
                         quantity=i[2],
                         inventory=inventoryObj,
                         preallocation=0,
-                        inflight=0, )
+                        inflight=0,
+                    )
                     stockObj.save()
             return Response(status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -929,103 +930,114 @@ class OrderAllocate(views.APIView):
     # 派单需要更新库存占库字段; 重派需要先从之前指派的仓库回滚占库数据, 再更新库存占
     # 库字段;
     #
-    # TODO: 需要注意, 订单派单之后, 不能再修改订单jancode, 这个问题后面fix
+    # 支持购物车派单和批量派单
     #
     def put(self, request, format=None):
-        orderInfo = request.data
-        logger.debug('派单调试:%s', orderInfo)
+        allocateData = request.data
+        logger.debug('派单调试:%s', allocateData)
         allocate_time = arrow.now().format('YYYY-MM-DD HH:mm:ss')
-        paramInventory = orderInfo['inventory']
+        paramInventory = allocateData['inventory']
         relate_inventory = Inventory.objects.get(id=paramInventory)
         # if not paramInventory or not paramShipping:  # 传入参数为空, 无效
         #     return status.HTTP_400_BAD_REQUEST
 
+        # check if is shipcart order
+        ordid_pre = allocateData['orderid'].split(',')[0]
+        orders = Order.objects.filter(orderid__contains=ordid_pre)
+
         # 检查是否订单商品已经在product表中, 如不存在, 返回错误提示
-        productObj = None
-        try:
-            productObj = Product.objects.get(jancode=orderInfo['jancode'])
-        except Product.DoesNotExist:
-            results = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
-            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
+        jans = set([v.jancode for v in orders])
+        prodObjs = {}
+        for j in jans:
+            try:
+                productObj = Product.objects.get(jancode=j)
+                prodObjs[j] = productObj
+            except Product.DoesNotExist:
+                results = {'errmsg': '商品库中无[{}], 请先创建产品资料'.format(j)}
+                return Response(
+                    data=results, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            # 检查被指派的仓库, 是否该产品已经在仓库中存在, 如果不存在, 创建
-            stockObj = None
-            try:
-                stockObj = Stock.objects.get(
-                    inventory=paramInventory, product__id=productObj.id)
-            except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
-                stockObj = Stock(
-                    product=productObj,
-                    inventory=relate_inventory,
-                    quantity=0,
-                    inflight=0,
-                    preallocation=0)
-                stockObj.save()
-            dborder = Order.objects.get(id=orderInfo['id'])
-            dbinventory = dborder.inventory
+            for dborder in orders:
+                # 检查被指派的仓库, 是否该产品已经在仓库中存在, 如果不存在, 创建
+                try:
+                    stockObj = Stock.objects.get(
+                        inventory=paramInventory,
+                        product=prodObjs[dborder.jancode])
+                except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
+                    stockObj = Stock(
+                        product=prodObjs[dborder.jancode],
+                        inventory=relate_inventory,
+                        quantity=0,
+                        inflight=0,
+                        preallocation=0)
+                    stockObj.save()
+                # dborder = Order.objects.get(id=orderInfo['id'])
+                dbinventory = dborder.inventory
 
-            rollbackstock = ''
-            # 计算库存变化
-            if not dbinventory:  # 派单
-                stockObj.preallocation = F(
-                    'preallocation') + orderInfo['quantity']  # 分配订单需要占库存
-            else:  # 重新派单
-                if dbinventory.id != paramInventory:  # 重派单, 订单派给了新的仓库, 需要回滚之前的库存占用
-                    rollbackstock = Stock.objects.get(
-                        inventory=dbinventory.id, product__id=productObj.id)
-                    rollbackstock.preallocation = F(
-                        'preallocation') - orderInfo['quantity']
+                rollbackstock = ''
+                # 计算库存变化
+                if not dbinventory:  # 派单
                     stockObj.preallocation = F(
-                        'preallocation') + orderInfo['quantity']
-                else:  # 重派单, 但是仓库没有改变, 无需对库存做更新
-                    if dborder.shipping.id == orderInfo[
-                            'shipping']:  # 派单信息没有变化, 无需处理.
+                        'preallocation') + dborder.quantity  # 分配订单需要占库存
+                else:  # 重新派单
+                    if dbinventory.id != paramInventory:  # 重派单, 订单派给了新的仓库, 需要回滚之前的库存占用
+                        rollbackstock = Stock.objects.get(
+                            inventory=dbinventory.id,
+                            product__id=productObj.id)
+                        rollbackstock.preallocation = F(
+                            'preallocation') - dborder.quantity
+                        stockObj.preallocation = F(
+                            'preallocation') + dborder.quantity
+                    else:  # 重派单, 但是仓库没有改变, 无需对库存做更新
+                        if dborder.shipping.id == allocateData[
+                                'shipping']:  # 派单信息没有变化, 无需处理.
+                            return Response(status=status.HTTP_200_OK)
+                        dborder.shipping = Shipping.objects.get(
+                            id=allocateData['shipping'])
+                        dborder.save(update_fields=[
+                            'shipping',
+                        ])
                         return Response(status=status.HTTP_200_OK)
-                    dborder.shipping = Shipping.objects.get(
-                        id=orderInfo['shipping'])
-                    dborder.save(update_fields=[
-                        'shipping',
-                    ])
-                    return Response(status=status.HTTP_200_OK)
 
-            # 计算订单状态
-            stockObj.save()
-            # 使用F操作models, save之后需要从数据库刷新, 否则值不能使用
-            stockObj.refresh_from_db()
+                # 计算订单状态
+                stockObj.save()
+                # 使用F操作models, save之后需要从数据库刷新, 否则值不能使用
+                stockObj.refresh_from_db()
 
-            dborder.allocate_time = allocate_time  # 如果更新库存表, 就需要更新派单时间
-            purchaseQuantity = stockObj.preallocation - (
-                stockObj.quantity + stockObj.inflight)
-            if purchaseQuantity > 0:  # 订单需采购
-                if purchaseQuantity < orderInfo['quantity']:
-                    dborder.need_purchase = purchaseQuantity
+                dborder.allocate_time = allocate_time  # 如果更新库存表, 就需要更新派单时间
+                purchaseQuantity = stockObj.preallocation - (
+                    stockObj.quantity + stockObj.inflight)
+                if purchaseQuantity > 0:  # 订单需采购
+                    if purchaseQuantity < dborder.quantity:
+                        dborder.need_purchase = purchaseQuantity
+                    else:
+                        dborder.need_purchase = dborder.quantity
+                    dborder.status = '待采购'
                 else:
-                    dborder.need_purchase = orderInfo['quantity']
-                dborder.status = '待采购'
-            else:
-                # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
-                # 在途的采购单绑定, 同时标记状态为已采购
-                if stockObj.preallocation > stockObj.quantity:
-                    dborder.status = '已采购'
-                    # 找到最新的采购单
-                    id = PurchaseOrder.objects.filter(
-                        purchaseorderitem__product__jancode=orderInfo[
-                            'jancode'],
-                        # purchaseorderitem__status__isnull=True,    # 不知道为什么要判断
-                        status__in=('在途', '部分入库')).aggregate(Max('id'))
-                    dborder.purchaseorder = PurchaseOrder.objects.get(
-                        id=id['id__max'])
-                else:
-                    dborder.status = '待发货'
+                    # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
+                    # 在途的采购单绑定, 同时标记状态为已采购
+                    if stockObj.preallocation > stockObj.quantity:
+                        dborder.status = '已采购'
+                        # 找到最新的采购单
+                        id = PurchaseOrder.objects.filter(
+                            purchaseorderitem__product__jancode=dborder.
+                            jancode,
+                            # purchaseorderitem__status__isnull=True,    # 不知道为什么要判断
+                            status__in=('在途', '部分入库')).aggregate(Max('id'))
+                        dborder.purchaseorder = PurchaseOrder.objects.get(
+                            id=id['id__max'])
+                    else:
+                        dborder.status = '待发货'
 
-            # 更新订单和仓库信息
-            dborder.shipping = Shipping.objects.get(id=orderInfo['shipping'])
-            dborder.inventory = relate_inventory
-            dborder.save()
+                # 更新订单和仓库信息
+                dborder.shipping = Shipping.objects.get(
+                    id=allocateData['shipping'])
+                dborder.inventory = relate_inventory
+                dborder.save()
 
-            if rollbackstock:
-                rollbackstock.save()
+                if rollbackstock:
+                    rollbackstock.save()
             return Response(status=status.HTTP_201_CREATED)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1085,7 +1097,8 @@ class OrderRollbackToPreprocess(views.APIView):
                 '已采购',
                 '需介入',
                 '待发货',
-            ], )
+            ],
+        )
         with transaction.atomic():
             for dbOrderObj in dbOrderObjs:
                 productObj = Product.objects.get(jancode=dbOrderObj.jancode)
@@ -1177,8 +1190,8 @@ class OrderPurchase(views.APIView):
                     po_id = i.get('purchaseorderid')
                     if not po_id:
                         continue
-                    if (not i['quantity'] or i['quantity'] < i['qty'] or
-                            not i['supplier'] or not i['price']):
+                    if (not i['quantity'] or i['quantity'] < i['qty']
+                            or not i['supplier'] or not i['price']):
                         results = {'errmsg': '请检查输入'}
                         raise InputError
                     jancode = i['jancode']
@@ -1193,7 +1206,8 @@ class OrderPurchase(views.APIView):
                                 supplier=supplierOb,
                                 inventory=inventoryOb,
                                 create_time=createtime,
-                                status='在途', )
+                                status='在途',
+                            )
                             po.save()
                         pos[po_id] = po
 
@@ -1214,7 +1228,8 @@ class OrderPurchase(views.APIView):
                     # set inflight in stock
                     stock = Stock.objects.get(
                         inventory=inventory,
-                        product__jancode=jancode, )
+                        product__jancode=jancode,
+                    )
                     stock.inflight = F('inflight') + int(i['quantity'])
                     stock.save()
 
@@ -1222,7 +1237,8 @@ class OrderPurchase(views.APIView):
                     if '东京仓' in supplierOb.name:
                         stockTokyo = Stock.objects.get(
                             inventory=Inventory.objects.get(name='东京'),
-                            product__jancode=jancode, )
+                            product__jancode=jancode,
+                        )
                         stockTokyo.preallocation = F('preallocation') + int(
                             i['quantity'])
                         stockTokyo.save()
@@ -1286,7 +1302,8 @@ class NoOrderPurchase(views.APIView):
                     supplier=supplierObj,
                     inventory=inventoryObj,
                     create_time=createtime,
-                    status='在途', )
+                    status='在途',
+                )
                 poObj.save()
                 for i in data['items']:
                     # add purchase item
@@ -1322,7 +1339,8 @@ class NoOrderPurchase(views.APIView):
                     if '东京仓' in supplierObj.name:
                         stockTokyo = Stock.objects.get(
                             inventory=Inventory.objects.get(name='东京'),
-                            product__jancode=i['jancode'], )
+                            product__jancode=i['jancode'],
+                        )
                         stockTokyo.preallocation = F('preallocation') + int(
                             i['quantity'])
                         stockTokyo.save()
@@ -1385,7 +1403,8 @@ class PurchaseOrderDelete(views.APIView):
                 if '东京仓' in poObj.supplier.name:
                     stockTokyo = Stock.objects.get(
                         inventory=Inventory.objects.get(name='东京'),
-                        product=poi.product, )
+                        product=poi.product,
+                    )
                     stockTokyo.preallocation = F('preallocation') - poi.quantity
                     stockTokyo.save()
 
@@ -1453,7 +1472,8 @@ class PurchaseOrderClear(views.APIView):
                 if '东京仓' in poObj.supplier.name:
                     stockTokyo = Stock.objects.get(
                         inventory=Inventory.objects.get(name='东京'),
-                        product__jancode=poi['jancode'], )
+                        product__jancode=poi['jancode'],
+                    )
                     stockTokyo.preallocation = F(
                         'preallocation') - poiObj.quantity
                     if poiObj.quantity < poi['qty']:
@@ -1514,15 +1534,16 @@ class DomesticStockIn(views.APIView):
                 if '东京仓' in poObj.supplier.name:
                     stockTokyo = Stock.objects.get(
                         inventory=Inventory.objects.get(name='东京'),
-                        product=poiObj.product, )
+                        product=poiObj.product,
+                    )
                     stockTokyo.preallocation = F(
                         'preallocation') - poiObj.quantity
                     stockTokyo.quantity = F('quantity') - poiObj.quantity
                     stockTokyo.save()
 
                 poObj.order.filter(
-                    jancode=poiObj.product.jancode, status='已采购').update(
-                        status='待发货')
+                    jancode=poiObj.product.jancode,
+                    status='已采购').update(status='待发货')
 
             count = poObj.purchaseorderitem.filter(status='已入库').count()
             total = poObj.purchaseorderitem.all().count()
@@ -1671,9 +1692,9 @@ class OrderDelete(views.APIView):
                 orderObj.status = '已删除'
                 orderObj.conflict_feedback = data['conflict_feedback']
                 orderObj.save()
-            elif ('待发货' in orderObj.status or '需介入' in orderObj.status or
-                  '已采购' in orderObj.status or
-                  '待采购' in orderObj.status):  # 清除占用的库存
+            elif ('待发货' in orderObj.status or '需介入' in orderObj.status
+                  or '已采购' in orderObj.status
+                  or '待采购' in orderObj.status):  # 清除占用的库存
                 stockObj = Stock.objects.get(
                     inventory=orderObj.inventory,
                     product__jancode=orderObj.jancode)
@@ -1710,7 +1731,8 @@ class ProductUpdateJancode(views.APIView):
                 Order.objects.filter(jancode=jancode).update(
                     jancode=data['jancode'],
                     product_title=productObj.name,
-                    sku_properties_name=productObj.specification, )
+                    sku_properties_name=productObj.specification,
+                )
                 return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)

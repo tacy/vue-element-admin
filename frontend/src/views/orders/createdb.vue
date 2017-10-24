@@ -549,11 +549,15 @@
       rollbackToPreprocess() {
         orderRollback(this.rollbackOrderData).then(response => {
 	  const process_orderid = this.rollbackOrderData.orderid.split('-')[0]
+	  const inds = []
 	  for (const v of this.list) {
 	    if (v.orderid.includes(process_orderid)) {
 	      const index = this.list.indexOf(v);
-	      this.list.splice(index, 1,);
+	      inds.push(index);
 	    }
+	  };
+	  for (var i=inds.length-1; i>=0; i--) {
+	    this.list.splice(inds[i],1);
 	  };
           this.dialogRollbackToPreprocessVisible = false;
           this.$notify({
