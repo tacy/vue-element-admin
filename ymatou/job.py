@@ -442,7 +442,7 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
 # automatic process ymatou bonded order delivery
 async def deliveryYmtBondedOrder(ymtapi, pool):
     # 订单渠道是洋码头, 并且db单中的ymatou字段为空
-    sql = "select orderid, domestic_delivery_no, domestic_delivery_company from stock_order where domestic_delivery_no is not null and domestic_delivery_company is not null group by orderid, domestic_delivery_no, domestic_delivery_company"
+    sql = "select orderid, domestic_delivery_no, domestic_delivery_company from stock_order where domestic_delivery_no is not null and domestic_delivery_company is not null and channel_delivery_status<>'已发货' group by orderid, domestic_delivery_no, domestic_delivery_company"
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(sql)
