@@ -24,7 +24,7 @@ async def fetch(session, url, payload):
 
 async def fetch_all(session, url, payloads, loop):
     results = await asyncio.gather(
-        * [fetch(session, url, payload) for payload in payloads],
+        *[fetch(session, url, payload) for payload in payloads],
         return_exceptions=True  # default is false, that would raise
     )
 
@@ -308,7 +308,9 @@ def exportYMTOrder(st, et):
         '', '', u'直邮', u'官方（贝海）直邮', u'第三方保税', u'官方（贝海）保税', '', u'拼邮'
     ]
     sessYmt = aiohttp.ClientSession(
-        loop=loop, headers={'Content-Type': 'application/json'})
+        loop=loop, headers={
+            'Content-Type': 'application/json'
+        })
     v = {
         'appid': 'llzlHWWDTkEsUUjwKf',
         'appsecret': 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox',
@@ -393,6 +395,24 @@ def exportYMTOrder(st, et):
 
 
 @click.command()
+@click.argument('id')
+def getYMTOrderInfo(id):
+    loop = asyncio.get_event_loop()
+    sessYmt = aiohttp.ClientSession(
+        loop=loop, headers={
+            'Content-Type': 'application/json'
+        })
+    v = {
+        'appid': 'llzlHWWDTkEsUUjwKf',
+        'appsecret': 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox',
+        'authcode': 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk',
+    }
+    ymtapi = YmatouAPI(sessYmt, v['appid'], v['appsecret'], v['authcode'])
+    result = loop.run_until_complete(ymtapi.getOrderInfo(id))
+    print(result)
+
+
+@click.command()
 def importCategory():
     access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
     client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
@@ -432,7 +452,9 @@ def importLogisticCompany():
     authcode = 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk'
     loop = asyncio.get_event_loop()
     sessYmt = aiohttp.ClientSession(
-        loop=loop, headers={'Content-Type': 'application/json'})
+        loop=loop, headers={
+            'Content-Type': 'application/json'
+        })
     ymtapi = YmatouAPI(sessYmt, appid, appsecret, authcode)
     result = loop.run_until_complete(ymtapi.getLogisticCompany())
 
@@ -526,6 +548,7 @@ cli.add_command(importYmtToXlobo)
 cli.add_command(exportStock)
 cli.add_command(importLogisticCompany)
 cli.add_command(exportYMTOrder)
+cli.add_command(getYMTOrderInfo)
 
 if __name__ == '__main__':
     cli()

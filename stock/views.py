@@ -83,9 +83,15 @@ class XloboCreateNoVerification(views.APIView):
                 result = loop.run_until_complete(
                     ymtapi.getOrderInfo(ords[0]['orderid']))
                 # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+                if result['content']['order_info']['order_status'] in [
+                        12, 13, 14
+                ]:
+                    errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
+                    return Response(
+                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
                 for oi in result['content']['order_info']['order_items_info']:
-                    if oi['refund_id'] == 0 or oi['refund_id'] == 1:
-                        errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
+                    if oi['refund_id'] == 0:
+                        errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
@@ -211,9 +217,15 @@ class XloboCreateFBXBill(views.APIView):
                 result = loop.run_until_complete(
                     ymtapi.getOrderInfo(ords[0]['orderid']))
                 # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+                if result['content']['order_info']['order_status'] in [
+                        12, 13, 14
+                ]:
+                    errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
+                    return Response(
+                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
                 for oi in result['content']['order_info']['order_items_info']:
-                    if oi['refund_id'] == 0 or oi['refund_id'] == 1:
-                        errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
+                    if oi['refund_id'] == 0:
+                        errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
@@ -658,14 +670,22 @@ class ManualAllocateDBNumber(views.APIView):
             skey = YMTKEY[ords[0]['seller_name']]
             ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
                                          skey['appsecret'], skey['authcode'])
-            result = loop.run_until_complete(
-                ymtapi.getOrderInfo(ords[0]['orderid']))
-            # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
-            for oi in result['content']['order_info']['order_items_info']:
-                if oi['refund_id'] == 0 or oi['refund_id'] == 1:
-                    errmsg = {'errmsg': '订单状态异常, 请到码头后台确认'}
+            ordids = list([OrderedDict.fromkeys([i['orderid'] for i in ords])])
+            for oid in ordids:
+                result = loop.run_until_complete(
+                    ymtapi.getOrderInfo(ords[0]['orderid']))
+                # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+                if result['content']['order_info']['order_status'] in [
+                        12, 13, 14
+                ]:
+                    errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
                     return Response(
                         data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                for oi in result['content']['order_info']['order_items_info']:
+                    if oi['refund_id'] == 0:
+                        errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
+                        return Response(
+                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
         db_number = request.data['Comment']
         channel_name = ords[0]['channel_name']
