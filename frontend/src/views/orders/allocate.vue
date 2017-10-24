@@ -157,7 +157,7 @@
       </div>
     </el-dialog>
 
-    <el-dialog title="订单分配" :visible.sync="dialogAllocationVisible" size="small">
+    <el-dialog title="订单分派" :visible.sync="dialogAllocationVisible" size="small">
       <div class="filter-container">
         <el-select clearable style="width: 90px" class="filter-item" v-model="temp.inventory" v-on:change="getShipping()" placeholder="仓库">
           <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
@@ -376,13 +376,18 @@
         this.submitting = true;
         orderAllocate(this.temp).then(response => {
           // 刷新列表数据
+	  const orderid = this.temp.orderid.split('-')[0]
+	  const inds = []
           for (const v of this.list) {
-            if (v.id === this.temp.id) {
+            if (v.orderid.includes(orderid)) {
               const index = this.list.indexOf(v);
-              this.list.splice(index, 1, this.temp);
-              break;
+	      inds.push(index);
+              // this.list.splice(index, 1);
             }
-          }
+          };
+	  for (var i=inds.length-1; i>=0; i--) {
+	    this.list.splice(inds[i],1);
+	  };
 	  this.submitting = false;
           this.dialogAllocationVisible = false;
           this.$notify({
