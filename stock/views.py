@@ -941,9 +941,21 @@ class OrderAllocate(views.APIView):
         # if not paramInventory or not paramShipping:  # 传入参数为空, 无效
         #     return status.HTTP_400_BAD_REQUEST
 
-        # check if is shipcart order
-        ordid_pre = allocateData['orderid'].split(',')[0]
-        orders = Order.objects.filter(orderid__contains=ordid_pre)
+        orders = []
+        if allocateData['id'] == 'batchallocate':  # batchAllocate
+            allOrders = Order.objects.filter(
+                jancode=allocateData['jancode'], status='待处理')
+            for ao in allOrders:  # batch allocate ignore shipCart order
+                # check if is shipcart order
+                ordid_pre = ao.orderid.split('-')[0]
+                c = Order.objects.filter(orderid__contains=ordid_pre).count()
+                # print(ao, ordid_pre, c)
+                if c == 1:
+                    orders.append(ao)
+        else:  # 单个订单派
+            # check if is shipcart order
+            ordid_pre = allocateData['orderid'].split('-')[0]
+            orders = Order.objects.filter(orderid__contains=ordid_pre)
 
         # 检查是否订单商品已经在product表中, 如不存在, 返回错误提示
         jans = set([v.jancode for v in orders])
@@ -1038,7 +1050,7 @@ class OrderAllocate(views.APIView):
 
                 if rollbackstock:
                     rollbackstock.save()
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
