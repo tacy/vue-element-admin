@@ -117,8 +117,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
             await cur.executemany(insertOrderSQL, ords)
 
             # insert sync order log
-            await cur.execute(insertExportOrderLog, (sellerName, st, et,
-                                                     len(ords)))
+            await cur.execute(insertExportOrderLog,
+                              (sellerName, st, et, len(ords)))
             await conn.commit()
 
 
@@ -208,8 +208,8 @@ async def syncTGOrder(tgapi, sellerName, pool):
             await cur.executemany(insertOrderSQL, ords)
 
             # insert sync order log
-            await cur.execute(insertExportOrderLog, (sellerName, st, et,
-                                                     len(ords)))
+            await cur.execute(insertExportOrderLog,
+                              (sellerName, st, et, len(ords)))
             await conn.commit()
 
 
@@ -378,9 +378,9 @@ async def pushUbayBondedOrder(ubayapi, pool):
                         (i[0]['orderid'], ))
                     await conn.commit()
                 else:
-                    logging.error(
-                        'pushUbayBondedOrder: %s failed, ErrMsg:%s' %
-                        (i[0]['orderid'], r['Message']['ResultMsg']), )
+                    logging.error('pushUbayBondedOrder: %s failed, ErrMsg:%s' %
+                                  (i[0]['orderid'],
+                                   r['Message']['ResultMsg']), )
 
 
 # 获取宁波保税订单运单号
@@ -427,7 +427,11 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
                     delivery_no = msg['LogisticsNumber']
                     await cur.execute(
                         "update stock_order set status='已发货',domestic_delivery_no=%s,domestic_delivery_company=%s where orderid=%s",
-                        (delivery_no, ec, i, ))
+                        (
+                            delivery_no,
+                            ec,
+                            i,
+                        ))
                     await conn.commit()
                 else:
                     logging.error(
@@ -485,7 +489,7 @@ async def deliveryTgOrder(tgapi, pool):
                 r = await tgapi.matchAndShip(payload)
                 if not r:
                     continue
-                if r['success']:
+                if r['success'] or '订单状态错误' in r['message']:
                     await cur.execute(
                         "update stock_order set channel_delivery_status='已发货' where orderid=%s",
                         (i[0], ))
@@ -560,7 +564,9 @@ async def main(loop):
 
     # sync YMT order & delivery ymatou order
     sessYmt = aiohttp.ClientSession(
-        loop=loop, headers={'Content-Type': 'application/json'})
+        loop=loop, headers={
+            'Content-Type': 'application/json'
+        })
     for k, v in YMTKEY.items():
         ymtapi = ymatouapi.YmatouAPI(sessYmt, v['appid'], v['appsecret'],
                                      v['authcode'])
@@ -575,8 +581,8 @@ async def main(loop):
         # 宁波保税仓发货
         task.append(
             asyncio.ensure_future(
-                periodic.start(deliveryYmtBondedOrder, interval[
-                    'deliveryymtorder'], ymtapi, pool)))
+                periodic.start(deliveryYmtBondedOrder,
+                               interval['deliveryymtorder'], ymtapi, pool)))
 
     # sync ymtorder to xlobo
     sessXlobo = aiohttp.ClientSession(loop=loop)
