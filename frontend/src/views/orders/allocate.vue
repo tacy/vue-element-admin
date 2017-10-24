@@ -16,6 +16,7 @@
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleBatchAllocate">批量派单</el-button>
     </div>
 
     <el-table :key='tableKey' :data="list" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
@@ -83,8 +84,8 @@
         <template scope="scope">
           <el-button v-if="scope.row.inventory===null" :disabled="scope.row.jancode===''?true:false" size="small" type="success" @click="handleFetchStock(scope.row)">派单
           </el-button>
-          <el-button v-if="scope.row.inventory != null" size="small" type="danger" @click="handleFetchStock(scope.row)">重派
-          </el-button>
+          <!--el-button v-if="scope.row.inventory != null" size="small" type="danger" @click="handleFetchStock(scope.row)">重派
+          </el-button-->
           <el-button size="small" type="primary" @click="handleProduct(scope.row)">新产品
           </el-button>
         </template>
@@ -182,6 +183,32 @@
         <el-button type="primary" :disabled="submitting" @click="allocate">确 定</el-button>
       </span>
     </el-dialog>
+
+    <el-dialog title="订单批量分派" :visible.sync="dialogBatchAllocateVisible" size="tiny">
+      <el-form class="small-space" :model="temp" label-position="left" label-width="80px" >
+        <el-form-item label="仓库:">
+          <el-select clearable class="filter-item" v-model="temp.inventory" v-on:change="getShipping()" placeholder="仓库">
+            <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="发货方式:">
+	  <el-select clearable class="filter-item" v-model="temp.shipping" placeholder="发货方式">
+	    <el-option v-for="item in  shippingOptions" :key="item.name" :label="item.name" :value="item.id">
+	    </el-option>
+	  </el-select>
+        </el-form-item>
+        <el-form-item label="商品条码:">
+          <el-input v-model.trim="temp.jancode" style='width: 225px' ></el-input>
+        </el-form-item>
+      </el-form>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogBatchAllocateVisible=false">取 消</el-button>
+        <el-button type="primary" :disabled="submitting" @click="allocate">确 定</el-button>
+      </span>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -241,6 +268,7 @@
         sortOptions: [{ label: '按ID升序列', key: '+id' }, { label: '按ID降序', key: '-id' }],
         dialogFormVisible: false,
 	dialogProductVisible: false,
+        dialogBatchAllocateVisible: false,
         dialogStatus: '',
         textMap: {
           update: '编辑',
@@ -335,6 +363,11 @@
         })
 
       },
+      handleBatchAllocate() {
+        this.temp.id = 'batchallocate'  // 特殊标记
+	this.temp.orderid = 'batchallocate'
+        this.dialogBatchAllocateVisible = true
+      },
       handleUpdate(row) {
         this.temp = Object.assign({}, row);
         this.dialogStatus = 'update';
@@ -390,6 +423,9 @@
 	  };
 	  this.submitting = false;
           this.dialogAllocationVisible = false;
+	  if ( this.temp.id === 'batchallocate' ) {
+	   this.dialogBatchAllocateVisible = false;
+	  }
           this.$notify({
             title: '成功',
             message: '派单成功',
@@ -419,24 +455,6 @@
           // this.inventoryOptions = response.data.results;  // 需要优化, 构造{id,name}结构
           this.dialogAllocationVisible = true;
         })
-      },
-      handleDownload() {
-        require.ensure([], () => {
-          const { export_json_to_excel } = require('vendor/Export2Excel');
-          const tHeader = ['时间', '地区', '类型', '标题', '重要性'];
-          const filterVal = ['timestamp', 'province', 'type', 'title', 'channel_name'];
-          const data = this.formatJson(filterVal, this.list);
-          export_json_to_excel(tHeader, data, 'table数据');
-        })
-      },
-      formatJson(filterVal, jsonData) {
-        return jsonData.map(v => filterVal.map(j => {
-          if (j === 'timestamp') {
-            return parseTime(v[j])
-          } else {
-            return v[j]
-          }
-        }))
       }
     }
   }
