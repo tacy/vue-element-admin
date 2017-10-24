@@ -351,8 +351,8 @@ async def deliveryYmtOrder(ymtapi, pool):
                         await conn.commit()
                     else:
                         logging.error(
-                            'deliveryYmtOrder: %s failed, ErrMsg:%s' %
-                            (i[0], info[0]['msg']))
+                            'deliveryYmtOrder: %s failed, db: %s, ErrMsg:%s' %
+                            (i[0], i[1], info[0]['msg']))
 
 
 # 推送宁波保税仓订单
@@ -460,7 +460,7 @@ async def deliveryYmtBondedOrder(ymtapi, pool):
                         await conn.commit()
                     else:
                         logging.error(
-                            'deliveryYmtOrder: %s failed, ErrMsg:%s' %
+                            'deliveryYmtBondedOrder: %s failed, ErrMsg:%s' %
                             (i[0], info[0]['msg']))
 
 
