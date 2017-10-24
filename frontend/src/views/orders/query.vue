@@ -104,9 +104,10 @@
 	  <span>{{scope.row.channel_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="状态" width="80px">
+      <el-table-column align="center" label="状态" width="100px">
 	<template scope="scope">
-	  <span>{{scope.row.status}}</span>
+	  <!--span>{{scope.row.status}}</span-->
+	  <el-tag :type="scope.row.status | statusFilter">{{scope.row.status}}</el-tag>
 	</template>
       </el-table-column>
       <!--el-table-column align="center" label="仓库" width="70px">
@@ -156,9 +157,9 @@
       </el-table-column>
       <el-table-column align="center" label="操作" width="150">
 	<template scope="scope">
-          <el-button size="small" :disabled="scope.row.status==='待处理'?false:true" type="primary" @click="handleMark(scope.row)">标记
+          <el-button size="small" :disabled="scope.row.status === '已删除'?true:false" type="primary" @click="handleMark(scope.row)">标 记
 	  </el-button>
-	  <el-button size="small" :disabled="checkShippingdb(scope.row)" type="danger" @click="handleDelete(scope.row)">删 除
+	  <el-button size="small" :disabled="scope.row.status === '已删除'?true:false" type="danger" @click="handleDelete(scope.row)">删 除
 	  </el-button>
 	</template>
       </el-table-column>
@@ -416,6 +417,19 @@
 	}
       };
     },
+    filters: {
+      statusFilter(status) {
+        const statusMap = {
+          待发货: 'success',
+          已采购: 'primary',
+	  待处理: 'primary',
+	  已删除: 'danger',
+          需介入: 'danger',
+	  待采购: 'warning',
+        };
+        return statusMap[status]
+      },
+    },
     created() {
       this.getInventory();
       this.getOrder();
@@ -459,14 +473,14 @@
         this.getOrder();
       },
       //不能删除订单, 如果订单已经分配了DB单号
-      checkShippingdb(row) {
-        if ( row.shippingdb !== null ) {
-	  return true
-	};
-	if (row.status === '已删除' ) {
-	  return true
-	};
-      },
+      // checkShippingdb(row) {
+      //   if ( row.shippingdb !== null ) {
+      // 	  return true
+      // 	};
+      // 	if (row.status === '已删除' ) {
+      // 	  return true
+      // 	};
+      // },
       deleteProduct(item) {
         var index = this.orderData.products.indexOf(item)
         if (index !== -1) {
@@ -483,6 +497,15 @@
         });
       },
       handleDelete(row) {
+        if ( row.shippingdb !== null ) {
+          this.$notify({
+            title: '警告',
+            message: '订单已经出面单, 需先在系统删除对应面单',
+            type: 'error',
+            duration: 2000
+          });
+	  return
+	}
         this.temp = Object.assign({}, row);
 	this.dialogFormVisible = true;
       },
