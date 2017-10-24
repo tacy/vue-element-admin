@@ -16,18 +16,26 @@ class Supplier(models.Model):
     name = models.CharField(max_length=16, null=False, unique=True)
     address = models.CharField(max_length=255)
     phone = models.CharField(max_length=255)
+    priority = models.CharField(max_length=2, null=True)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['priority']
 
 
 class Inventory(models.Model):
     name = models.CharField(max_length=8, unique=True, null=False)
     address = models.CharField(max_length=255)
     phone = models.CharField(max_length=255)
+    priority = models.CharField(max_length=2, null=True)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['priority']
 
 
 # mysql> select a.category_id, a.category_cn_name, b.category_id, b.category_cn_name,
@@ -84,9 +92,13 @@ class Shipping(models.Model):
     name = models.CharField(max_length=16, null=False)
     delivery_company = models.CharField(max_length=4, null=True)
     tiangou_company = models.CharField(max_length=4, null=True, default='')
+    priority = models.CharField(max_length=2, null=True)
 
     def __str__(self):
         return '{}:{}'.format(self.inventory.name, self.name)
+
+    class Meta:
+        ordering = ['priority']
 
 
 class ShippingDB(models.Model):
