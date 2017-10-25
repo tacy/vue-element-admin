@@ -62,7 +62,7 @@
       </el-table-column>
       <el-table-column align="center" label="操作" width="240px">
         <template scope="scope">
-          <el-button size="small" :disabled="scope.row.status === '入库' ? true:false" type="success" @click="handleStockIn(scope.row)">入 库
+          <el-button size="small" :disabled="scope.row.status === '入库'||scope.row.status === '删除' ? true:false" type="success" @click="handleStockIn(scope.row)">入 库
 	  </el-button>
           <el-button size="small" :disabled="scope.row.status === '在途' ? false:true" type="danger" @click="handleDelete(scope.row)">删 除
           </el-button>

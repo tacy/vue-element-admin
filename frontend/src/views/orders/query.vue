@@ -16,6 +16,8 @@
       </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '4'">
       </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入采购单" v-model="listQuery.purchaseorder__orderid" v-show="listQuery.labelVal == '5'">
+      </el-input>
 
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品规格" v-model="listQuery.sku_properties_name">
       </el-input>
@@ -347,6 +349,9 @@
 	}, {
 	  value: '4',
 	  label: '收件人'
+	}, {
+	  value: '5',
+	  label: '采购单'
 	}],
         listQuery: {
           page: 1,
@@ -359,6 +364,7 @@
 	  orderid: undefined,
 	  status: undefined,
 	  product_title: undefined,
+	  purchaseorder__orderid: undefined,
 	  sku_properties_name: undefined,
 	  delivery_type: undefined,
         },
@@ -448,6 +454,9 @@
 	}
 	if ( this.listQuery.labelVal !== '4' ) {
 	  this.listQuery.receiver_name=undefined
+	}
+	if ( this.listQuery.labelVal !== '5' ) {
+	  this.listQuery.purchaseorder__orderid=undefined
 	}
         fetchOrder(this.listQuery).then(response => {
           this.list = response.data.results;

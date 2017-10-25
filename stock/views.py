@@ -1463,6 +1463,7 @@ class PurchaseOrderClear(views.APIView):
         id = request.data.get('id')
         inventory_id = request.data.get('inventory')
         pois = request.data.get('pois')
+        logger.debug('PurchaseOrderClear入库调试: 用户输入 - {}'.format(request.data))
         poObj = PurchaseOrder.objects.get(id=id)  # 采购单
 
         with transaction.atomic():
