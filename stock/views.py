@@ -975,7 +975,7 @@ class OrderAllocate(views.APIView):
         else:  # 单个订单派
             # check if is shipcart order
             ordid_pre = allocateData['orderid'].split('-')[0]
-            orders = Order.objects.filter(orderid__contains=ordid_pre)
+            orders = Order.objects.filter(orderid__contains=ordid_pre, status='待处理')
 
         # 检查是否订单商品已经在product表中, 如不存在, 返回错误提示
         jans = set([v.jancode for v in orders])
