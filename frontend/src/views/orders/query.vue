@@ -56,7 +56,15 @@
 	    <el-form-item label="规格:" label-width="50px">
 	      <span>{{ scope.row.sku_properties_name }}</span>
 	    </el-form-item-->
-
+	    <el-form-item label="收件人:" label-width="80px">
+	      <span>{{ scope.row.receiver_name }}</span>
+	    </el-form-item>
+	    <el-form-item label="地址:" label-width="80px">
+	      <span>{{ scope.row.receiver_address }}</span>
+	    </el-form-item>
+	    <el-form-item label="身份证:" label-width="80px">
+	      <span>{{ scope.row.receiver_idcard }}</span>
+	    </el-form-item>
 	    <el-form-item label="支付时间:" label-width="80px">
 	      <span>{{ scope.row.piad_time }}</span>
 	    </el-form-item>
