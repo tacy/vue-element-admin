@@ -1,5 +1,4 @@
 import os
-import json
 import logging
 import eventlet
 import gspread
@@ -9,8 +8,9 @@ from io import BytesIO
 from oauth2client.service_account import ServiceAccountCredentials
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import cm
+from reportlab.lib.units import cm, inch
 from reportlab.pdfbase import pdfmetrics, ttfonts
+from reportlab.graphics.barcode import createBarcodeDrawing
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
 
 log = logging.getLogger(__name__)
@@ -34,8 +34,14 @@ class PDFTool:
             bottomMargin=2,
             pagesize=(10 * cm, 15 * cm))
         elements = []
-        title = 'DB Number: {}'.format(db_number)
-        elements.append(Paragraph(title, styles['h5']))
+        # title = 'DB Number: {}'.format(db_number)
+        # elements.append(Paragraph(title, styles['h5']))
+        barcode = createBarcodeDrawing(
+            'Code128',
+            value=db_number,
+            humanReadable=True,
+            barWidth=0.015 * inch)
+        elements.append(barcode)
 
         data = [
             ['产品', '规格', '数量', '位置'],
@@ -65,7 +71,8 @@ class PDFTool:
                 2.8 * cm,
                 1.0 * cm,
                 1.4 * cm,
-            ], )
+            ],
+        )
         t.setStyle(
             TableStyle([
                 ('FONTNAME', (0, 0), (-1, -1), 'wqy'),
