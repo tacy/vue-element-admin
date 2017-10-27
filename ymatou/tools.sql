@@ -19,7 +19,9 @@ select concat('update stock_stock set preallocation=', b.oquantity, ' where inve
 
 
 ############ 计算在途
-select p.jancode, product_id, inventory_id, inflight from stock_purchaseorderitem poi inner join stock_product p on poi.product_id=p.id
+select p.jancode, s.product_id, s.inventory_id, s.inflight, a.cinflight from stock_stock s inner join stock_product p on s.product_id=p.id inner join (select product_id,sum(quantity) cinflight ,inventory_id from stock_purchaseorderitem poi inner join stock_purchaseorder po on poi.purchaseorder_id=po.id where po.status in ('部分入库','在途') and (poi.status is null or poi.status='转运中') group by product_id, inventory_id) a on s.inventory_id=a.inventory_id and s.product_id=a.product_id;
+
+
 
 # 判断需采购数据异常
 select * from (select a.jancode, a.inventory_id,  a.quantity, a.inflight, a.preallocation, b.oquantity, a.preallocation-a.quantity-a.inflight r, b.nquantity from (select p.jancode, s.quantity, s.inflight, s.preallocation, s.inventory_id from stock_stock s inner join stock_product p on p.id=s.product_id) as a inner join (select jancode, inventory_id, sum(quantity) oquantity, sum(need_purchase) nquantity from stock_order where status in ('待发货','待采购', '已采购', '需介入') group by jancode, inventory_id) as b on a.jancode=b.jancode and a.inventory_id=b.inventory_id) as v where v.r>0 and v.r<>v.nquantity;
