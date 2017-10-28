@@ -369,7 +369,8 @@ class PurchaseOrderClear(views.APIView):
                         stockTokyo.quantity = F('quantity') - poiObj.quantity
                     stockTokyo.save()
 
-                poObj.order.filter(status='已采购').update(status='待发货')
+                poObj.order.filter(
+                    status='已采购', jancode=poi['jancode']).update(status='待发货')
 
             count = poObj.purchaseorderitem.filter(status='已入库').count()
             if count > 0:
