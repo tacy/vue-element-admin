@@ -183,14 +183,18 @@ class NoOrderPurchase(views.APIView):
                 # create purchaseorder
                 supplierObj = Supplier.objects.get(id=data['supplier'])
                 inventoryObj = Inventory.objects.get(id=inventory)
-                poObj = PurchaseOrder(
-                    orderid=data['orderid'],
-                    supplier=supplierObj,
-                    inventory=inventoryObj,
-                    create_time=createtime,
-                    status='在途',
-                )
-                poObj.save()
+                try:
+                    poObj = PurchaseOrder.objects.get(orderid=data['orderid'])
+                except PurchaseOrder.DoesNotExist:
+                    poObj = PurchaseOrder(
+                        orderid=data['orderid'],
+                        supplier=supplierObj,
+                        inventory=inventoryObj,
+                        create_time=createtime,
+                        status='在途',
+                    )
+                    poObj.save()
+
                 for i in data['items']:
                     # add purchase item
                     try:
