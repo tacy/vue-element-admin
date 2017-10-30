@@ -64,7 +64,11 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
         return
     # insert order to db
     ords = []
+    accept_time = ''
     for o in orders:
+        if o['accept_time'] > accept_time:
+            accept_time = o[
+                'accept_time']  # use accept_time as next start time
         for oi in o['order_items_info']:
             # 拆单:
             #    1. jancode (jancode*1+jancode*1)
@@ -117,6 +121,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
             await cur.executemany(insertOrderSQL, ords)
 
             # insert sync order log
+            if accept_time and et > accept_time:
+                et = accept_time
             await cur.execute(insertExportOrderLog,
                               (sellerName, st, et, len(ords)))
             await conn.commit()
