@@ -377,8 +377,10 @@ class PurchaseOrderClear(views.APIView):
                     status='已采购', jancode=poi['jancode']).update(status='待发货')
 
             count = poObj.purchaseorderitem.filter(status='已入库').count()
+            all = poObj.purchaseorderitem.count(
+            )  # 不能和用户提交的采购明细条数比较, 用户可能在其他页面增加了采购明细, 却不刷新提交页面
             if count > 0:
-                if count != len(pois):
+                if count != all:
                     poObj.status = '部分入库'
                 else:
                     poObj.status = '入库'
