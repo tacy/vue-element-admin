@@ -471,6 +471,18 @@ class ManualAllocateDBNumber(views.APIView):
                         errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+        # 如果need_check, 需要先查一下该用户是否有其他订单没有一并提交, 如果有, 返回
+        # 异常
+        if not request.data['disable_check']:
+            check_ords = Order.objects.filter(
+                receiver_name=ords[0]['receiver_name'],
+                receiver_mobile=ords[0]['receiver_mobile'],
+                shippingdb__isnull=True,
+                status__in=['待处理', '待采购', '待发货', '已采购', '需介入'])
+            if len(check_ords) != len(ords):
+                errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
+                return Response(
+                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
         db_number = request.data['Comment']
         channel_name = ords[0]['channel_name']
