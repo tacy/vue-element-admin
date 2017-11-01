@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 # ymatou order need check orderstatus
 # 这里可能有合并订单发货情况, 需要根据订单ID去重, 然后去码头后台查每一
 # 个订单状态是否正常
-def checkOrderStatus(loop, sess, ords):
+def checkOrderStatus(loop, sess, ords, disable_checkOrderDelivery=False):
     if '洋码头' in ords[0]['channel_name']:
         skey = YMTKEY[ords[0]['seller_name']]
         ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'], skey['appsecret'],
@@ -58,9 +58,10 @@ def checkOrderStatus(loop, sess, ords):
             if result['content']['order_info']['order_status'] in [12, 13, 14]:
                 errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
                 return errmsg
-            if result['content']['order_info']['order_status'] in [3, 4]:
-                errmsg = {'errmsg': '订单已发货, 请到码头后台确认'}
-                return errmsg
+            if not disable_checkOrderDelivery:
+                if result['content']['order_info']['order_status'] in [3, 4]:
+                    errmsg = {'errmsg': '订单已发货, 请到码头后台确认'}
+                    return errmsg
             for oi in result['content']['order_info']['order_items_info']:
                 if oi['refund_id'] == 0:
                     errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
@@ -298,13 +299,16 @@ class ManualAllocateDBNumber(views.APIView):
     def post(self, request, format=None):
         ords = request.data['orders']
         disable_check = request.data['disable_check']
+        disable_checkOrderDelivery = request.data[
+            'disable_checkOrderDelivery']  # 走贝海系统生成的面单, 会直接码头后台发货, 这样的DB面单回填到系统的时候, 不能检查订单状态, 否则报错
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
 
-        ordStatus = checkOrderStatus(loop, sess, ords)
+        ordStatus = checkOrderStatus(loop, sess, ords,
+                                     disable_checkOrderDelivery)
         if ordStatus:
             return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
 

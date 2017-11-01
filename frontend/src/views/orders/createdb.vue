@@ -200,9 +200,18 @@
         <el-form-item label="面单号">
           <el-input v-model.trim="xloboData.Comment"></el-input>
         </el-form-item>
-        <el-form-item label="订单遗漏">
-          <el-checkbox v-model="xloboData.disable_check">无需校验</el-checkbox>
-        </el-form-item>
+        <el-row>
+	  <el-col :span="12">
+	    <el-form-item label="订单遗漏">
+	      <el-checkbox v-model="xloboData.disable_check">无需校验</el-checkbox>
+	    </el-form-item>
+ 	  </el-col>
+	  <el-col :span="12">
+	    <el-form-item label="订单发货">
+	      <el-checkbox v-model="xloboData.disable_checkOrderDelivery">无需校验</el-checkbox>
+	    </el-form-item>
+   	  </el-col>
+	</el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogDBInputVisible=false">取 消</el-button>
@@ -336,6 +345,7 @@
 	  LineTypeId: 3,
 	  IsContainTax: 1,
 	  disable_check: false,
+	  disable_checkOrderDelivery: false,
 	  orders: []
 	},
 	uexData: {
