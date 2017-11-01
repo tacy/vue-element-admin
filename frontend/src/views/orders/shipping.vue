@@ -174,7 +174,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogStockOutVisible=false">取 消</el-button>
-        <el-button type="primary" @click="stockOut">提 交</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="stockOut">提 交</el-button>
       </div>
     </el-dialog>
 
@@ -277,6 +277,7 @@
 	dialogStockOutVisible: false,
 	dialogFormVisible: false,
         inventoryOptions: [],
+	disableSubmit: false,
         selectRow: [],
 	channelOptions: ['洋码头', '京东'],
 	shippingOptions: [],
@@ -443,6 +444,7 @@
 	this.dialogStockOutVisible=true;
       },
       stockOut() {
+        this.disableSubmit=true;
         stockOut(this.stockOutData).then(response => {
 	  const dbs = this.stockOutData.db_numbers.split('\n')
 	  for (const d of dbs) {
@@ -464,6 +466,7 @@
 	  });
 	  this.dialogStockOutVisible=false;
 	});
+	this.disableSubmit=false;
       },
       handleDelete(row) {
         deleteDBNumber(row).then(response => {

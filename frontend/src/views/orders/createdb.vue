@@ -172,7 +172,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible=false">取 消</el-button>
-        <el-button type="primary" @click="createShippingDB()">确 定</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="createShippingDB()">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -272,6 +272,7 @@
 	dialogUEXVisible: false,
 	dialogDBInputVisible: false,
         dialogRollbackToPreprocessVisible: false,
+	disableSubmit: false,
         inventoryOptions: [],
 	shippingOptions: [],
 	channelOptions: ['洋码头', '京东'],
@@ -527,6 +528,7 @@
         this.dialogDBInputVisible = true;
       },
       createShippingDB() {
+        this.disableSubmit=true;
         this.xloboData.orders = this.selectRow;
         let shipping_type = this.selectRow[0].shipping_name;
         if ( shipping_type==='直邮电商' | shipping_type==='贝海直邮电商' ) {
@@ -540,6 +542,7 @@
             this.getOrder();
           })
         }
+	this.disableSubmit=false;
       },
       createUexShippingDB() {
         this.uexData.orders = this.selectRow;
@@ -549,17 +552,20 @@
         })
       },
       manualShippingDB() {
+        this.disableSubmit=true;
         this.xloboData.orders = this.selectRow;
         manualallocatedb(this.xloboData).then(response => {
           this.dialogDBInputVisible = false
           this.getOrder();
         })
+	this.disableSubmit=false;
       },
       handleRollbackToPreprocess(row) {
         this.rollbackOrderData.orderid = row.orderid;
         this.dialogRollbackToPreprocessVisible = true;
       },
       rollbackToPreprocess() {
+        this.disableSubmit=true;
         orderRollback(this.rollbackOrderData).then(response => {
 	  const process_orderid = this.rollbackOrderData.orderid.split('-')[0]
 	  const inds = []
@@ -580,6 +586,7 @@
             duration: 2000
           });
         });
+	this.disableSubmit=false;
       }
     },
   }
