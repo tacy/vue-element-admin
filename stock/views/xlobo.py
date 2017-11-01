@@ -42,54 +42,68 @@ client_id = '8417db83-360c-4275-974f-cf9a2734d8f8'
 logger = logging.getLogger(__name__)
 
 
+# ymatou order need check orderstatus
+# 这里可能有合并订单发货情况, 需要根据订单ID去重, 然后去码头后台查每一
+# 个订单状态是否正常
+def checkOrderStatus(loop, sess, ords):
+    if '洋码头' in ords[0]['channel_name']:
+        skey = YMTKEY[ords[0]['seller_name']]
+        ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'], skey['appsecret'],
+                                     skey['authcode'])
+        ordids = list([OrderedDict.fromkeys([i['orderid'] for i in ords])])
+        for oid in ordids:
+            result = loop.run_until_complete(
+                ymtapi.getOrderInfo(ords[0]['orderid']))
+            # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
+            if result['content']['order_info']['order_status'] in [12, 13, 14]:
+                errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
+                return errmsg
+            if result['content']['order_info']['order_status'] in [3, 4]:
+                errmsg = {'errmsg': '订单已发货, 请到码头后台确认'}
+                return errmsg
+            for oi in result['content']['order_info']['order_items_info']:
+                if oi['refund_id'] == 0:
+                    errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
+                    return errmsg
+        return None
+
+
+def checkUserOtherOrder(ords):
+    # 如果need_check, 需要先查一下该用户是否有其他订单没有一并提交, 如果有, 返回
+    # 异常
+    check_ords = Order.objects.filter(
+        receiver_name=ords[0]['receiver_name'],
+        receiver_mobile=ords[0]['receiver_mobile'],
+        shippingdb__isnull=True,
+        status__in=['待处理', '待采购', '待发货', '已采购', '需介入'])
+    if len(check_ords) != len(ords):
+        errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
+        return errmsg
+    return None
+
+
 # 1. 生成DB面单, 如果是码头订单, 需要先确认订单状态, 状态异常, 直接返回异常
 # 2. 需要考虑该用户是否有其他订单, 如果有其他订单, 需要提醒操作人员.
 class XloboCreateNoVerification(views.APIView):
     def post(self, request, format=None):
         data = request.data
         ords = data['orders']
+        disable_check = data['disable_check']
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
 
-        # ymatou order need check orderstatus
-        # 这里可能有合并订单发货情况, 需要根据订单ID去重, 然后去码头后台查每一
-        # 个订单状态是否正常
-        if '洋码头' in ords[0]['channel_name']:
-            skey = YMTKEY[ords[0]['seller_name']]
-            ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
-                                         skey['appsecret'], skey['authcode'])
-            ordids = list([OrderedDict.fromkeys([i['orderid'] for i in ords])])
-            for oid in ordids:
-                result = loop.run_until_complete(
-                    ymtapi.getOrderInfo(ords[0]['orderid']))
-                # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
-                if result['content']['order_info']['order_status'] in [
-                        12, 13, 14
-                ]:
-                    errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
-                    return Response(
-                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-                for oi in result['content']['order_info']['order_items_info']:
-                    if oi['refund_id'] == 0:
-                        errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
-                        return Response(
-                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+        ordStatus = checkOrderStatus(loop, sess, ords)
+        if ordStatus:
+            return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
 
-        # 如果need_check, 需要先查一下该用户是否有其他订单没有一并提交, 如果有, 返回
-        # 异常
-        if not data['disable_check']:
-            check_ords = Order.objects.filter(
-                receiver_name=ords[0]['receiver_name'],
-                receiver_mobile=ords[0]['receiver_mobile'],
-                shippingdb__isnull=True,
-                status__in=['待处理', '待采购', '待发货', '已采购', '需介入'])
-            if len(check_ords) != len(ords):
-                errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
+        if not disable_check:
+            otherOrder = checkUserOtherOrder(ords)
+            if otherOrder:
                 return Response(
-                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                    data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
 
         # create db number
         # construct api msg
@@ -172,6 +186,7 @@ class XloboCreateFBXBill(views.APIView):
     def post(self, request, format=None):
         data = request.data
         ords = data['orders']
+        disable_check = data['disable_check']
         channinfo = {
             '洋码头': 2,
             '天猫': 3,
@@ -188,42 +203,15 @@ class XloboCreateFBXBill(views.APIView):
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
 
-        # ymatou order need check orderstatus
-        # 这里可能有合并订单发货情况, 需要根据订单ID去重, 然后去码头后台查每一
-        # 个订单状态是否正常
-        if '洋码头' in ords[0]['channel_name']:
-            skey = YMTKEY[ords[0]['seller_name']]
-            ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
-                                         skey['appsecret'], skey['authcode'])
-            ordids = list([OrderedDict.fromkeys([i['orderid'] for i in ords])])
-            for oid in ordids:
-                result = loop.run_until_complete(
-                    ymtapi.getOrderInfo(ords[0]['orderid']))
-                # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
-                if result['content']['order_info']['order_status'] in [
-                        12, 13, 14
-                ]:
-                    errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
-                    return Response(
-                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-                for oi in result['content']['order_info']['order_items_info']:
-                    if oi['refund_id'] == 0:
-                        errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
-                        return Response(
-                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+        ordStatus = checkOrderStatus(loop, sess, ords)
+        if ordStatus:
+            return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
 
-        # 如果need_check, 需要先查一下该用户是否有其他订单没有一并提交, 如果有, 返回
-        # 异常
-        if not data['disable_check']:
-            check_ords = Order.objects.filter(
-                receiver_name=ords[0]['receiver_name'],
-                receiver_mobile=ords[0]['receiver_mobile'],
-                shippingdb__isnull=True,
-                status__in=['待处理', '待采购', '待发货', '已采购', '需介入'])
-            if len(check_ords) != len(ords):
-                errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
+        if not disable_check:
+            otherOrder = checkUserOtherOrder(ords)
+            if otherOrder:
                 return Response(
-                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                    data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
 
         # construct api msg
         channel_name = ords[0]['channel_name']
@@ -302,6 +290,78 @@ class XloboCreateFBXBill(views.APIView):
                 stockObj.save()
 
         return Response(data=result, status=status.HTTP_200_OK)
+
+
+# 思考: 拼邮订单, 还是需要填写正确的EMS单号, 否则不容易追踪包裹情况, 但是存在
+# 不正确填写EMS单号的情况, 这个需要怎么处理?
+class ManualAllocateDBNumber(views.APIView):
+    def post(self, request, format=None):
+        ords = request.data['orders']
+        disable_check = request.data['disable_check']
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop = asyncio.get_event_loop()
+        sess = aiohttp.ClientSession(loop=loop)
+
+        ordStatus = checkOrderStatus(loop, sess, ords)
+        if ordStatus:
+            return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
+
+        if not disable_check:
+            otherOrder = checkUserOtherOrder(ords)
+            if otherOrder:
+                return Response(
+                    data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
+
+        db_number = request.data['Comment']
+        channel_name = ords[0]['channel_name']
+        order_piad_time = ords[0]['piad_time']
+        # delivery_type = ords[0]['delivery_type']
+        with transaction.atomic():
+            orderStatus = None
+            shippingdbObj = None
+            try:
+                shippingdbObj = ShippingDB.objects.get(db_number=db_number)
+                for o in ords:
+                    if '拼邮' not in o['shipping_name']:
+                        errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
+                        return Response(
+                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            except ShippingDB.DoesNotExist:
+                shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
+                inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
+                dbStatus = '待处理'
+                if '贝海' in inventoryObj.name and 'EMS' in shippingObj.name:  # 贝海EMS无需我们打包
+                    dbStatus = '已出库'
+                    orderStatus = '已发货'  # TODO: 采购可能没有到库
+                if '拼邮' in shippingObj.name:  # 拼邮不进入待发货列表, 但是需打包发货
+                    dbStatus = '已出库'
+                shippingdbObj = ShippingDB(
+                    db_number=db_number,
+                    # status='已出库' if '拼邮' in delivery_type else '待处理',   # 如果是拼邮订单, 只是需要一个面单回填, 无需做国外发货处理
+                    status=dbStatus,
+                    channel_name=channel_name,
+                    order_piad_time=order_piad_time,
+                    shipping=shippingObj,
+                    inventory=inventoryObj)
+                shippingdbObj.save()
+            for o in ords:
+                orderObj = Order.objects.get(id=o['id'])
+                orderObj.shippingdb = shippingdbObj
+                if orderStatus:
+                    orderObj.status = orderStatus
+                    stockObj = Stock.objects.get(
+                        product__jancode=orderObj.jancode,
+                        inventory=orderObj.inventory)
+                    stockObj.quantity = F(
+                        'quantity') - orderObj.quantity  # 扣减库存
+                    stockObj.preallocation = F(
+                        'preallocation') - orderObj.quantity
+                    stockObj.save()
+                orderObj.save(update_fields=['shippingdb', 'status'])
+
+        return Response(status=status.HTTP_200_OK)
 
 
 # 删除DB面单, 清理订单的shippingdb_id字段
@@ -437,86 +497,3 @@ class LogisticGet(views.APIView):
         } for i in result['Result']['LogisticInfoList']
                 if i['iCountryId'] == 6]
         return Response(data=data, status=status.HTTP_200_OK)
-
-
-# 思考: 拼邮订单, 还是需要填写正确的EMS单号, 否则不容易追踪包裹情况, 但是存在
-# 不正确填写EMS单号的情况, 这个需要怎么处理?
-class ManualAllocateDBNumber(views.APIView):
-    def post(self, request, format=None):
-        ords = request.data['orders']
-
-        # ymatou order need check orderstatus
-        if '洋码头' in ords[0]['channel_name']:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop = asyncio.get_event_loop()
-            sess = aiohttp.ClientSession(loop=loop)
-
-            skey = YMTKEY[ords[0]['seller_name']]
-            ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'],
-                                         skey['appsecret'], skey['authcode'])
-            ordids = list([OrderedDict.fromkeys([i['orderid'] for i in ords])])
-            for oid in ordids:
-                result = loop.run_until_complete(
-                    ymtapi.getOrderInfo(ords[0]['orderid']))
-                # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
-                if result['content']['order_info']['order_status'] in [
-                        12, 13, 14
-                ]:
-                    errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
-                    return Response(
-                        data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-                for oi in result['content']['order_info']['order_items_info']:
-                    if oi['refund_id'] == 0:
-                        errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
-                        return Response(
-                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-
-        db_number = request.data['Comment']
-        channel_name = ords[0]['channel_name']
-        order_piad_time = ords[0]['piad_time']
-        # delivery_type = ords[0]['delivery_type']
-        with transaction.atomic():
-            orderStatus = None
-            shippingdbObj = None
-            try:
-                shippingdbObj = ShippingDB.objects.get(db_number=db_number)
-                for o in ords:
-                    if '拼邮' not in o['shipping_name']:
-                        errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
-                        return Response(
-                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-            except ShippingDB.DoesNotExist:
-                shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
-                inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
-                dbStatus = '待处理'
-                if '贝海' in inventoryObj.name and 'EMS' in shippingObj.name:  # 贝海EMS无需我们打包
-                    dbStatus = '已出库'
-                    orderStatus = '已发货'  # TODO: 采购可能没有到库
-                if '拼邮' in shippingObj.name:  # 拼邮不进入待发货列表, 但是需打包发货
-                    dbStatus = '已出库'
-                shippingdbObj = ShippingDB(
-                    db_number=db_number,
-                    # status='已出库' if '拼邮' in delivery_type else '待处理',   # 如果是拼邮订单, 只是需要一个面单回填, 无需做国外发货处理
-                    status=dbStatus,
-                    channel_name=channel_name,
-                    order_piad_time=order_piad_time,
-                    shipping=shippingObj,
-                    inventory=inventoryObj)
-                shippingdbObj.save()
-            for o in ords:
-                orderObj = Order.objects.get(id=o['id'])
-                orderObj.shippingdb = shippingdbObj
-                if orderStatus:
-                    orderObj.status = orderStatus
-                    stockObj = Stock.objects.get(
-                        product__jancode=orderObj.jancode,
-                        inventory=orderObj.inventory)
-                    stockObj.quantity = F(
-                        'quantity') - orderObj.quantity  # 扣减库存
-                    stockObj.preallocation = F(
-                        'preallocation') - orderObj.quantity
-                    stockObj.save()
-                orderObj.save(update_fields=['shippingdb', 'status'])
-
-        return Response(status=status.HTTP_200_OK)

@@ -200,6 +200,9 @@
         <el-form-item label="面单号">
           <el-input v-model.trim="xloboData.Comment"></el-input>
         </el-form-item>
+        <el-form-item label="订单遗漏">
+          <el-checkbox v-model="xloboData.disable_check">无需校验</el-checkbox>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogDBInputVisible=false">取 消</el-button>
