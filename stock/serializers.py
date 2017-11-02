@@ -37,6 +37,8 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     product_specification = serializers.ReadOnlyField(
         source='product.specification')
     orderid = serializers.ReadOnlyField(source='purchaseorder.orderid')
+    purchaseorder_createtime = serializers.ReadOnlyField(
+        source='purchaseorder.create_time')
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""

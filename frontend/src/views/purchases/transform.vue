@@ -52,7 +52,7 @@
 	  <span>{{scope.row.jancode}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="采购数量" width="100px">
+      <el-table-column align="center" label="数量" width="80px">
 	<template scope="scope">
 	  <span>{{scope.row.quantity}}</span>
 	</template>
@@ -60,6 +60,11 @@
       <el-table-column align="center" label="状态" width="80px">
 	<template scope="scope">
 	  <span>{{scope.row.status}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="采购时间" width="130px">
+	<template scope="scope">
+	  <span>{{scope.row.purchaseorder_createtime|fmDate}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="运单号">
@@ -136,6 +141,13 @@
 	  purchaseorderitems: undefined,
 	  delivery_no: undefined
 	},
+      }
+    },
+    filters: {
+      fmDate(value) {
+	if (!value) return ''
+	value = value.substr(2, 8) + ' ' + value.substr(11, 5)
+	return value
       }
     },
     created() {
