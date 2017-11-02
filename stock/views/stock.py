@@ -10,7 +10,8 @@ from rest_framework import status, utils, views
 from rest_framework.response import Response
 
 from stock.models import (Inventory, Order, Product, PurchaseOrderItem,
-                          Shipping, ShippingDB, Stock)
+                          Shipping, ShippingDB, Stock, StockOutRecord,
+                          StockInRecord)
 from ymatou import uex
 
 uex_user = '2830020@qq.com'
@@ -136,7 +137,7 @@ class UexStockOut(views.APIView):
 class StockOut(views.APIView):
     # 1. 标记db面单状态, 设置运单号(delivery_no);
     # 2. 标记订单状态, 过滤条件是订单状态: ('待发货')
-    # 3. 扣减库存
+    # 3. 扣减库存, 并记录出库stockoutrecord
     def post(self, request, format=None):
         delivery_no = request.data['delivery_no']
         dbs = request.data['db_numbers'].split('\n')
@@ -183,6 +184,14 @@ class StockOut(views.APIView):
                         stockObj.quantity = F('quantity') - o.quantity
                         stockObj.preallocation = F('preallocation') - o.quantity
                         stockObj.save()
+                        stockORObj = StockOutRecord(
+                            orderid=o.orderid,
+                            quantity=o.quantity,
+                            inventory=o.inventory,
+                            product=stockObj.product,
+                            out_date=shippingdbObj.delivery_time,
+                        )
+                        stockORObj.save()
         except IntegrityError:
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
@@ -192,6 +201,7 @@ class StockOut(views.APIView):
 # 拼邮订单和第三方保税订单出库操作
 # 更新订单状态, 扣减库存
 class OrderOut(views.APIView):
+    # 修改库存状态, 记录stockoutrecord, 更新订单状态
     def post(self, request, format=None):
         ord = request.data
         with transaction.atomic():
@@ -205,6 +215,14 @@ class OrderOut(views.APIView):
                 stockObj.preallocation = F('preallocation') - ordObjs.quantity
                 stockObj.quantity = F('quantity') - ordObjs.quantity
                 stockObj.save()
+                stockORObj = StockOutRecord(
+                    orderid=ordObjs.orderid,
+                    quantity=ordObjs.quantity,
+                    inventory=ordObjs.inventory,
+                    product=stockObj.product,
+                    out_date=arrow.now().format('YYYY-MM-DD HH:mm:ss'),
+                )
+                stockORObj.save()
                 return Response(status=status.HTTP_200_OK)
             else:
                 results = {'errmsg': '订单已发货'}
@@ -212,7 +230,12 @@ class OrderOut(views.APIView):
                     data=results, status=status.HTTP_400_BAD_REQUEST)
 
 
+# 采购到国内仓库的采购单入库
 class DomesticStockIn(views.APIView):
+    # 1. 标记采购单和采购明细状态
+    # 2. 修改stock库存, 并且记录stockinrecord
+    # 3. 如果从东京仓采购, 需要对东京仓做出库处理, 并且记录stockoutrecord(注意, 是采购单出库)
+    # 4. 标记关联订单状态
     def post(self, request, format=None):
         data = request.data
         with transaction.atomic():
@@ -220,14 +243,22 @@ class DomesticStockIn(views.APIView):
             poObj = poiObj.purchaseorder
             if '转运中' in poiObj.status:
                 poiObj.status = '已入库'
+                poiObj.stockin_date = arrow.now().format('YYYY-MM-DD HH:mm:ss')
                 poiObj.save()
-
                 inventory = poObj.inventory
                 stockObj = Stock.objects.get(
                     product=poiObj.product, inventory=inventory)
                 stockObj.quantity = F('quantity') + poiObj.quantity
                 stockObj.inflight = F('inflight') - poiObj.quantity
                 stockObj.save()
+                stockIRObj = StockInRecord(
+                    orderid=poObj.orderid,
+                    inventory=poObj.inventory,
+                    quantity=poiObj.quantity,
+                    in_date=poiObj.stockin_date,
+                    product=poiObj.product,
+                )
+                stockIRObj.save()
 
                 # tokyo stock out if supplier is tokyo
                 if '东京仓' in poObj.supplier.name:
@@ -239,6 +270,15 @@ class DomesticStockIn(views.APIView):
                         'preallocation') - poiObj.quantity
                     stockTokyo.quantity = F('quantity') - poiObj.quantity
                     stockTokyo.save()
+                    # 记录出库到stockoutrecord表, 这里的orderid用采购单id
+                    stockORObj = StockOutRecord(
+                        orderid=poObj.orderid,
+                        quantity=poiObj.quantity,
+                        inventory=stockTokyo.inventory,
+                        product=poiObj.product,
+                        out_date=poiObj.stockin_date,
+                    )
+                    stockORObj.save()
 
                 poObj.order.filter(
                     jancode=poiObj.product.jancode,

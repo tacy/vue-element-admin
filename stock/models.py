@@ -86,6 +86,14 @@ class Stock(models.Model):
         unique_together = ('inventory', 'product')
 
 
+class StockOutRecord(models.Model):
+    inventory = models.ForeignKey(Inventory, related_name='stockoutrecord')
+    product = models.ForeignKey(Product, related_name='stockoutrecord')
+    quantity = models.IntegerField(null=True, default=0)  # 出库数量
+    out_date = models.DateTimeField(null=True)
+    orderid = models.CharField(max_length=64, null=False)  # 单/订采购单(仓库间调拨用的是采购)
+
+
 class Shipping(models.Model):
     inventory = models.ForeignKey(
         Inventory, related_name='shipping', null=False)
@@ -153,6 +161,7 @@ class PurchaseOrderItem(models.Model):
     status = models.CharField(max_length=8, null=True)  # 已入库/东京仓/转运中
     delivery_no = models.CharField(max_length=128, null=True)  # 转运单号
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    stockin_date = models.DateTimeField(null=True)
 
     class Meta:
         unique_together = ('purchaseorder', 'product')
@@ -162,6 +171,15 @@ class PurchaseOrderItem(models.Model):
         return "{}@{}@{}@{}@{}@{}".format(
             self.product.jancode, self.product.name,
             self.product.specification, self.quantity, self.price, self.status)
+
+
+class StockInRecord(models.Model):
+    inventory = models.ForeignKey(Inventory, related_name='stockinrecord')
+    product = models.ForeignKey(Product, related_name='stockinrecord')
+    quantity = models.IntegerField(null=True, default=0)  # 出库数量
+    in_date = models.DateTimeField(null=True)
+    orderid = models.CharField(
+        max_length=64, blank=False)  # orderid或者采购单orderid
 
 
 class Order(models.Model):
