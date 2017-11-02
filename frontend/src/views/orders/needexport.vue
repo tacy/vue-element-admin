@@ -96,7 +96,7 @@
       </el-table-column>
       <el-table-column align="center" label="操作" width="80">
 	<template scope="scope">
-          <el-button size="small" :disabled="scope.row.status==='已发货'?true:false" type="primary" @click="stockOut(scope.row)">出库
+          <el-button size="small" :disabled="scope.row.status==='待发货'?false:true" type="primary" @click="stockOut(scope.row)">出库
 	  </el-button>
 	</template>
       </el-table-column>
