@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from django.db.models import F
 from stock.exceptions import InputError
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
-                          PurchaseOrderItem, Stock, Supplier)
+                          PurchaseOrderItem, Stock, Supplier, StockInRecord,
+                          StockOutRecord)
 
 logger = logging.getLogger(__name__)
 
@@ -344,6 +345,7 @@ class PurchaseOrderClear(views.APIView):
                     continue
 
                 poiObj.status = '已入库'
+                poiObj.stockin_date = arrow.now().format('YYYY-MM-DD HH:mm:ss')
                 poiObj.save()
 
                 inventory = Inventory.objects.get(id=inventory_id)
@@ -352,12 +354,23 @@ class PurchaseOrderClear(views.APIView):
                 # poi.quantity记录的是采购数量, qty是实际到库数量.
                 # 入库实际到库数量, 扣减inflight数量用采购数量.
                 # TODO: 如果实际到库少于采购数量, 需要处理漏采(漏采需补采购)
+                cp = 0
                 if poiObj.quantity < poi['qty']:
-                    stockObj.quantity = F('quantity') + poi['qty']
+                    cp = poi['qty']
                 else:
-                    stockObj.quantity = F('quantity') + poiObj.quantity
+                    cp = poiObj.quantity
+                stockObj.quantity = F('quantity') + cp
                 stockObj.inflight = F('inflight') - poiObj.quantity
                 stockObj.save()
+                # 记录入库操作stockinrecord(采购单入库)
+                stockIRObj = StockInRecord(
+                    orderid=poObj.orderid,
+                    inventory=poObj.inventory,
+                    quantity=cp,
+                    in_date=poiObj.stockin_date,
+                    product=poiObj.product,
+                )
+                stockIRObj.save()
 
                 # tokyo stock out if supplier is tokyo
                 if '东京仓' in poObj.supplier.name:
@@ -367,11 +380,21 @@ class PurchaseOrderClear(views.APIView):
                     )
                     stockTokyo.preallocation = F(
                         'preallocation') - poiObj.quantity
-                    if poiObj.quantity < poi['qty']:
-                        stockTokyo.quantity = F('quantity') - poi['qty']
-                    else:
-                        stockTokyo.quantity = F('quantity') - poiObj.quantity
+                    # if poiObj.quantity < poi['qty']:
+                    #     stockTokyo.quantity = F('quantity') - poi['qty']
+                    # else:
+                    #     stockTokyo.quantity = F('quantity') - poiObj.quantity
+                    stockTokyo.quantity = F('quantity') - cp
                     stockTokyo.save()
+                    # 记录出库到stockoutrecord表, 这里的orderid用采购单id
+                    stockORObj = StockOutRecord(
+                        orderid=poObj.orderid,
+                        quantity=cp,
+                        inventory=stockTokyo.inventory,
+                        product=poiObj.product,
+                        out_date=poiObj.stockin_date,
+                    )
+                    stockORObj.save()
 
                 poObj.order.filter(
                     status='已采购', jancode=poi['jancode']).update(status='待发货')

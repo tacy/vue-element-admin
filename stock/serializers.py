@@ -1,7 +1,9 @@
 from rest_framework import serializers
 # from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-from .models import PurchaseOrder, Product, Order, Stock, Shipping, Inventory, PurchaseOrderItem, Supplier, ShippingDB, BondedProduct
+from .models import (PurchaseOrder, Product, Order, Stock, Shipping, Inventory,
+                     PurchaseOrderItem, Supplier, ShippingDB, BondedProduct,
+                     StockInRecord, StockOutRecord)
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -168,5 +170,25 @@ class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = Supplier
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class StockOutSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = StockOutRecord
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class StockInSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = StockInRecord
         # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
         fields = '__all__'
