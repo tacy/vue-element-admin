@@ -217,8 +217,9 @@
 	    for (const s of this.selectRow ) {
 	      if (o.id===s.id) {
 	        const index = this.list.indexOf(o);
-	        this.list[index].status = '转运中';
-		this.list[index].delivery_no = this.stockInData.delivery_no;
+	        // this.list[index].status = '转运中';
+		// this.list[index].delivery_no = this.stockInData.delivery_no;
+	        this.list.splice(index, 1);
 		break;
 	      }
 	    }
