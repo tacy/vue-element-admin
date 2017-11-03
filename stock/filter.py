@@ -58,6 +58,7 @@ class StockFilter(FilterSet):
         model = Stock
         fields = [
             'inventory',
+            'stocking_supplier',
         ]
 
 

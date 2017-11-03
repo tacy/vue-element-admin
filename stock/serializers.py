@@ -124,6 +124,7 @@ class StockSerializer(serializers.ModelSerializer):
     product_specification = serializers.ReadOnlyField(
         source='product.specification')
     jancode = serializers.ReadOnlyField(source='product.jancode')
+    supplier_name = serializers.ReadOnlyField(source='stocking_supplier.name')
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
