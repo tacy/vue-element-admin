@@ -86,7 +86,13 @@ class OrderPurchase(views.APIView):
                         supplierOb = Supplier.objects.get(id=i['supplier'])
                         inventoryOb = Inventory.objects.get(id=inventory)
                         try:
-                            po = PurchaseOrder.objects.get(orderid=po_id)
+                            po = PurchaseOrder.objects.get(
+                                orderid=po_id, supplier=supplierOb)
+                            if '在途' not in po.status:
+                                results = {
+                                    'errmsg': '注文编号已经存在, 且状态非在途. 请更换注文编号'
+                                }
+                                raise InputError
                         except PurchaseOrder.DoesNotExist:
                             po = PurchaseOrder(
                                 orderid=po_id,
@@ -185,7 +191,11 @@ class NoOrderPurchase(views.APIView):
                 supplierObj = Supplier.objects.get(id=data['supplier'])
                 inventoryObj = Inventory.objects.get(id=inventory)
                 try:
-                    poObj = PurchaseOrder.objects.get(orderid=data['orderid'])
+                    poObj = PurchaseOrder.objects.get(
+                        orderid=data['orderid'], supplier=supplierObj)
+                    if '在途' not in poObj.status:
+                        results = {'errmsg': '注文编号已经存在, 且状态非在途. 请更换注文编号'}
+                        raise InputError
                 except PurchaseOrder.DoesNotExist:
                     poObj = PurchaseOrder(
                         orderid=data['orderid'],
