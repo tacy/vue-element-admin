@@ -81,6 +81,9 @@ class Stock(models.Model):
     inflight = models.IntegerField(null=True, default=0)  # 在途数量
     preallocation = models.IntegerField(null=True, default=0)  # 分配到该仓库商品的订单
     location = models.CharField(max_length=64, null=True)  # 库存位置
+    stocking_supplier = models.ForeignKey(
+        Supplier, related_name='stock', null=True)
+    stock_alert = models.IntegerField(null=True, default=0)  # 警戒库存
 
     class Meta:
         unique_together = ('inventory', 'product')
