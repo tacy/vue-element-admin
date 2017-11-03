@@ -24,6 +24,7 @@
         <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
       </el-select>
+      <el-checkbox clearable class="filter-item" size="large" v-model="listQuery.check_alert">库存告警</el-checkbox>
       <el-button class="filter-item" size="large" plain="true" style="width:60px;" type="text">库存:</el-button>
       <el-input @keyup.enter.native="handleFilter" style="width: 80px;" class="filter-item" placeholder="最小值" v-model="listQuery.quantity_l">
       </el-input>
@@ -158,7 +159,9 @@
 	  quantity_g: undefined,
 	  quantity__range: undefined,
 	  quantity_l: undefined,
-	  stocking_supplier: undefined
+	  stocking_supplier: undefined,
+	  check_alert: false,
+	  alerting: undefined
         },
         selectedOptions: [{
           value: '1',
@@ -192,6 +195,11 @@
 	}
 	if ( this.listQuery.labelVal !== '3' ) {
 	  this.listQuery.sku_properties=undefined
+	}
+	if ( this.listQuery.check_alert ) {
+	  this.listQuery.alerting='T'
+	} else {
+	  this.listQuery.alerting= undefined
 	}
 	if ( this.listQuery.quantity_g && this.listQuery.quantity_l ) {
 	  this.listQuery.quantity__range=this.listQuery.quantity_l+','+this.listQuery.quantity_g

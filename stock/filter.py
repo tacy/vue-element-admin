@@ -1,6 +1,6 @@
 from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter, NumberFilter
 from .models import Order, Product, Stock, ShippingDB, PurchaseOrder, PurchaseOrderItem
-
+from django.db.models import F
 
 class CharInFilter(BaseInFilter, CharFilter):
     pass
@@ -53,7 +53,13 @@ class StockFilter(FilterSet):
         name='product__specification', lookup_expr='icontains')
     brand = CharFilter(name='product__brand', lookup_expr='icontains')
     quantity__range = NumberRangeFilter(name='quantity', lookup_expr='range')
+    alerting = CharFilter(name='stock_alert', method='filter_alert')
 
+    def filter_alert(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(stock_alert__gt=F('quantity')+F('inflight')-F('preallocation'))
+    
     class Meta:
         model = Stock
         fields = [
