@@ -203,6 +203,8 @@
 	}
 	if ( this.listQuery.quantity_g && this.listQuery.quantity_l ) {
 	  this.listQuery.quantity__range=this.listQuery.quantity_l+','+this.listQuery.quantity_g
+	}  else {
+	  this.listQuery.quantity__range=undefined
 	}
         fetchStock(this.listQuery).then(response => {
           // this.list = response.data.results;

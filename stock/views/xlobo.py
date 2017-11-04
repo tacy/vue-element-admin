@@ -339,7 +339,7 @@ class ManualAllocateDBNumber(views.APIView):
                 if '贝海' in inventoryObj.name and 'EMS' in shippingObj.name:  # 贝海EMS无需我们打包
                     dbStatus = '已出库'
                     orderStatus = '已发货'  # TODO: 采购可能没有到库
-                if '拼邮' in shippingObj.name:  # 拼邮不进入待发货列表, 但是需打包发货
+                if shippingObj.name in ['拼邮', '轨迹']:  # 拼邮不进入待发货列表, 但是需打包发货
                     dbStatus = '已出库'
                 shippingdbObj = ShippingDB(
                     db_number=db_number,
