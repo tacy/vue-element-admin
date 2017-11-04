@@ -1,6 +1,8 @@
 import base64
 import logging
+import arrow
 from django.http import HttpResponse
+from datetime import timedelta, date
 
 from django.db import connection, transaction
 from openpyxl import Workbook
@@ -71,19 +73,8 @@ class ExportDomesticOrder(views.APIView):
         ords = request.data
         excel_data = [
             [
-                '订单号',
-                '收件人',
-                '固话',
-                '手机',
-                '地址',
-                '明细',
-                '发件人',
-                '发件人电话',
-                '发件人地址',
-                '备注',
-                '代收金额',
-                '保价金额',
-                '业务类型',
+                '订单号', '收件人', '固话', '手机', '地址', '明细', '发件人', '发件人电话', '发件人地址',
+                '备注', '代收金额', '保价金额', '业务类型'
             ],
         ]
 
@@ -93,19 +84,10 @@ class ExportDomesticOrder(views.APIView):
                 return Response(
                     data=errmsg, status=status.HTTP_400_BAD_REQUEST)
             excel_data.append([
-                o['orderid'],
-                o['receiver_name'],
-                o['receiver_mobile'],
-                o['receiver_mobile'],
-                o['receiver_address'],
-                o['product_title'],
-                o['seller_name'],
-                '13922442299',
-                '',
-                '',
-                '',
-                '',
-                '',
+                o['orderid'], o['receiver_name'], o['receiver_mobile'],
+                o['receiver_mobile'], o['receiver_address'],
+                o['product_title'], o['seller_name'], '13922442299', '', '',
+                '', '', ''
             ])
         if excel_data:
             wb = Workbook(write_only=True)
@@ -126,6 +108,40 @@ class ExportDomesticOrder(views.APIView):
         with transaction.atomic():
             for o in ords:
                 Order.objects.filter(id=o['id']).update(export_status='已导出')
+
+        return Response(data=msg, status=status.HTTP_200_OK)
+
+
+class ExportUexTrack(views.APIView):
+    def get(self, request, format=None):
+        exportTemplete = {
+            '日本海关': ['日本海关申报中', '待导出', 3],
+            '中国海关': ['海关清关中', '日本海关', 6],
+        }
+        exportType = request.query_params.get('exportType')
+        data = exportTemplete[exportType]
+        excel_data = [
+            ['物流信息', '时间', '6号库出库码'],
+        ]
+        ords = Order.objects.filter(
+            shipping__name='轨迹',
+            export_status=data[1],
+            piad_time__lte=date.today() - timedelta(days=data[2]))
+        for o in ords:
+            excel_data.append([
+                data[0],
+                arrow.now().format('YYYY-MM-DD HH:mm:ss'),
+                o.shippingdb.db_number,
+            ])
+        if excel_data:
+            wb = Workbook(write_only=True)
+            ws = wb.create_sheet(title=exportType)
+            for line in excel_data:
+                ws.append(line)
+
+        base64Data = base64.b64encode(save_virtual_workbook(wb))
+        msg = {'tableData': base64Data}
+        ords.update(export_status=exportType)
 
         return Response(data=msg, status=status.HTTP_200_OK)
 

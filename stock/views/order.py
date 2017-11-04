@@ -1,12 +1,13 @@
 import logging
 
 import arrow.arrow
+from django.db import IntegrityError, connection, transaction
 from django.db.models import F, Max
-from django.db import connection, transaction
 from rest_framework import status, views
 from rest_framework.response import Response
 
-from stock.models import Inventory, Order, Product, PurchaseOrder, Shipping, Stock
+from stock.models import (Inventory, Order, Product, PurchaseOrder, Shipping,
+                          Stock, UexTrack, ShippingDB)
 
 logger = logging.getLogger(__name__)
 
@@ -156,10 +157,13 @@ class OrderAllocate(views.APIView):
     # if paramorder.status == '已删除'; then delete order opetion, use in conflict
     # if paramorder.inventory is null; then return
     # if dborder.inventory is null; then 派单
+    #
+    # 重派不考虑了, 已经支持弹回功能.
     # if dborder.inventory != paramorder.inventory; then 重派
     # if dborder.inventory == paramorder.inventory:
     #     if dborder.shipping == paramorder.shipping; then return
     #     if dborder.shipping != paramorder.shipping; then (仅仅更新order数据, 无需更新库存信息)
+    #
     #
     # update order status
     # if stock(quantity+inflight-preallocation) > 0: 待发货 else 采购
@@ -169,12 +173,17 @@ class OrderAllocate(views.APIView):
     #
     # 支持购物车派单和批量派单
     #
+    # 需要支持轨迹运输模式, 轨迹运输模式在派单的时候直接给订单分配轨迹单号(不管订单是否需要采购,
+    # 主要是考虑到发货的时效性), 轨迹单(shippingdb)状态直接设置为已出库, 直接给国内处理, 不需要
+    # 东京仓参与
+    #
     def put(self, request, format=None):
         allocateData = request.data
         logger.debug('派单调试:%s', allocateData)
         allocate_time = arrow.now().format('YYYY-MM-DD HH:mm:ss')
         paramInventory = allocateData['inventory']
         relate_inventory = Inventory.objects.get(id=paramInventory)
+        relate_shipping = Shipping.objects.get(id=allocateData['shipping'])
         # if not paramInventory or not paramShipping:  # 传入参数为空, 无效
         #     return status.HTTP_400_BAD_REQUEST
 
@@ -207,88 +216,127 @@ class OrderAllocate(views.APIView):
                 return Response(
                     data=results, status=status.HTTP_400_BAD_REQUEST)
 
-        with transaction.atomic():
-            for dborder in orders:
-                # 检查被指派的仓库, 是否该产品已经在仓库中存在, 如果不存在, 创建
-                try:
-                    stockObj = Stock.objects.get(
-                        inventory=paramInventory,
-                        product=prodObjs[dborder.jancode])
-                except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
-                    stockObj = Stock(
-                        product=prodObjs[dborder.jancode],
-                        inventory=relate_inventory,
-                        quantity=0,
-                        inflight=0,
-                        preallocation=0)
-                    stockObj.save()
-                # dborder = Order.objects.get(id=orderInfo['id'])
-                dbinventory = dborder.inventory
+        try:
+            errmsg = {}
+            with transaction.atomic():
+                # 轨迹订单处理: 这里需要先判断是否特殊运输方式: 轨迹
+                uex_number = None
+                shippingdbObj = None
+                if relate_shipping.name == '轨迹':
+                    uextrackObj = UexTrack.objects.filter(
+                        allocate_time__isnull=True)[0]
+                    uex_number = uextrackObj.uex_number
+                    uextrackObj.allocate_time = allocate_time
+                    uextrackObj.save()
+                    shippingdbObj = ShippingDB(
+                        db_number=uex_number,
+                        status='已出库',
+                        channel_name=orders[0].channel_name,
+                        order_piad_time=orders[0].piad_time,
+                        shipping=relate_shipping,
+                        inventory=relate_inventory)
+                    shippingdbObj.save()
 
-                rollbackstock = ''
-                # 计算库存变化
-                if not dbinventory:  # 派单
-                    stockObj.preallocation = F(
-                        'preallocation') + dborder.quantity  # 分配订单需要占库存
-                else:  # 重新派单
-                    if dbinventory.id != paramInventory:  # 重派单, 订单派给了新的仓库, 需要回滚之前的库存占用
-                        rollbackstock = Stock.objects.get(
-                            inventory=dbinventory.id,
-                            product__id=productObj.id)
-                        rollbackstock.preallocation = F(
-                            'preallocation') - dborder.quantity
+                for dborder in orders:
+                    # 检查被指派的仓库, 是否该产品已经在仓库中存在, 如果不存在, 创建
+                    try:
+                        stockObj = Stock.objects.get(
+                            inventory=paramInventory,
+                            product=prodObjs[dborder.jancode])
+                    except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
+                        stockObj = Stock(
+                            product=prodObjs[dborder.jancode],
+                            inventory=relate_inventory,
+                            quantity=0,
+                            inflight=0,
+                            preallocation=0)
+                        stockObj.save()
+                    # dborder = Order.objects.get(id=orderInfo['id'])
+                    dbinventory = dborder.inventory
+
+                    # rollbackstock = ''
+                    # 计算库存变化
+                    if not dbinventory:  # 派单
                         stockObj.preallocation = F(
-                            'preallocation') + dborder.quantity
-                    else:  # 重派单, 但是仓库没有改变, 无需对库存做更新
-                        if dborder.shipping.id == allocateData[
-                                'shipping']:  # 派单信息没有变化, 无需处理.
-                            return Response(status=status.HTTP_200_OK)
-                        dborder.shipping = Shipping.objects.get(
-                            id=allocateData['shipping'])
-                        dborder.save(update_fields=[
-                            'shipping',
-                        ])
-                        return Response(status=status.HTTP_200_OK)
-
-                # 计算订单状态
-                stockObj.save()
-                # 使用F操作models, save之后需要从数据库刷新, 否则值不能使用
-                stockObj.refresh_from_db()
-
-                dborder.allocate_time = allocate_time  # 如果更新库存表, 就需要更新派单时间
-                purchaseQuantity = stockObj.preallocation - (
-                    stockObj.quantity + stockObj.inflight)
-                if purchaseQuantity > 0:  # 订单需采购
-                    if purchaseQuantity < dborder.quantity:
-                        dborder.need_purchase = purchaseQuantity
+                            'preallocation') + dborder.quantity  # 分配订单需要占库存
+                    # else:  # 重新派单
+                    #     if dbinventory.id != paramInventory:  # 重派单, 订单派给了新的仓库, 需要回滚之前的库存占用
+                    #         rollbackstock = Stock.objects.get(
+                    #             inventory=dbinventory.id,
+                    #             product__id=productObj.id)
+                    #         rollbackstock.preallocation = F(
+                    #             'preallocation') - dborder.quantity
+                    #         stockObj.preallocation = F(
+                    #             'preallocation') + dborder.quantity
+                    #     else:  # 重派单, 但是仓库没有改变, 无需对库存做更新
+                    #         if dborder.shipping.id == allocateData[
+                    #                 'shipping']:  # 派单信息没有变化, 无需处理.
+                    #             return Response(status=status.HTTP_200_OK)
+                    #         dborder.shipping = Shipping.objects.get(
+                    #             id=allocateData['shipping'])
+                    #         dborder.save(update_fields=[
+                    #             'shipping',
+                    #         ])
+                    #         return Response(status=status.HTTP_200_OK)
                     else:
-                        dborder.need_purchase = dborder.quantity
-                    dborder.status = '待采购'
-                else:
-                    # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
-                    # 在途的采购单绑定, 同时标记状态为已采购
-                    if stockObj.preallocation > stockObj.quantity:
-                        dborder.status = '已采购'
-                        # 找到最新的采购单
-                        id = PurchaseOrder.objects.filter(
-                            purchaseorderitem__product__jancode=dborder.
-                            jancode,
-                            # purchaseorderitem__status__isnull=True,    # 不知道为什么要判断
-                            status__in=('在途', '部分入库')).aggregate(Max('id'))
-                        dborder.purchaseorder = PurchaseOrder.objects.get(
-                            id=id['id__max'])
+                        errmsg = {
+                            'errmsg':
+                            '订单:[%s]状态异常, 请通知技术解决' % (dborder.orderid, ),
+                        }
+                        raise IntegrityError
+
+                    # 计算订单状态
+                    stockObj.save()
+                    # 使用F操作models, save之后需要从数据库刷新, 否则值不能使用
+                    stockObj.refresh_from_db()
+
+                    dborder.allocate_time = allocate_time  # 如果更新库存表, 就需要更新派单时间
+                    purchaseQuantity = stockObj.preallocation - (
+                        stockObj.quantity + stockObj.inflight)
+                    if purchaseQuantity > 0:  # 订单需采购
+                        if purchaseQuantity < dborder.quantity:
+                            dborder.need_purchase = purchaseQuantity
+                        else:
+                            dborder.need_purchase = dborder.quantity
+                        dborder.status = '待采购'
                     else:
-                        dborder.status = '待发货'
+                        # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
+                        # 在途的采购单绑定, 同时标记状态为已采购
+                        if stockObj.preallocation > stockObj.quantity:
+                            dborder.status = '已采购'
+                            # 找到最新的采购单
+                            id = PurchaseOrder.objects.filter(
+                                purchaseorderitem__product__jancode=dborder.
+                                jancode,
+                                # purchaseorderitem__status__isnull=True,    # 不知道为什么要判断
+                                status__in=('在途', '部分入库')).aggregate(
+                                    Max('id'))
+                            dborder.purchaseorder = PurchaseOrder.objects.get(
+                                id=id['id__max'])
+                        else:
+                            dborder.status = '待发货'
 
-                # 更新订单和仓库信息
-                dborder.shipping = Shipping.objects.get(
-                    id=allocateData['shipping'])
-                dborder.inventory = relate_inventory
-                dborder.save()
+                    # 更新订单和仓库信息, 如果是轨迹订单, 需要特殊处理
+                    dborder.shipping = Shipping.objects.get(
+                        id=allocateData['shipping'])
+                    dborder.inventory = relate_inventory
 
-                if rollbackstock:
-                    rollbackstock.save()
-            return Response(status=status.HTTP_200_OK)
+                    # 轨迹订单处理: 轨迹订单直接分配uex单号,不管是否需要采购
+                    if uex_number:
+                        dborder.shippingdb = shippingdbObj
+                        dborder.export_status = '待导出'
+
+                    dborder.save()
+
+                    # if rollbackstock:
+                    #     rollbackstock.save()
+                return Response(status=status.HTTP_200_OK)
+        except (IntegrityError, IndexError) as e:
+            if type(e).__name__ == 'IndexError':
+                errmsg = {'errmsg': 'Uex单号已经分配完成, 请增加Uex号段'}
+            logger.exception(errmsg)
+            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 

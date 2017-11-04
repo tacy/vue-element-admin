@@ -24,6 +24,7 @@ const ordersConflict = _import('orders/conflict');
 const ordersCreateDB = _import('orders/createdb');
 const ordersShipping = _import('orders/shipping');
 const ordersNeedExport = _import('orders/needexport');
+const ordersUexTrack = _import('orders/uextrack');
 
 /* purchase */
 const purchasesorder = _import('purchases/order');
@@ -111,7 +112,8 @@ export const asyncRouterMap = [
       { path: 'conflict', component: ordersConflict, name: '需介入', meta: { role: ['admin', 'normal'] } },
       { path: 'createdb', component: ordersCreateDB, name: '出面单', meta: { role: ['admin', 'tokyo'] } },
       { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin', 'tokyo'] } },
-      { path: 'needexport', component: ordersNeedExport, name: '拼邮&保税', meta: { role: ['admin', 'normal'] } }
+      { path: 'needexport', component: ordersNeedExport, name: '拼邮&保税', meta: { role: ['admin', 'normal'] } },
+      { path: 'uextrack', component: ordersUexTrack, name: '轨迹单', meta: { role: ['admin', 'normal'] } }
     ]
   },
   {

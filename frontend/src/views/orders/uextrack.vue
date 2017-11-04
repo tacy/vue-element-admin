@@ -7,11 +7,6 @@
       <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
       </el-input>
 
-      <el-select style="width: 120px" class="filter-item" v-model="orderType" placeholder="选择订单类型">
-        <el-option v-for="item in orderTypeOptions" :key="item" :label="item" :value="item">
-        </el-option>
-      </el-select>
-
       <el-select style="width: 120px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
         <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
         </el-option>
@@ -21,18 +16,17 @@
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.exportstatus" placeholder="导出状态">
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.export_status" placeholder="导出状态">
         <el-option v-for="item in exportstatusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="domesticOrder">导出拼邮单</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleUexTrack">导出轨迹</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleAddUexNumber">新增UEX号段</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
-      <el-table-column type="selection" width="45" :selectable="checkSelectable">
-      </el-table-column>
       <el-table-column align="center" label="订单号" width="100px">
 	<template scope="scope">
 	  <span>{{scope.row.orderid}}</span>
@@ -54,19 +48,19 @@
 	  <span>{{scope.row.shipping_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="运输方式" width="100px">
+      <el-table-column align="center" label="支付时间" width="120px">
 	<template scope="scope">
-	  <span>{{scope.row.delivery_type}}</span>
+	  <span>{{scope.row.piad_time}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="面单" width="120px">
+	<template scope="scope">
+	  <span>{{scope.row.db_number}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="收件人" width="95px">
 	<template scope="scope">
 	  <span>{{scope.row.receiver_name}}</span>
-	</template>
-      </el-table-column>
-      <el-table-column align="center" label="电话" width="115px" show-overflow-tooltip>
-	<template scope="scope">
-	  <span>{{scope.row.receiver_mobile}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="地址" width="200px">
@@ -94,9 +88,9 @@
 	  <span>{{scope.row.sku_properties_name}}</span>
 	</template>
       </el-table-column>
-      <el-table-column align="center" label="操作" width="80">
+      <el-table-column align="center" label="操作" width="80px">
 	<template scope="scope">
-          <el-button size="small" :disabled="scope.row.status==='待发货'?false:true" type="primary" @click="stockOut(scope.row)">出库
+          <el-button size="small" :disabled="scope.row.status==='待发货'&&scope.row.export_status==='中国海关'?false:true" type="primary" @click="handleStockOut(scope.row)">出库
 	  </el-button>
 	</template>
       </el-table-column>
@@ -108,12 +102,57 @@
       </el-pagination>
     </div>
 
+    <el-dialog title="导出轨迹" size="tiny" :visible.sync="dialogUexTrackVisible">
+      <el-form class="small-space" :model="param" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
+        <el-form-item label="轨迹类型:" label-width="80px">
+	  <el-select clearable style="width: 150px" class="filter-item" v-model.trim="param.exportType" placeholder="渠道">
+	    <el-option v-for="item in exportTypeOptions" :key="item" :label="item" :value="item">
+	    </el-option>
+	  </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogUexTrackVisible=false">取 消</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="uexTrack">提 交</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog title="订单出库" size="tiny" :visible.sync="dialogStockOutVisible">
+      <el-form class="small-space" :model="stockOutData" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
+        <el-form-item label="快递公司:" label-width="80px">
+          <el-input style="width: 120px" v-model.trim="stockOutData.domestic_delivery_company"></el-input>
+        </el-form-item>
+        <el-form-item label="运单号:" label-width="80px">
+          <el-input style="width: 120px" v-model.trim="stockOutData.domestic_delivery_no"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogStockOutVisible=false">取 消</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="stockOut">提 交</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog title="新增UEX号段" size="tiny" :visible.sync="dialogAddUexNumberVisible">
+      <el-form class="small-space" :model="uexNumberData" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
+        <el-form-item label="起始号:" label-width="80px">
+          <el-input style="width: 120px" v-model.trim="uexNumberData.start"></el-input>
+        </el-form-item>
+        <el-form-item label="结束号:" label-width="80px">
+          <el-input style="width: 120px" v-model.trim="uexNumberData.end"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogAddUexNumberVisible=false">取 消</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="newUexNumber">提 交</el-button>
+      </div>
+    </el-dialog>
+
   </div>
 </template>
 
 <script>
-  import { parseTime } from 'utils';
-  import { fetchOrder, exportDomesticOrder, outOrder } from 'api/orders';
+  import { fetchOrder, exportDomesticOrder, outOrder, exportUexTrack } from 'api/orders';
+  import { addUexNumber, } from 'api/uexes';
 
   export default {
     data() {
@@ -121,20 +160,35 @@
         list: [],
         listLoading: true,
         total: null,
+	dialogUexTrackVisible: false,
+        dialogStockOutVisible: false,
+        dialogAddUexNumberVisible: false,
 	channelOptions: ['洋码头', '京东'],
 	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
-	orderTypeOptions: ['拼邮', '保税'],
-	exportstatusOptions: ['未导出', '已导出'],
+	exportstatusOptions: ['待导出', '日本海关', '中国海关', '已出库'],
+	exportTypeOptions: ['日本海关', '中国海关'],
 	selectRows: [],
-	orderType: '拼邮',
+	param: {
+	  'exportType': undefined
+	},
+	stockOutData: {
+	  id: undefined,
+	  domestic_delivery_no: undefined,
+	  domestic_delivery_company: undefined,
+	},
+	uexNumberData: {
+	  start: undefined,
+	  end: undefined,
+	},
         listQuery: {
           page: 1,
           limit: 10,
 	  status: "待发货,待采购,已采购,需介入",
           inventory: undefined,
 	  shipping: undefined,
-	  purchaseorder__orderid: undefined,
 	  channel_name: undefined,
+	  shipping_name: '轨迹',
+	  export_status: undefined,
 	  receiver_name: undefined,
 	  orderid: undefined,
 	  delivery_type: undefined
@@ -159,14 +213,7 @@
       getOrder() {
         this.listLoading = true;
 	if ( ! this.listQuery.status ) {
-	  this.listQuery.status="待发货,待采购,已采购,需介入"
-	};
-	if ( this.orderType==='拼邮' ) {
-	  this.listQuery.shipping=5
-	  this.listQuery.delivery_type = undefined;
-	} else {
-	  this.listQuery.shipping=undefined;
-	  this.listQuery.delivery_type = '第三个方保税';
+	  this.listQuery.status="待发货,待采购,已采购,需介入,已发货"
 	};
         fetchOrder(this.listQuery).then(response => {
           this.list = response.data.results;
@@ -186,40 +233,53 @@
         this.listQuery.page = val;
         this.getOrder();
       },
-      handleSelect(val) {
-        this.selectRow = val;
+      handleUexTrack() {
+        this.dialogUexTrackVisible = true;
+	this.param.exportType=undefined
       },
-      checkSelectable(row) {
-        return row.status !== '待采购' & row.status !== '需介入'
+      handleAddUexNumber() {
+        this.dialogAddUexNumberVisible = true
+        this.uexNumberData.start=undefined
+        this.uexNumberData.end=undefined
       },
-      stockOut(row) {
-        outOrder(row).then(response => {
-	  for (const v of this.list) {
-	    if (v.id === row.id) {
-	      row.status='已发货';
-	      const index = this.list.indexOf(v);
-	      this.list.splice(index, 1, row);
-	      break;
-	    }
-	  };
-          this.dialogFormVisible = false;
+      handleStockOut(row) {
+        this.dialogStockOutVisible = true;
+	this.stockOutData.id = row.id;
+	this.stockOutData.domestic_delivery_no = undefined
+	this.stockOutData.domestic_delivery_company = undefined
+      },
+      newUexNumber() {
+        addUexNumber(this.uexNumberData).then(response => {
+          this.dialogAddUexNumberVisible = false;
           this.$notify({
             title: '成功',
-            message: '更新成功',
+            message: '新增号段成功',
             type: 'success',
             duration: 2000
           });
         });
       },
-      domesticOrder() {
-        if (this.selectRow.length===0) {
-          this.$message({
-            type: 'error',
-            message: '请选择面单对应订单',
+      stockOut() {
+        outOrder(this.stockOutData).then(response => {
+          this.dialogStockOutVisible = false;
+	  for (const v of this.list) {
+	    if (v.id === this.stockOutData.id) {
+	      const index = this.list.indexOf(v);
+	      this.list[index].status='已发货';
+	      this.list[index].domestic_delivery_no = this.stockOutData.domestic_delivery_no
+	      this.list[index].domestic_delivery_company = this.stockOutData.domestic_delivery_company
+	      break;
+	    }
+	  };
+          this.$notify({
+            title: '成功',
+            message: '出库成功',
+            type: 'success',
             duration: 2000
           });
-          return
-        };
+        });
+      },
+      uexTrack() {
 	const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
 	  const byteCharacters = atob(b64Data);
 	  const byteArrays = [];
@@ -235,14 +295,14 @@
 	  const blob = new Blob(byteArrays, {type: contentType});
 	  return blob;
 	};
-        exportDomesticOrder(this.selectRow).then(response => {
+        exportUexTrack(this.param).then(response => {
           const blob = b64toBlob(response.data.tableData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 	  const link = document.createElement('a')
 	  link.href = window.URL.createObjectURL(blob)
 	  link.target = "_blank";
-	  link.download = "domestic_order.xlsx"
+	  link.download = "uextrack.xlsx"
 	  link.click()
-	  // window.open(link);
+	  this.dialogUexTrackVisible=false
           this.getOrder();
 	});
       }

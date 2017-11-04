@@ -233,10 +233,10 @@ export function orderConflict(data) {
   });
 }
 
-export function fetchPv(pv) {
+export function exportUexTrack(query) {
   return fetch({
-    url: '/article_table/pv',
+    url: '/order/uextrack',
     method: 'get',
-    params: { pv }
+    params: query
   });
 }
