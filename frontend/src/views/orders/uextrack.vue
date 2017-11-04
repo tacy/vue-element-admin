@@ -105,7 +105,7 @@
     <el-dialog title="导出轨迹" size="tiny" :visible.sync="dialogUexTrackVisible">
       <el-form class="small-space" :model="param" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
         <el-form-item label="轨迹类型:" label-width="80px">
-	  <el-select clearable style="width: 150px" class="filter-item" v-model.trim="param.exportType" placeholder="渠道">
+	  <el-select clearable style="width: 150px" class="filter-item" v-model.trim="param.exportType" placeholder="选择类型">
 	    <el-option v-for="item in exportTypeOptions" :key="item" :label="item" :value="item">
 	    </el-option>
 	  </el-select>
