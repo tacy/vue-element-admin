@@ -2,6 +2,7 @@ from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter, N
 from .models import Order, Product, Stock, ShippingDB, PurchaseOrder, PurchaseOrderItem
 from django.db.models import F
 
+
 class CharInFilter(BaseInFilter, CharFilter):
     pass
 
@@ -18,6 +19,7 @@ class OrderFilter(FilterSet):
     # https://docs.djangoproject.com/en/dev/ref/models/lookups/#module-django.db.models.lookups
     purchaseorder__orderid = CharFilter(lookup_expr='exact')
     product_title = CharFilter(lookup_expr='icontains')
+    shipping_name = CharFilter(name='shipping__name')
 
     class Meta:
         model = Order
@@ -31,6 +33,7 @@ class OrderFilter(FilterSet):
             'shippingdb',
             'unshippingdb',
             'sku_properties_name',
+            'export_status',
             'delivery_type',
         ]
 
@@ -58,8 +61,9 @@ class StockFilter(FilterSet):
     def filter_alert(self, queryset, name, value):
         if not value:
             return queryset
-        return queryset.filter(stock_alert__gt=F('quantity')+F('inflight')-F('preallocation'))
-    
+        return queryset.filter(
+            stock_alert__gt=F('quantity') + F('inflight') - F('preallocation'))
+
     class Meta:
         model = Stock
         fields = [
@@ -115,13 +119,16 @@ class PurchaseOrderItemFilter(FilterSet):
         name='purchaseorder__orderid', lookup_expr='icontains')
     product_name = CharFilter(
         name='product__name',
-        lookup_expr='icontains', )
+        lookup_expr='icontains',
+    )
     product_specification = CharFilter(
         name='product__specification',
-        lookup_expr='icontains', )
+        lookup_expr='icontains',
+    )
     jancode = CharFilter(
         name='product__jancode',
-        lookup_expr='icontains', )
+        lookup_expr='icontains',
+    )
 
     class Meta:
         model = PurchaseOrderItem

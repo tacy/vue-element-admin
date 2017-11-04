@@ -21,7 +21,7 @@
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.exportstatus" placeholder="导出状态">
+      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.export_status" placeholder="导出状态">
         <el-option v-for="item in exportstatusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
@@ -96,7 +96,7 @@
       </el-table-column>
       <el-table-column align="center" label="操作" width="80">
 	<template scope="scope">
-          <el-button size="small" :disabled="scope.row.status==='待发货'?false:true" type="primary" @click="stockOut(scope.row)">出库
+          <el-button size="small" :disabled="scope.row.status==='待发货'?false:true" type="primary" @click="handleStockOut(scope.row)">出库
 	  </el-button>
 	</template>
       </el-table-column>
@@ -107,6 +107,21 @@
         :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper" :total="total">
       </el-pagination>
     </div>
+
+    <el-dialog title="订单出库" size="tiny" :visible.sync="dialogStockOutVisible">
+      <el-form class="small-space" :model="stockOutData" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
+        <el-form-item label="快递公司:" label-width="80px">
+          <el-input style="width: 120px" v-model.trim="stockOutData.domestic_delivery_company"></el-input>
+        </el-form-item>
+        <el-form-item label="运单号:" label-width="80px">
+          <el-input style="width: 120px" v-model.trim="stockOutData.domestic_delivery_no"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogStockOutVisible=false">取 消</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="stockOut">提 交</el-button>
+      </div>
+    </el-dialog>
 
   </div>
 </template>
@@ -121,22 +136,28 @@
         list: [],
         listLoading: true,
         total: null,
+        dialogStockOutVisible: false,
 	channelOptions: ['洋码头', '京东'],
 	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
 	orderTypeOptions: ['拼邮', '保税'],
 	exportstatusOptions: ['未导出', '已导出'],
 	selectRows: [],
 	orderType: '拼邮',
+	stockOutData: {
+	  id: undefined,
+	  domestic_delivery_no: undefined,
+	  domestic_delivery_company: undefined,
+	},
         listQuery: {
           page: 1,
           limit: 10,
 	  status: "待发货,待采购,已采购,需介入",
           inventory: undefined,
 	  shipping: undefined,
-	  purchaseorder__orderid: undefined,
 	  channel_name: undefined,
 	  receiver_name: undefined,
 	  orderid: undefined,
+	  export_status: undefined,
 	  delivery_type: undefined
         }
       }
@@ -192,20 +213,27 @@
       checkSelectable(row) {
         return row.status !== '待采购' & row.status !== '需介入'
       },
-      stockOut(row) {
-        outOrder(row).then(response => {
+      handleStockOut(row) {
+        this.dialogStockOutVisible = true;
+	this.stockOutData.id = row.id;
+	this.stockOutData.domestic_delivery_no = undefined
+	this.stockOutData.domestic_delivery_company = undefined
+      },
+      stockOut() {
+        outOrder(this.stockOutData).then(response => {
+          this.dialogStockOutVisible = false;
 	  for (const v of this.list) {
-	    if (v.id === row.id) {
-	      row.status='已发货';
+	    if (v.id === this.stockOutData.id) {
 	      const index = this.list.indexOf(v);
-	      this.list.splice(index, 1, row);
+	      this.list[index].status='已发货';
+	      this.list[index].domestic_delivery_no = this.stockOutData.domestic_delivery_no
+	      this.list[index].domestic_delivery_company = this.stockOutData.domestic_delivery_company
 	      break;
 	    }
 	  };
-          this.dialogFormVisible = false;
           this.$notify({
             title: '成功',
-            message: '更新成功',
+            message: '出库成功',
             type: 'success',
             duration: 2000
           });

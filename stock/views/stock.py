@@ -205,20 +205,26 @@ class OrderOut(views.APIView):
     def post(self, request, format=None):
         ord = request.data
         with transaction.atomic():
-            ordObjs = Order.objects.get(id=ord['id'])
-            if '已发货' not in ordObjs.status:
-                ordObjs.status = '已发货'
-                ordObjs.save(update_fields=['status'])
-                productObj = Product.objects.get(jancode=ordObjs.jancode)
+            ordObj = Order.objects.get(id=ord['id'])
+            if '已发货' not in ordObj.status:
+                ordObj.status = '已发货'
+                ordObj.domestic_delivery_no = ord['domestic_delivery_no']
+                ordObj.domestic_delivery_company = ord[
+                    'domestic_delivery_company']
+                ordObj.save(update_fields=[
+                    'status', 'domestic_delivery_no',
+                    'domestic_delivery_company'
+                ])
+                productObj = Product.objects.get(jancode=ordObj.jancode)
                 stockObj = Stock.objects.get(
-                    product=productObj, inventory=ordObjs.inventory)
-                stockObj.preallocation = F('preallocation') - ordObjs.quantity
-                stockObj.quantity = F('quantity') - ordObjs.quantity
+                    product=productObj, inventory=ordObj.inventory)
+                stockObj.preallocation = F('preallocation') - ordObj.quantity
+                stockObj.quantity = F('quantity') - ordObj.quantity
                 stockObj.save()
                 stockORObj = StockOutRecord(
-                    orderid=ordObjs.orderid,
-                    quantity=ordObjs.quantity,
-                    inventory=ordObjs.inventory,
+                    orderid=ordObj.orderid,
+                    quantity=ordObj.quantity,
+                    inventory=ordObj.inventory,
                     product=stockObj.product,
                     out_date=arrow.now().format('YYYY-MM-DD HH:mm:ss'),
                 )

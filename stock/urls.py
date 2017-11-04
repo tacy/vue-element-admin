@@ -13,7 +13,7 @@ from .views import (
     PurchaseOrderClear, UexStockOut, ExportBondedOrder, BondedProductList,
     BondedProductDetail, ProductUpdateJancode, SyncStock, ExportDomesticOrder,
     OrderOut, PurchaseOrderTransform, DomesticStockIn, OrderAllocateUpdate,
-    OrderRollbackToPreprocess)
+    OrderRollbackToPreprocess, ExportUexTrack, AddUexNumber)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -65,6 +65,7 @@ urlpatterns = {
     url(r'^order/createtpr/$', OrderTPRCreate.as_view(),
         name='orderCreateTPR'),
     url(r'^order/items/$', OrderItemGet.as_view(), name="orderItem"),
+    url(r'^order/uextrack/$', ExportUexTrack.as_view(), name="uexTrack"),
     url(r'^order/rollback/$',
         OrderRollbackToPreprocess.as_view(),
         name="orderrollback"),
@@ -108,6 +109,7 @@ urlpatterns = {
         XloboCreateFBXBill.as_view(),
         name="createFBXBill"),
     url(r'^uex/stockout/$', UexStockOut.as_view(), name="createUexDB"),
+    url(r'^uex/addnumber/$', AddUexNumber.as_view(), name="addUexNumber"),
 }
 
 urlpatterns = format_suffix_patterns(urlpatterns)
