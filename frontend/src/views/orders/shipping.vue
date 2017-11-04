@@ -388,7 +388,7 @@
 		'receiver_zip': ordinfo[9],
 		'product_id': product_id,
 	      });
-	      if ( ordinfo[2] === '已采购' ) {
+	      if ( ordinfo[2] === '已采购'|| ordinfo[2] === '待采购') {
 	        this.list[index].stockStatus = '在途';
 	      };
 	      if ( ordinfo[2] === '已发货' ) {
