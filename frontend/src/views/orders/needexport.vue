@@ -152,6 +152,7 @@
           page: 1,
           limit: 10,
 	  status: "待发货,待采购,已采购,需介入",
+	  unshippingdb:1,
           inventory: undefined,
 	  shipping: undefined,
 	  channel_name: undefined,
