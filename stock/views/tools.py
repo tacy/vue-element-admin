@@ -1,4 +1,5 @@
 import base64
+import random
 import logging
 import arrow
 from django.http import HttpResponse
@@ -115,8 +116,8 @@ class ExportDomesticOrder(views.APIView):
 class ExportUexTrack(views.APIView):
     def get(self, request, format=None):
         exportTemplete = {
-            '日本海关': ['日本海关申报中', '待导出', 3],
-            '中国海关': ['海关清关中', '日本海关', 6],
+            '日本海关': ['待导出', 3],
+            '中国海关': ['日本海关', 6],
         }
         exportType = request.query_params.get('exportType')
         data = exportTemplete[exportType]
@@ -125,14 +126,52 @@ class ExportUexTrack(views.APIView):
         ]
         ords = Order.objects.filter(
             shipping__name='轨迹',
-            export_status=data[1],
-            piad_time__lte=date.today() - timedelta(days=data[2]))
-        for o in ords:
-            excel_data.append([
-                data[0],
-                arrow.now().format('YYYY-MM-DD HH:mm:ss'),
-                o.shippingdb.db_number,
-            ])
+            export_status=data[0],
+            piad_time__lte=date.today() - timedelta(days=data[1]))
+
+        # 生成轨迹
+        ods = set([(o.piad_time, o.shippingdb.db_number)
+                   for o in ords])  # 去重db_number
+        for o in ods:
+            # 生成时间轨迹
+            trace_time = []
+            ordtime = arrow.get(o[0])
+            if exportType == '日本海关':
+                t1 = ordtime.replace(hour=0).shift(
+                    days=+1, seconds=random.randint(36000, 39600))
+                t2 = t1.replace(hour=0).shift(
+                    days=+1, seconds=random.randint(32400, 36000))
+                t3 = t2.replace(hour=0).shift(
+                    seconds=random.randint(43200, 46800))
+                t4 = t3.replace(hour=0).shift(
+                    days=+1, seconds=random.randint(54000, 57600))
+                trace_time.append(('日本仓已接单', t1.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append(('生成单证信息', t2.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append(('离开日本仓', t3.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append(('日本海关申报中',
+                                   t4.format('YYYY-MM-DD HH:mm:ss')))
+            else:
+                t1 = ordtime.replace(hour=0).shift(
+                    days=+3, seconds=random.randint(61200, 64800))
+                t2 = t1.replace(hour=0).shift(
+                    days=+1, seconds=random.randint(32400, 36000))
+                t3 = t2.shift(seconds=random.randint(12600, 14400))
+                t4 = t3.shift(seconds=random.randint(14400, 18000))
+                t5 = t4.replace(hour=0).shift(
+                    days=+2, seconds=random.randint(36000, 39600))
+                trace_time.append(('已获得出境许可',
+                                   t1.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append(('航班已起飞，离开日本东京',
+                                   t2.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append(('航班降落，到达北京机场',
+                                   t3.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append(('到达机场快件中心',
+                                   t4.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append(('海关清关中', t5.format('YYYY-MM-DD HH:mm:ss')))
+
+            # 添加轨迹
+            for t in trace_time:
+                excel_data.append([t[0], t[1], o[1]])
         if excel_data:
             wb = Workbook(write_only=True)
             ws = wb.create_sheet(title=exportType)
