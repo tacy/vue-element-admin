@@ -13,7 +13,7 @@ from .views import (
     PurchaseOrderClear, UexStockOut, ExportBondedOrder, BondedProductList,
     BondedProductDetail, ProductUpdateJancode, SyncStock, ExportDomesticOrder,
     OrderOut, PurchaseOrderTransform, DomesticStockIn, OrderAllocateUpdate,
-    OrderRollbackToPreprocess, ExportUexTrack, AddUexNumber)
+    OrderRollbackToPreprocess, ExportUexTrack, AddUexNumber, ExportPrint)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -79,6 +79,9 @@ urlpatterns = {
     url(r'^order/exportdomestic/$',
         ExportDomesticOrder.as_view(),
         name="orderDomesticExport"),
+    url(r'^order/exportprint/$',
+        ExportPrint.as_view(),
+        name="orderPrintExport"),
     url(r'^purchase/noorderpurchase/$',
         NoOrderPurchase.as_view(),
         name="noOrderConflict"),

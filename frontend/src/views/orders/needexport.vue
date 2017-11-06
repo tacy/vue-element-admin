@@ -141,7 +141,7 @@
 	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
 	orderTypeOptions: ['拼邮', '保税'],
 	exportstatusOptions: ['未导出', '已导出'],
-	selectRows: [],
+	selectRow: [],
 	orderType: '拼邮',
 	stockOutData: {
 	  id: undefined,
