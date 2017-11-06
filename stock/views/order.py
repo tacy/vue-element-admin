@@ -223,6 +223,9 @@ class OrderAllocate(views.APIView):
                 uex_number = None
                 shippingdbObj = None
                 if relate_shipping.name == '轨迹':
+                    if orders[0].channel_name == '洋码头':
+                        errmsg = {'errmsg': '洋码头订单不能走轨迹发货'}
+                        raise IntegrityError
                     uextrackObj = UexTrack.objects.filter(
                         allocate_time__isnull=True)[0]
                     uex_number = uextrackObj.uex_number
