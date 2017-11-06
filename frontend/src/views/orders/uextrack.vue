@@ -237,7 +237,7 @@
         this.getOrder();
       },
       checkSelectable(row) {
-        return row.status === '待发货' && row.export_status === '中国海关'
+        return row.status !== '已出库' || row.status !== '已删除'
       },
       handleSelect(val) {
         this.selectRow = val;
