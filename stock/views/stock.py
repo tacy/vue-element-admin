@@ -6,13 +6,13 @@ import aiohttp
 import arrow.arrow
 from django.db import IntegrityError, transaction
 from django.db.models import F
-from rest_framework import status, utils, views
+from rest_framework import status, views
 from rest_framework.response import Response
 
 from stock.models import (Inventory, Order, Product, PurchaseOrderItem,
                           Shipping, ShippingDB, Stock, StockOutRecord,
                           StockInRecord)
-from ymatou import uex
+from ymatou import uex, utils
 
 uex_user = '2830020@qq.com'
 uex_passwd = '20162017'
