@@ -212,6 +212,9 @@
 	    </el-form-item>
    	  </el-col>
 	</el-row>
+        <el-form-item label="后台发货">
+          <el-checkbox v-model="xloboData.disable_channel_delivery">无需后台发货</el-checkbox>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogDBInputVisible=false">取 消</el-button>
@@ -347,6 +350,7 @@
 	  IsContainTax: 1,
 	  disable_check: false,
 	  disable_checkOrderDelivery: false,
+	  disable_channel_delivery: false,
 	  orders: []
 	},
 	uexData: {
@@ -454,6 +458,11 @@
         this.temp = Object.assign({}, row);
         this.dialogUpdateVisible = true;
       },
+      resetXloboData() {
+        this.xloboData.disable_check=false
+        this.xloboData.disable_checkOrderDelivery=false
+        this.xloboData.disable_channel_delivery=false
+      },
       checkSelectable(row) {
         return row.status !== '待采购' & row.status !== '需介入'
       },
@@ -476,6 +485,7 @@
         });
       },
       handleCreate() {
+        this.resetXloboData()
         this.xloboData.IsRePacking=0;
         if (this.selectRow.length===0) {
           this.$message({
@@ -508,6 +518,7 @@
         this.dialogFormVisible = true;
       },
       handleDBInput() {
+        this.resetXloboData()
         if (this.selectRow.length===0) {
           this.$message({
             type: 'error',
