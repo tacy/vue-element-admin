@@ -101,6 +101,12 @@
 	    <el-form-item label="渠道发货:" label-width="80px">
 	      <span>{{ scope.row.channel_delivery_status }}</span>
 	    </el-form-item>
+	    <el-form-item label="国内运单:" label-width="80px">
+	      <span>{{ scope.row.domestic_delivery_no }}</span>
+	    </el-form-item>
+	    <el-form-item label="国内物流:" label-width="80px">
+	      <span>{{ scope.row.domestic_delivery_company }}</span>
+	    </el-form-item>
 	  </el-form>
 	</template>
       </el-table-column>

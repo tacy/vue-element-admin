@@ -113,6 +113,43 @@ class ExportDomesticOrder(views.APIView):
         return Response(data=msg, status=status.HTTP_200_OK)
 
 
+class ExportPrint(views.APIView):
+    def post(self, request, format=None):
+        ords = request.data
+        excel_data = [
+            ['物流单号', '订单号', '收件人', '地址', '产品', '电话', '发件人', '发件人地址', '发件人电话'],
+        ]
+
+        for o in ords:
+            orderObjs = Order.objects.filter(orderid=o['orderid'])
+            oObj = orderObjs[0]
+            if '轨迹' not in oObj.shipping.name or '待发货' not in oObj.status or not oObj.shippingdb:
+                errmsg = {'errmsg': '订单:%s物流方式非轨迹或非待发货状态' % (o['orderid'])}
+                return Response(
+                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            excel_data.append([
+                oObj.shippingdb.db_number,
+                oObj.orderid,
+                oObj.receiver_name,
+                oObj.receiver_address,
+                oObj.product_title,
+                oObj.receiver_mobile,
+                '天狗',
+                '東京都練馬区石神井台埼玉県朝霞市泉水3-7-9-115',
+                '400-650-8988',
+            ])
+        if excel_data:
+            wb = Workbook(write_only=True)
+            ws = wb.create_sheet(title='热敏数据')
+            for line in excel_data:
+                ws.append(line)
+
+        base64Data = base64.b64encode(save_virtual_workbook(wb))
+        msg = {'tableData': base64Data}
+
+        return Response(data=msg, status=status.HTTP_200_OK)
+
+
 class ExportUexTrack(views.APIView):
     def get(self, request, format=None):
         exportTemplete = {

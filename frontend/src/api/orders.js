@@ -240,3 +240,11 @@ export function exportUexTrack(query) {
     params: query
   });
 }
+
+export function exportPrint(data) {
+  return fetch({
+    url: '/order/exportprint/',
+    method: 'post',
+    data
+  });
+}

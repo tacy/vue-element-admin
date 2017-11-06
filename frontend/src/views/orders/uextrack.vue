@@ -24,9 +24,12 @@
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
       <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleUexTrack">导出轨迹</el-button>
       <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleAddUexNumber">新增UEX号段</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="exportOrder">导出热敏</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
+      <el-table-column type="selection" width="45" :selectable="checkSelectable">
+      </el-table-column>
       <el-table-column align="center" label="订单号" width="100px">
 	<template scope="scope">
 	  <span>{{scope.row.orderid}}</span>
@@ -151,7 +154,7 @@
 </template>
 
 <script>
-  import { fetchOrder, exportDomesticOrder, outOrder, exportUexTrack } from 'api/orders';
+  import { fetchOrder, exportDomesticOrder, outOrder, exportUexTrack, exportPrint } from 'api/orders';
   import { addUexNumber, } from 'api/uexes';
 
   export default {
@@ -167,7 +170,7 @@
 	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
 	exportstatusOptions: ['待导出', '日本海关', '中国海关', '已出库'],
 	exportTypeOptions: ['日本海关', '中国海关'],
-	selectRows: [],
+	selectRow: [],
 	param: {
 	  'exportType': undefined
 	},
@@ -233,6 +236,12 @@
         this.listQuery.page = val;
         this.getOrder();
       },
+      checkSelectable(row) {
+        return row.status === '待发货' && row.export_status === '中国海关'
+      },
+      handleSelect(val) {
+        this.selectRow = val;
+      },
       handleUexTrack() {
         this.dialogUexTrackVisible = true;
 	this.param.exportType=undefined
@@ -258,6 +267,41 @@
             duration: 2000
           });
         });
+      },
+      exportOrder() {
+        if (this.selectRow.length===0) {
+          this.$message({
+            type: 'error',
+            message: '请选择导出订单',
+            duration: 2000
+          });
+          return
+        };
+	const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
+	  const byteCharacters = atob(b64Data);
+	  const byteArrays = [];
+	  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+	    const slice = byteCharacters.slice(offset, offset + sliceSize);
+	    const byteNumbers = new Array(slice.length);
+	    for (let i = 0; i < slice.length; i++) {
+	      byteNumbers[i] = slice.charCodeAt(i);
+	    }
+	    const byteArray = new Uint8Array(byteNumbers);
+	    byteArrays.push(byteArray);
+	  }
+	  const blob = new Blob(byteArrays, {type: contentType});
+	  return blob;
+	};
+        exportPrint(this.selectRow).then(response => {
+          const blob = b64toBlob(response.data.tableData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+	  const link = document.createElement('a')
+	  link.href = window.URL.createObjectURL(blob)
+	  link.target = "_blank";
+	  link.download = "thermal_order.xlsx"
+	  link.click()
+	  // window.open(link);
+          this.getOrder();
+	});
       },
       stockOut() {
         outOrder(this.stockOutData).then(response => {
