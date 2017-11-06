@@ -301,7 +301,7 @@ class ManualAllocateDBNumber(views.APIView):
         disable_check = request.data['disable_check']
         disable_checkOrderDelivery = request.data[
             'disable_checkOrderDelivery']  # 走贝海系统生成的面单, 会直接码头后台发货, 这样的DB面单回填到系统的时候, 不能检查订单状态, 否则报错
-
+        disable_channel_delivery = request.data['disable_channel_delivery']
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
@@ -363,7 +363,11 @@ class ManualAllocateDBNumber(views.APIView):
                     stockObj.preallocation = F(
                         'preallocation') - orderObj.quantity
                     stockObj.save()
-                orderObj.save(update_fields=['shippingdb', 'status'])
+                if disable_channel_delivery:
+                    orderObj.channel_delivery_status = '已发货'
+                orderObj.save(update_fields=[
+                    'shippingdb', 'status', 'channel_delivery_status'
+                ])
 
         return Response(status=status.HTTP_200_OK)
 
