@@ -64,7 +64,8 @@ class SyncStock(views.APIView):
                     stockObj.refresh_from_db()
                     incr = stockObj.quantity - oldQuantity
                     if incr > 0:  # 检查是否有待采购, 如果有待采购, 标记成待发货
-                        ords = Order.objects.filter(jancode=i[0], status='待采购')
+                        ords = Order.objects.filter(
+                            jancode=i[0], inventory=inventoryObj, status='待采购')
                         if ords:
                             for od in ords:
                                 if od.need_purchase > incr:
