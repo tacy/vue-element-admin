@@ -63,7 +63,7 @@ def checkOrderStatus(loop, sess, ords, disable_checkOrderDelivery=False):
                     errmsg = {'errmsg': '订单已发货, 请到码头后台确认'}
                     return errmsg
             for oi in result['content']['order_info']['order_items_info']:
-                if oi['refund_id'] == 0:
+                if oi['refund_status'] == 0:
                     errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
                     return errmsg
         return None
