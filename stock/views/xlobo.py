@@ -328,7 +328,7 @@ class ManualAllocateDBNumber(views.APIView):
             try:
                 shippingdbObj = ShippingDB.objects.get(db_number=db_number)
                 for o in ords:
-                    if '拼邮' not in o['shipping_name']:
+                    if '拼邮' not in o['delivery_type']:
                         errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)

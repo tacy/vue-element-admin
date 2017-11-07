@@ -70,6 +70,11 @@
 	  <span>{{scope.row.shipping_name}}</span>
 	</template>
       </el-table-column>
+      <el-table-column align="center" label="运输" width="100px" show-overflow-tooltip>
+	<template scope="scope">
+	  <span>{{scope.row.delivery_type}}</span>
+	</template>
+      </el-table-column>
       <el-table-column align="center" label="收件人" width="95px">
         <template scope="scope">
           <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.receiver_name}}</span>
