@@ -54,11 +54,29 @@ class SyncStock(views.APIView):
                 try:
                     stockObj = Stock.objects.get(
                         product=productObj, inventory=inventoryObj)
-                    if '东京' in impInventory:
-                        stockObj.quantity = F('quantity') + i[2]
-                    else:
-                        stockObj.quantity = i[2]
+                    oldQuantity = stockObj.quantity
+                    # if '东京' in impInventory:
+                    #     stockObj.quantity = F('quantity') + i[2]
+                    # else:
+                    #     stockObj.quantity = i[2]
+                    stockObj.quantity = i[2]
                     stockObj.save(update_fields=['quantity'])
+                    stockObj.refresh_from_db()
+                    incr = stockObj.quantity - oldQuantity
+                    if incr > 0:  # 检查是否有待采购, 如果有待采购, 标记成待发货
+                        ords = Order.objects.filter(jancode=i[0], status='待采购')
+                        if ords:
+                            for od in ords:
+                                if od.need_purchase > incr:
+                                    od.need_purchase = F('need_purchase') - incr
+                                    od.save()
+                                    break
+                                od.need_purchase = None
+                                od.status = '待发货'
+                                od.save()
+                                incr = incr - od.need_purchase
+                                if incr == 0: break
+
                 except Stock.DoesNotExist:
                     stockObj = Stock(
                         product=productObj,
