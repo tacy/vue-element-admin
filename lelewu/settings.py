@@ -176,6 +176,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'explorer': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
     },
 }
 
