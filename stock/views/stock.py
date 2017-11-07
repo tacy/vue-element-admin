@@ -71,10 +71,10 @@ class SyncStock(views.APIView):
                                     od.need_purchase = F('need_purchase') - incr
                                     od.save()
                                     break
+                                incr = incr - od.need_purchase
                                 od.need_purchase = None
                                 od.status = '待发货'
                                 od.save()
-                                incr = incr - od.need_purchase
                                 if incr == 0: break
 
                 except Stock.DoesNotExist:
