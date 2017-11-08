@@ -56,7 +56,11 @@ class ExportBondedOrder(views.APIView):
             c.execute(sql)
             results = c.fetchall()
         for r in results:
-            excel_data.append(list(r))
+            addSplit = r[5].split(',')
+            excel_data.append([
+                r[1], r[2], r[3], r[4], addSplit[0], addSplit[1], addSplit[2],
+                r[5].replace('#', '-'), r[6], r[7], r[8], r[9]
+            ])
 
         wb = Workbook(write_only=True)
         ws = wb.create_sheet(title='郑州保税订单')
