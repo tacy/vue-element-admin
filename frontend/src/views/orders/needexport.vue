@@ -184,12 +184,14 @@
 	if ( this.orderType==='拼邮' ) {
 	  this.listQuery.shipping_name='拼邮'
 	  this.listQuery.delivery_type = undefined;
+	  this.listQuery.unshippingdb = 3;
 	  if ( ! this.listQuery.status || this.listQuery.status==='待处理') {
 	    this.listQuery.status="待发货,待采购,已采购,需介入"
 	  };
 	} else {
 	  this.listQuery.shipping_name=undefined;
 	  this.listQuery.status='待处理';
+	  this.listQuery.unshippingdb = 2;
 	  this.listQuery.delivery_type = '第三方保税';
 	};
         fetchOrder(this.listQuery).then(response => {
