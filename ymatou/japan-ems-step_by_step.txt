@@ -1,0 +1,208 @@
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M010000.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:58.138.190.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:login:
+request_locale:zh
+localeSel:zh
+loginBean.id:rainbowtokyorainbowtokyo@gmail.com
+loginBean.pw:shining123
+
+做单
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M010100.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:210.248.166.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:onlineS:
+request_locale:zh
+sx:0
+sy:0
+calendarBean.selIndex:
+calendarBean.dispYmdBean.year:2017
+calendarBean.dispYmdBean.month:11
+calendarBean.dispYmdBean.day:08
+
+寄件人登入
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M060105.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:58.138.190.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:regist:
+addrFromBean.courierFlg:0
+addrFromBean.nam:test
+addrFromBean.companyName:
+addrFromBean.postName:
+addrFromBean.hojo1:
+addrFromBean.hojo2:
+addrFromBean.mail:
+addrFromBean.postal:1770045
+addrFromBean.add1:
+addrFromBean.add2:SHAKUJIIDAI
+addrFromBean.add3:NERIMA
+addrFromBean.pref:Tokyo
+addrFromBean.tel:08030097238
+addrFromBean.fax:
+addrFromBean.exportCd:
+addrFromBean.initDisp:0
+
+
+收件人登入
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M060505.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:58.138.190.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:regist:
+addrToBean.courierFlg:0
+addrToBean.nam:李春龙
+addrToBean.companyName:
+addrToBean.postName:
+addrToBean.couCode:CN
+addrToBean.sortNum:1
+addrToBean.add1:
+addrToBean.add2:北苑路172号
+addrToBean.add3:北京,朝阳区
+addrToBean.pref:北京
+addrToBean.postal:10000
+addrToBean.tel:13199191919
+addrToBean.fax:
+addrToBean.mail:
+
+sendType  EMS(物品): 1 / 国际e包裹: 4 / 国际邮包: 5  | transType 航空: 1 / 标准航空(SAL): 3 / 海运: 2
+
+
+注册商品内容
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M080100.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:58.138.190.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:regist:
+itemBean.pkg:565555
+itemBean.hsCode:
+itemBean.couCd:
+itemBean.weight.value:
+itemBean.cost.value:100
+itemBean.curUnit:JPY
+
+增加商品到列表
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M080101.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:210.248.166.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:update:
+
+返回
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M080102.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:210.248.166.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:back:
+
+登入物品内容提交
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M060800.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:210.248.166.50:443
+Referrer Policy:no-referrer-when-downgrade
+method:regist:
+cdSel:
+shippingBean.overConfirm:
+janCd:
+shippingBean.sendType:1
+cost.value:6000
+curUnit:JPY
+curUnitEtc:
+printCurUnit:JPY
+itemCount:1
+cost.value:8000
+curUnit:JPY
+curUnitEtc:
+printCurUnit:JPY
+itemCount:1
+cost.value:100
+curUnit:JPY
+curUnitEtc:
+printCurUnit:JPY
+itemCount:1
+shippingBean.pkgType:3
+shippingBean.pkgTotalPrice.value:14100
+shippingBean.curUnit:JPY
+__checkbox_shippingBean.noCm:true
+ShippingBean.danger:true
+__checkbox_ShippingBean.danger:true
+
+
+确认登入内容
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M060900.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:58.138.190.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:regist:
+emsNo.value:1
+shippingBean.sendDate.YMD:2017/11/08
+shippingBean.num.value:
+shippingBean.totalNum.value:
+shippingBean.totalWeight.value:
+shippingBean.cost.value:
+shippingBean.damges:
+shippingBean.insure.value:
+shippingBean.invPrintType:0
+shippingBean.invPrintNum.value:1
+shippingBean.licenceNum:
+shippingBean.certNum:
+shippingBean.invoiceNum:
+shippingBean.taxCode:
+shippingBean.payCond:
+shippingBean.invBiko:
+__checkbox_shippingBean.ctrlMailConfBean.fromConf1:true
+__checkbox_shippingBean.ctrlMailConfBean.fromConf3:true
+__checkbox_shippingBean.ctrlMailConfBean.fromConf4:true
+__checkbox_shippingBean.ctrlMailConfBean.fromConf5:true
+__checkbox_shippingBean.ctrlMailConfBean.fromConf6:true
+__checkbox_shippingBean.ctrlMailConfBean.fromConf2:true
+__checkbox_shippingBean.ctrlMailConfBean.fromConf7:true
+__checkbox_shippingBean.ctrlMailConfBean.toConf1:true
+__checkbox_shippingBean.ctrlMailConfBean.toConf3:true
+__checkbox_shippingBean.ctrlMailConfBean.toConf4:true
+__checkbox_shippingBean.ctrlMailConfBean.toConf5:true
+__checkbox_shippingBean.ctrlMailConfBean.toConf6:true
+__checkbox_shippingBean.ctrlMailConfBean.toConf2:true
+__checkbox_shippingBean.ctrlMailConfBean.toConf7:true
+
+
+发货单发送
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M061000.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:210.248.166.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:regist:
+
+
+打印
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M061100.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:58.138.190.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:print:
+
+
+<iframe src="DOWNLOAD?pdf=20171108113226EN002785142JPa4JYLpX0151b453b27f514092ae4508a424c57d9.pdf" width="660" height="400"></iframe>

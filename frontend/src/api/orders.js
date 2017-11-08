@@ -105,6 +105,14 @@ export function exportDomesticOrder(data) {
   });
 }
 
+export function exportBondedOrder(data) {
+  return fetch({
+    url: '/order/exportbonded/',
+    method: 'post',
+    data
+  });
+}
+
 export function outOrder(data) {
   return fetch({
     url: '/order/out/',

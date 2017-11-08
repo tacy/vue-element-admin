@@ -28,6 +28,7 @@
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
       <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="domesticOrder">导出拼邮单</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="bondedOrder">导出郑州保税</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
@@ -128,7 +129,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchOrder, exportDomesticOrder, outOrder } from 'api/orders';
+  import { fetchOrder, exportDomesticOrder, outOrder, exportBondedOrder } from 'api/orders';
 
   export default {
     data() {
@@ -180,14 +181,15 @@
     methods: {
       getOrder() {
         this.listLoading = true;
-	if ( ! this.listQuery.status ) {
-	  this.listQuery.status="待发货,待采购,已采购,需介入"
-	};
 	if ( this.orderType==='拼邮' ) {
 	  this.listQuery.shipping=5
 	  this.listQuery.delivery_type = undefined;
+	  if ( ! this.listQuery.status || this.listQuery.status==='待处理') {
+	    this.listQuery.status="待发货,待采购,已采购,需介入"
+	  };
 	} else {
 	  this.listQuery.shipping=undefined;
+	  this.listQuery.status='待处理';
 	  this.listQuery.delivery_type = '第三个方保税';
 	};
         fetchOrder(this.listQuery).then(response => {
@@ -239,6 +241,33 @@
             duration: 2000
           });
         });
+      },
+      bondedOrder() {
+	const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
+	  const byteCharacters = atob(b64Data);
+	  const byteArrays = [];
+	  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+	    const slice = byteCharacters.slice(offset, offset + sliceSize);
+	    const byteNumbers = new Array(slice.length);
+	    for (let i = 0; i < slice.length; i++) {
+	      byteNumbers[i] = slice.charCodeAt(i);
+	    }
+	    const byteArray = new Uint8Array(byteNumbers);
+	    byteArrays.push(byteArray);
+	  }
+	  const blob = new Blob(byteArrays, {type: contentType});
+	  return blob;
+	};
+        exportBondedOrder().then(response => {
+          const blob = b64toBlob(response.data.tableData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+	  const link = document.createElement('a')
+	  link.href = window.URL.createObjectURL(blob)
+	  link.target = "_blank";
+	  link.download = "zhengzhou_bonded_order.xlsx"
+	  link.click()
+	  // window.open(link);
+          this.getOrder();
+	});
       },
       domesticOrder() {
         if (this.selectRow.length===0) {
