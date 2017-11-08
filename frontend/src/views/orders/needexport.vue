@@ -188,7 +188,7 @@
 	    this.listQuery.status="待发货,待采购,已采购,需介入"
 	  };
 	} else {
-	  this.listQuery.shipping=undefined;
+	  this.listQuery.shipping_name=undefined;
 	  this.listQuery.status='待处理';
 	  this.listQuery.delivery_type = '第三方保税';
 	};
