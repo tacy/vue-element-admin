@@ -50,7 +50,7 @@ class ExportBondedOrder(views.APIView):
                 '收件人地址', '订购人证件号码', '商品海关备案货号', '申报数量', '物流企业'
             ],
         ]
-        sql = "select o.orderid, o.piad_time, o.receiver_name, o.receiver_mobile, o.receiver_address, receiver_idcard, b.filing_no, o.quantity, '中通' from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.status='待处理' and o.export_status is null and o.delivery_type='第三方保税' and b.bonded_name='郑州保税'"
+        sql = "select o.id, o.orderid, o.piad_time, o.receiver_name, o.receiver_mobile, o.receiver_address, receiver_idcard, b.filing_no, o.quantity, '中通' from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.status='待处理' and o.export_status is null and o.delivery_type='第三方保税' and o.channel_name='洋码头' and b.bonded_name='郑州保税'"
         results = []
         with connection.cursor() as c:
             c.execute(sql)
@@ -74,7 +74,7 @@ class ExportBondedOrder(views.APIView):
 
         with transaction.atomic():
             for r in results:
-                Order.objects.filter(id=r['id']).update(
+                Order.objects.filter(id=r[0]).update(
                     export_status='已导出',
                     status='已发货',
                     channel_delivery_status='已发货')
