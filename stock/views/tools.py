@@ -43,30 +43,42 @@ logger = logging.getLogger(__name__)
 
 
 class ExportBondedOrder(views.APIView):
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         excel_data = [
-            ['header1', 'header2', 'header3', 'header4', 'header5'],
-            [1, 4, 5, 6, 7],
-            [5, 6, 2, 4, 8],
+            [
+                '订单号', '订单时间', '收件人名称', '收件人电话', '收件人省', '收件人市', '收件人区',
+                '收件人地址', '订购人证件号码', '商品海关备案货号', '申报数量', '物流企业'
+            ],
         ]
+        sql = "select o.orderid, o.piad_time, o.receiver_name, o.receiver_mobile, o.receiver_address, receiver_idcard, b.filing_no, o.quantity, '中通' from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.status='待处理' and export_status<>'已导出' and delivery_type='第三方保税' and b.bonded_name='郑州保税'"
+        results = []
+        with connection.cursor() as c:
+            c.execute(sql)
+            results = c.fetchall()
+        for r in results:
+            excel_data.append(list(r))
 
-        if excel_data:
-            wb = Workbook(write_only=True)
-            ws = wb.create_sheet(title='主表')
-            ws2 = wb.create_sheet(title='从表')
-            for line in excel_data:
-                ws.append(line)
-                ws2.append(line)
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet(title='郑州保税订单')
+        for line in excel_data:
+            ws.append(line)
 
-        response = HttpResponse(
-            content_type=
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = 'attachment; filename=mydata.xlsx'
+        # response = HttpResponse(
+        #     content_type=
+        #     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        # )
+        # response['Content-Disposition'] = 'attachment; filename=mydata.xlsx'
+        # wb.save(response)
+        base64Data = base64.b64encode(save_virtual_workbook(wb))
+        msg = {'tableData': base64Data}
 
-        wb.save(response)
-
-        return response
+        with transaction.atomic():
+            for r in results:
+                Order.objects.filter(id=r['id']).update(
+                    export_status='已导出',
+                    status='已发货',
+                    channel_delivery_status='已发货')
+        return Response(data=msg, status=status.HTTP_200_OK)
 
 
 class ExportDomesticOrder(views.APIView):
