@@ -185,9 +185,10 @@ class ExportUexTrack(views.APIView):
         # 生成轨迹
         ods = set([(o.piad_time, o.shippingdb.db_number)
                    for o in ords])  # 去重db_number
-        for o in ods:
+        length = len(ods)
+        trace_time = []
+        for idx, o in enumerate(ods):
             # 生成时间轨迹
-            trace_time = []
             ordtime = arrow.get(o[0])
             if exportType == '日本海关':
                 t1 = ordtime.replace(hour=0).shift(
@@ -198,11 +199,14 @@ class ExportUexTrack(views.APIView):
                     seconds=random.randint(43200, 46800))
                 t4 = t3.replace(hour=0).shift(
                     days=+1, seconds=random.randint(54000, 57600))
-                trace_time.append(('日本仓已接单', t1.format('YYYY-MM-DD HH:mm:ss')))
-                trace_time.append(('生成单证信息', t2.format('YYYY-MM-DD HH:mm:ss')))
-                trace_time.append(('离开日本仓', t3.format('YYYY-MM-DD HH:mm:ss')))
-                trace_time.append(('日本海关申报中',
-                                   t4.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append((idx, '日本仓已接单',
+                                   t1.format('YYYY-MM-DD HH:mm:ss'), o[1]))
+                trace_time.append((idx + length, '生成单证信息',
+                                   t2.format('YYYY-MM-DD HH:mm:ss'), o[1]))
+                trace_time.append((idx + 2 * length, '离开日本仓',
+                                   t3.format('YYYY-MM-DD HH:mm:ss'), o[1]))
+                trace_time.append((idx + 3 * length, '日本海关申报中',
+                                   t4.format('YYYY-MM-DD HH:mm:ss'), o[1]))
             else:
                 t1 = ordtime.replace(hour=0).shift(
                     days=+3, seconds=random.randint(61200, 64800))
@@ -212,19 +216,20 @@ class ExportUexTrack(views.APIView):
                 t4 = t3.shift(seconds=random.randint(14400, 18000))
                 t5 = t4.replace(hour=0).shift(
                     days=+2, seconds=random.randint(36000, 39600))
-                trace_time.append(('已获得出境许可',
-                                   t1.format('YYYY-MM-DD HH:mm:ss')))
-                trace_time.append(('航班已起飞，离开日本东京',
-                                   t2.format('YYYY-MM-DD HH:mm:ss')))
-                trace_time.append(('航班降落，到达北京机场',
-                                   t3.format('YYYY-MM-DD HH:mm:ss')))
-                trace_time.append(('到达机场快件中心',
-                                   t4.format('YYYY-MM-DD HH:mm:ss')))
-                trace_time.append(('海关清关中', t5.format('YYYY-MM-DD HH:mm:ss')))
+                trace_time.append((idx, '已获得出境许可',
+                                   t1.format('YYYY-MM-DD HH:mm:ss'), o[1]))
+                trace_time.append((idx + length, '航班已起飞，离开日本东京',
+                                   t2.format('YYYY-MM-DD HH:mm:ss'), o[1]))
+                trace_time.append((idx + 2 * length, '航班降落，到达北京机场',
+                                   t3.format('YYYY-MM-DD HH:mm:ss'), o[1]))
+                trace_time.append((idx + 3 * length, '到达机场快件中心',
+                                   t4.format('YYYY-MM-DD HH:mm:ss'), o[1]))
+                trace_time.append((idx + 4 * length, '海关清关中',
+                                   t5.format('YYYY-MM-DD HH:mm:ss'), o[1]))
 
-            # 添加轨迹
-            for t in trace_time:
-                excel_data.append([t[0], t[1], o[1]])
+        # 添加轨迹
+        for t in sorted(trace_time):
+            excel_data.append(list(t[1:]))
         if excel_data:
             wb = Workbook(write_only=True)
             ws = wb.create_sheet(title=exportType)
