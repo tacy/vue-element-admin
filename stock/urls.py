@@ -7,13 +7,14 @@ from .views import (
     OrderAllocate, InventoryList, OrderPurchaseList, PurchaseOrderItemList,
     PurchaseOrderItemDetail, SupplierList, OrderPurchase, OrderMarkConflict,
     OrderConflict, NoOrderPurchase, PurchaseOrderDelete, OrderDelete,
-    CategoryGet, LogisticGet, XloboCreateNoVerification, ShippingDBList,
-    XloboCreateFBXBill, XloboGetPDF, XloboDeleteDBNumber,
-    ManualAllocateDBNumber, OrderItemGet, StockOut, OrderTPRCreate,
-    PurchaseOrderClear, UexStockOut, ExportBondedOrder, BondedProductList,
-    BondedProductDetail, ProductUpdateJancode, SyncStock, ExportDomesticOrder,
-    OrderOut, PurchaseOrderTransform, DomesticStockIn, OrderAllocateUpdate,
-    OrderRollbackToPreprocess, ExportUexTrack, AddUexNumber, ExportPrint)
+    CategoryGet, LogisticGet, XloboCreateNoVerification, CreateJapanEMS,
+    ShippingDBList, XloboCreateFBXBill, XloboGetPDF, getJapanEMSPDF,
+    XloboDeleteDBNumber, ManualAllocateDBNumber, OrderItemGet, StockOut,
+    OrderTPRCreate, PurchaseOrderClear, UexStockOut, ExportBondedOrder,
+    BondedProductList, BondedProductDetail, ProductUpdateJancode, SyncStock,
+    ExportDomesticOrder, OrderOut, PurchaseOrderTransform, DomesticStockIn,
+    OrderAllocateUpdate, OrderRollbackToPreprocess, ExportUexTrack,
+    AddUexNumber, ExportPrint)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -102,6 +103,7 @@ urlpatterns = {
         name="allocatedbnumber"),
     url(r'^xlobo/getlogistic/$', LogisticGet.as_view(), name="getLogistic"),
     url(r'^xlobo/getpdf/$', XloboGetPDF.as_view(), name="getPDF"),
+    url(r'^xlobo/getemspdf/$', getJapanEMSPDF.as_view(), name="getEMSPDF"),
     url(r'^xlobo/deletedbnumber/$',
         XloboDeleteDBNumber.as_view(),
         name="deleteDBNumber"),
@@ -111,6 +113,7 @@ urlpatterns = {
     url(r'^xlobo/createfbxbill/$',
         XloboCreateFBXBill.as_view(),
         name="createFBXBill"),
+    url(r'^xlobo/createems/$', CreateJapanEMS.as_view(), name="createEMS"),
     url(r'^uex/stockout/$', UexStockOut.as_view(), name="createUexDB"),
     url(r'^uex/addnumber/$', AddUexNumber.as_view(), name="addUexNumber"),
 }

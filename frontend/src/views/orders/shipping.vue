@@ -43,7 +43,7 @@
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
       <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleStockOut">出库</el-button>
-      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleDBPrint">打印面单</el-button>
+      <el-button class="filter-item" type="success" style="float:right" :disabled="disableSubmit" v-waves icon="edit" @click="handleDBPrint">打印面单</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
@@ -259,7 +259,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchShipping, fetchShippingDB, fetchPDF, fetchOrderItems, stockOut, deleteDBNumber } from 'api/orders';
+  import { fetchInventory, fetchShipping, fetchShippingDB, fetchPDF, fetchEMSPDF, fetchOrderItems, stockOut, deleteDBNumber } from 'api/orders';
   import pdf from 'vue-pdf';
 
   export default {
@@ -461,12 +461,13 @@
 	  this.$notify({
 	    title: '成功',
 	    message: '出库完成',
-	    type: 'success',
-	    duration: 2000
-	  });
-	  this.dialogStockOutVisible=false;
+            type: 'success',
+            duration: 2000
+          });
+          this.dialogStockOutVisible=false;
+          this.disableSubmit=false;
 	});
-	this.disableSubmit=false;
+
       },
       handleDelete(row) {
         deleteDBNumber(row).then(response => {
@@ -521,29 +522,51 @@
 	  return blob;
 	};
 
-        fetchPDF(this.xloboData).then(response => {
-	  // this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
-          // this.dialogFormVisible = true;
-
-          const blob = b64toBlob(response.data.Result[0].BillPdfLabel, "application/pdf");
-
-          // let blob = new Blob([response.data.Result[0].BillPdfLabel], { type: "application/pdf" } )
-	  const link = document.createElement('a')
-	  link.href = window.URL.createObjectURL(blob)
-	  link.target = "_blank";
-	  // link.download = "report.pdf"
-	  // link.click()
-	  window.open(link);
-          for (const o of this.list) {
-	    for (const s of this.selectRow ) {
-	      if (o.id===s.id) {
-	        const index = this.list.indexOf(o);
-	        this.list[index].print_status = '已打印';
-		break;
+        this.disableSubmit=true
+        if ( "EMS_SAL_EPACK_SURFACE".includes(this.selectRow[0].shipping_name) ) {
+	  fetchEMSPDF(this.xloboData).then(response => {
+	    const blob = b64toBlob(response.data.Result[0].BillPdfLabel, "application/pdf");
+	    const link = document.createElement('a')
+	    link.href = window.URL.createObjectURL(blob)
+	    link.target = "_blank";
+	    window.open(link);
+	    for (const o of this.list) {
+	      for (const s of this.selectRow ) {
+		if (o.id===s.id) {
+		  const index = this.list.indexOf(o);
+		  this.list[index].print_status = '已打印';
+		  break;
+		}
 	      }
 	    }
-	  }
-	});
+	    this.disableSubmit=false
+	   });
+        } else {
+	  fetchPDF(this.xloboData).then(response => {
+	    // this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
+	    // this.dialogFormVisible = true;
+
+	    const blob = b64toBlob(response.data.Result[0].BillPdfLabel, "application/pdf");
+
+	    // let blob = new Blob([response.data.Result[0].BillPdfLabel], { type: "application/pdf" } )
+	    const link = document.createElement('a')
+	    link.href = window.URL.createObjectURL(blob)
+	    link.target = "_blank";
+	    // link.download = "report.pdf"
+	    // link.click()
+	    window.open(link);
+	    for (const o of this.list) {
+	      for (const s of this.selectRow ) {
+		if (o.id===s.id) {
+		  const index = this.list.indexOf(o);
+		  this.list[index].print_status = '已打印';
+		  break;
+		}
+	      }
+	    }
+	    this.disableSubmit=false
+	  });
+	}
       },
       handlePDF(row) {
         this.xloboData.BillCodes = row.db_number;

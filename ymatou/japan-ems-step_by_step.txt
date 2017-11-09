@@ -77,6 +77,26 @@ addrToBean.mail:
 
 sendType  EMS(物品): 1 / 国际e包裹: 4 / 国际邮包: 5  | transType 航空: 1 / 标准航空(SAL): 3 / 海运: 2
 
+内容物品登入
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M060800.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:210.248.166.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:itemAdd:
+cdSel:
+shippingBean.overConfirm:
+janCd:
+shippingBean.sendType:1
+shippingBean.pkgType:0
+shippingBean.pkgTotalPrice.value:
+shippingBean.curUnit:JPY
+__checkbox_shippingBean.noCm:true
+__checkbox_ShippingBean.danger:true
+## 如果是国际邮包, 消息体增加内容
+shippingBean.transType: 对应的运输方式
+
 
 注册商品内容
 Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M080100.do
@@ -143,6 +163,21 @@ shippingBean.curUnit:JPY
 __checkbox_shippingBean.noCm:true
 ShippingBean.danger:true
 __checkbox_ShippingBean.danger:true
+## 如果是国际邮包, 消息体增加内容
+shippingBean.transType: 对应的运输方式
+
+
+如果是国际邮包, 需要选择退运方式
+Request URL:https://www.int-mypage.post.japanpost.jp/mypage/M060910.do
+Request Method:POST
+Status Code:200 OK
+Remote Address:210.248.166.50:443
+Referrer Policy:no-referrer-when-downgrade
+
+method:regist:
+cdSel:
+shippingBean.senderInstruction:1
+shippingBean.fwTransType:4
 
 
 确认登入内容
@@ -183,6 +218,11 @@ __checkbox_shippingBean.ctrlMailConfBean.toConf5:true
 __checkbox_shippingBean.ctrlMailConfBean.toConf6:true
 __checkbox_shippingBean.ctrlMailConfBean.toConf2:true
 __checkbox_shippingBean.ctrlMailConfBean.toConf7:true
+
+##  这是国际邮包的的消息体增加的字段(里面有退运的内容)
+__checkbox_shippingBean.withInsurance:true
+__checkbox_shippingBean.adviceOfDelivery:true
+shippingBean.senderInstruction:1
 
 
 发货单发送

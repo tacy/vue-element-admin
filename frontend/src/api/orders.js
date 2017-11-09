@@ -41,6 +41,14 @@ export function fetchPDF(query) {
   });
 }
 
+export function fetchEMSPDF(query) {
+  return fetch({
+    url: '/xlobo/getemspdf',
+    method: 'get',
+    params: query
+  });
+}
+
 export function fetchCategory(query) {
   return fetch({
     url: '/getcategory',
@@ -156,6 +164,14 @@ export function manualallocatedb(data) {
 export function createNoVerification(data) {
   return fetch({
     url: '/xlobo/createnoverification/',
+    method: 'post',
+    data
+  });
+}
+
+export function createJapanEMS(data) {
+  return fetch({
+    url: '/xlobo/createems/',
     method: 'post',
     data
   });
