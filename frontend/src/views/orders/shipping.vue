@@ -36,10 +36,12 @@
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
+      <!--el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
         <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
         </el-option>
-      </el-select>
+      </el-select-->
+
+      <el-checkbox clearable class="filter-item" style="width: 80px" size="large" v-model="listQuery.isTaxIncluded">包税单</el-checkbox>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
       <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleStockOut">出库</el-button>
@@ -312,6 +314,8 @@
 	  product_title: undefined,
 	  sku_properties_name: undefined,
 	  jancode: undefined,
+  	  isTaxIncluded: false,
+	  tax_included_channel: undefined,
         },
 	queryOrderItems: {
 	  shippingdb_id: undefined,
@@ -362,6 +366,11 @@
 	}
 	if ( this.listQuery.labelVal !== '5' ) {
 	  this.listQuery.receiver_name=undefined
+	}
+	if ( this.listQuery.isTaxIncluded ) {
+	  this.listQuery.tax_included_channel = '是'
+	} else {
+	  this.listQuery.tax_included_channel = undefined
 	}
         fetchShippingDB(this.listQuery).then(response => {
 	  this.list = response.data.results;
