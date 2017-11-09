@@ -92,6 +92,7 @@ class ShippingDBFilter(FilterSet):
             'delivery_no',
             'inventory',
             'delivery_time',
+            'tax_included_channel',
         ]
 
 
