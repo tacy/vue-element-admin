@@ -339,7 +339,7 @@ class CreateJapanEMS(views.APIView):
         with transaction.atomic():
             shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
             inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
-            taxIncluded = '是' if tax_included_channel else '否'
+            taxIncluded = '是' if tax_included_channel else None
             shippingdbObj = ShippingDB(
                 db_number=ems_number,
                 status='待处理',
