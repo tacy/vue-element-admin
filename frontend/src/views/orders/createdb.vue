@@ -37,7 +37,7 @@
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleCreate">生成面单</el-button>
+      <el-button class="filter-item" type="success" style="float:right" :disabled="disableSubmit" v-waves icon="edit" @click="handleCreate">生成面单</el-button>
       <el-button class="filter-item" type="danger" style="float:right" v-waves icon="document" @click="handleDBInput">面单回填</el-button>
     </div>
 
@@ -196,7 +196,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogUEXVisible=false">取 消</el-button>
-        <el-button type="primary" @click="createUexShippingDB()">确 定</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="createUexShippingDB()">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -223,7 +223,22 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogDBInputVisible=false">取 消</el-button>
-        <el-button type="primary" @click="manualShippingDB()">确 定</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="manualShippingDB()">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog title="生成EMS面单" size="tiny" :visible.sync="dialogCreateEMSVisible">
+      <el-form class="small-space" :model="xloboData" label-position="left" label-width="80px">
+	<el-form-item label="订单遗漏">
+	  <el-checkbox v-model="xloboData.disable_check">无需校验</el-checkbox>
+	</el-form-item>
+	<el-form-item label="包税通道">
+	  <el-checkbox v-model="xloboData.tax_included_channel">包税</el-checkbox>
+	</el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogCreateEMSVisible=false">取 消</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="createEMSShippingDB()">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -232,7 +247,7 @@
       </span>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogRollbackToPreprocessVisible=false">取 消</el-button>
-        <el-button type="primary" @click="rollbackToPreprocess()">确 定</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="rollbackToPreprocess()">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -265,7 +280,7 @@
 
 <script>
   import { parseTime } from 'utils';
-  import { fetchInventory, fetchShipping, fetchOrder, updateOrder, fetchLogistic, orderRollback, createNoVerification, createfbxbill, manualallocatedb, createUexDB} from 'api/orders';
+  import { fetchInventory, fetchShipping, fetchOrder, updateOrder, fetchLogistic, orderRollback, createNoVerification, createfbxbill, manualallocatedb, createUexDB, createJapanEMS } from 'api/orders';
   import { fetchPurchaseOrderItem, purchaseOrderDelete } from 'api/purchases';
 
   export default {
@@ -280,6 +295,7 @@
 	dialogUEXVisible: false,
 	dialogDBInputVisible: false,
         dialogRollbackToPreprocessVisible: false,
+	dialogCreateEMSVisible: false,
 	disableSubmit: false,
         inventoryOptions: [],
 	shippingOptions: [],
@@ -356,6 +372,7 @@
 	  disable_check: false,
 	  disable_checkOrderDelivery: false,
 	  disable_channel_delivery: false,
+	  tax_included_channel: false,
 	  orders: []
 	},
 	uexData: {
@@ -467,6 +484,7 @@
         this.xloboData.disable_check=false
         this.xloboData.disable_checkOrderDelivery=false
         this.xloboData.disable_channel_delivery=false
+	this.xloboData.tax_includec_channel=false
       },
       checkSelectable(row) {
         return row.status !== '待采购' & row.status !== '需介入'
@@ -513,6 +531,13 @@
           this.dialogUEXVisible = true;
           return
         };
+
+	// 如果是ems, 直接出面单, 无需用户输入
+        if ( "EMS_SAL_EPACK_SURFACE".includes(this.selectRow[0].shipping_name) ) {
+	  this.dialogCreateEMSVisible = true;
+	  return
+	};
+
 	if ( this.selectRow[0].shipping_name==="虚仓电商" ) {
           this.xloboData.IsRePacking=1;
         };
@@ -543,6 +568,23 @@
         this.xloboData.Comment = '';
         this.dialogDBInputVisible = true;
       },
+      createEMSShippingDB() {
+	this.disableSubmit=true;
+	this.xloboData.orders = this.selectRow;
+	this.xloboData.disable_check = false;
+	createJapanEMS(this.xloboData).then(response => {
+	  this.$notify({
+	    title: '成功',
+	    message: 'EMS面单创建成功',
+	    type: 'success',
+	    duration: 2000
+	  });
+	  this.getOrder();
+	  this.disableSubmit=false;
+          this.dialogCreateEMSVisible=false;
+	})
+
+      },
       createShippingDB() {
         this.disableSubmit=true;
         this.xloboData.orders = this.selectRow;
@@ -551,14 +593,15 @@
           createNoVerification(this.xloboData).then(response => {
             this.dialogFormVisible = false
             this.getOrder();
+	    this.disableSubmit=false;
           })
         } else {
           createfbxbill(this.xloboData).then(response => {
             this.dialogFormVisible = false;
             this.getOrder();
+	    this.disableSubmit=false;
           })
         }
-	this.disableSubmit=false;
       },
       createUexShippingDB() {
         this.uexData.orders = this.selectRow;
@@ -573,8 +616,8 @@
         manualallocatedb(this.xloboData).then(response => {
           this.dialogDBInputVisible = false
           this.getOrder();
+          this.disableSubmit=false;
         })
-	this.disableSubmit=false;
       },
       handleRollbackToPreprocess(row) {
         this.rollbackOrderData.orderid = row.orderid;
@@ -601,8 +644,8 @@
             type: 'success',
             duration: 2000
           });
+	  this.disableSubmit=false;
         });
-	this.disableSubmit=false;
       }
     },
   }

@@ -197,6 +197,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 STATIC_URL = '/static/'
 
+# Add by lelewu
+EMS_STORAGE_DIR = os.path.join(BASE_DIR, "emspdfs")
+
 if DEBUG:
     INTERNAL_IPS = ('127.0.0.1', )
     MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )

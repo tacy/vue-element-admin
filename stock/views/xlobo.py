@@ -1,11 +1,13 @@
-import base64
 import asyncio
+import base64
 import logging
+import os.path
 from collections import OrderedDict
 from io import BytesIO
 
 import aiohttp
-from PyPDF2 import PdfFileMerger
+from PyPDF2 import PdfFileMerger, PdfFileReader
+from django.conf import settings
 from django.db import connection, transaction
 from django.db.models import F
 from rest_framework import status, views
@@ -13,7 +15,7 @@ from rest_framework.response import Response
 
 from stock.models import (Inventory, Order, Product, Shipping, ShippingDB,
                           Stock)
-from ymatou import utils, ymatouapi
+from ymatou import japanems, utils, ymatouapi
 
 YMTKEY = {
     '东京彩虹桥': {
@@ -81,6 +83,10 @@ def checkUserOtherOrder(ords):
         errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
         return errmsg
     return None
+
+
+def getJapanEMSStorageLocal():
+    return settings.EMS_STORAGE_DIR
 
 
 # 1. 生成DB面单, 如果是码头订单, 需要先确认订单状态, 状态异常, 直接返回异常
@@ -293,6 +299,64 @@ class XloboCreateFBXBill(views.APIView):
         return Response(data=result, status=status.HTTP_200_OK)
 
 
+class CreateJapanEMS(views.APIView):
+    def post(self, request, format=None):
+        data = request.data
+        ords = data['orders']
+        disable_check = data['disable_check']
+        tax_included_channel = data['tax_included_channel']
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop = asyncio.get_event_loop()
+        sess = aiohttp.ClientSession(loop=loop)
+
+        ordStatus = checkOrderStatus(loop, sess, ords)
+        if ordStatus:
+            return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
+
+        if not disable_check:
+            otherOrder = checkUserOtherOrder(ords)
+            if otherOrder:
+                return Response(
+                    data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
+
+        # create ems number
+        # sendType
+        #    EMS(物品): 1 / 国际e包裹: 4 / 国际邮包: 5
+        # transType
+        #    航空: 1 / 标准航空(SAL): 3 / 海运: 2
+        shippingInfo = {
+            'EMS': (1, None),
+            'EPACK': (1, None),
+            'SAL': (5, 3),
+            'SURFACE': (5, 2)
+        }
+        sendType = shippingInfo[ords[0]['shipping_name']][0]
+        transType = shippingInfo[ords[0]['shipping_name']][1]
+        ems_number = japanems.createJapanEMS(ords[0], sendType, transType)
+
+        with transaction.atomic():
+            shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
+            inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
+            taxIncluded = '是' if tax_included_channel else '否'
+            shippingdbObj = ShippingDB(
+                db_number=ems_number,
+                status='待处理',
+                order_piad_time=ords[0]['piad_time'],
+                channel_name=ords[0]['channel_name'],
+                tax_included_channel=taxIncluded,
+                shipping=shippingObj,
+                inventory=inventoryObj)
+            shippingdbObj.save()
+            for o in ords:
+                orderObj = Order.objects.get(id=o['id'])
+                orderObj.shippingdb = shippingdbObj
+                orderObj.save(update_fields=['shippingdb'])
+
+        return Response(status=status.HTTP_200_OK)
+
+
 # 思考: 拼邮订单, 还是需要填写正确的EMS单号, 否则不容易追踪包裹情况, 但是存在
 # 不正确填写EMS单号的情况, 这个需要怎么处理?
 class ManualAllocateDBNumber(views.APIView):
@@ -412,6 +476,7 @@ class XloboGetPDF(views.APIView):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
+
         # construct api msg
         # drf can't get query list
         # data = {'BillCodes': request.query_params.get('BillCodes[]')}
@@ -486,6 +551,44 @@ class XloboGetPDF(views.APIView):
         # res.close()
         # response.write(pdf)
         # return response
+
+
+class getJapanEMSPDF(views.APIView):
+    def get(self, request, format=None):
+        data = self.request.GET.getlist("BillCodes[]")
+        emsStorageDir = getJapanEMSStorageLocal()
+
+        result = [{'BillPdfLabel': db + '.pdf', 'BillCode': db} for db in data]
+
+        merger = PdfFileMerger()
+        pdftool = utils.PDFTool()
+        sql = 'select p.name, p.specification, o.jancode, o.quantity, s.location, o.seller_memo from stock_order o inner join stock_product p on o.jancode=p.jancode inner join stock_stock s on s.product_id=p.id where o.shippingdb_id=%s and s.inventory_id=%s'
+        for i, b in enumerate(result):
+            ordsData = None
+            with connection.cursor() as c:
+                shippingdbObj = ShippingDB.objects.get(db_number=b['BillCode'])
+                c.execute(sql, (shippingdbObj.id, shippingdbObj.inventory.id))
+                ordsData = c.cursor.fetchall()
+
+            dbFN = os.path.join(emsStorageDir, b['BillPdfLabel'])
+            merger.append(PdfFileReader(open(dbFN, 'rb')))
+            merger.append(
+                BytesIO(pdftool.createShippingPDF(b['BillCode'], ordsData)))
+
+        res = BytesIO()
+        merger.write(res)
+        result = {
+            'Result': [{
+                'BillPdfLabel': base64.b64encode(res.getvalue())
+            }]
+        }
+        res.close()
+
+        # update shippingdb print_status
+        ShippingDB.objects.filter(db_number__in=data).update(
+            print_status='已打印')
+
+        return Response(data=result, status=status.HTTP_200_OK)
 
 
 class LogisticGet(views.APIView):
