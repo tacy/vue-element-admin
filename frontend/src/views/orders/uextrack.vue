@@ -123,7 +123,11 @@
     <el-dialog title="订单出库" size="tiny" :visible.sync="dialogStockOutVisible">
       <el-form class="small-space" :model="stockOutData" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
         <el-form-item label="快递公司:" label-width="80px">
-          <el-input style="width: 120px" v-model.trim="stockOutData.domestic_delivery_company"></el-input>
+	  <el-select allow-create filterable style="width: 120px" v-model.trim="stockOutData.domestic_delivery_company" placeholder="快递公司">
+	    <el-option v-for="item in expressOptions" :key="item" :label="item" :value="item">
+	    </el-option>
+	  </el-select>
+          <!--el-input style="width: 120px" v-model.trim="stockOutData.domestic_delivery_company"></el-input-->
         </el-form-item>
         <el-form-item label="运单号:" label-width="80px">
           <el-input style="width: 120px" v-model.trim="stockOutData.domestic_delivery_no"></el-input>
@@ -170,6 +174,7 @@
 	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
 	exportstatusOptions: ['待导出', '日本海关', '中国海关', '已出库'],
 	exportTypeOptions: ['日本海关', '中国海关'],
+	expressOptions: ['圆通', '顺丰', '中通', '中国邮政', '申通', '韵达'],
 	selectRow: [],
 	param: {
 	  'exportType': undefined
@@ -255,7 +260,7 @@
         this.dialogStockOutVisible = true;
 	this.stockOutData.id = row.id;
 	this.stockOutData.domestic_delivery_no = undefined
-	this.stockOutData.domestic_delivery_company = undefined
+	this.stockOutData.domestic_delivery_company = '圆通'
       },
       newUexNumber() {
         addUexNumber(this.uexNumberData).then(response => {
