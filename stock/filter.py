@@ -98,6 +98,7 @@ class ShippingDBFilter(FilterSet):
 
 class PurchaseOrderFilter(FilterSet):
     orderid = CharFilter(lookup_expr='icontains')
+    status = CharInFilter(name='status', lookup_expr='in')
     jancode = CharFilter(
         name='purchaseorderitem__product__jancode', distinct=True)
     product_name = CharFilter(
@@ -110,7 +111,6 @@ class PurchaseOrderFilter(FilterSet):
         fields = [
             'inventory',
             'supplier',
-            'status',
         ]
 
 
