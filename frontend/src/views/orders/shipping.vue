@@ -474,8 +474,9 @@
             duration: 2000
           });
           this.dialogStockOutVisible=false;
-          this.disableSubmit=false;
-	});
+	}).catch(error => {
+            this.disableSubmit=false;
+	})
 
       },
       handleDelete(row) {
@@ -548,8 +549,9 @@
 		}
 	      }
 	    }
-	    this.disableSubmit=false
-	   });
+	   }).catch(error => {
+             this.disableSubmit=false;
+	   })
         } else {
 	  fetchPDF(this.xloboData).then(response => {
 	    // this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
@@ -573,8 +575,9 @@
 		}
 	      }
 	    }
-	    this.disableSubmit=false
-	  });
+	  }).catch(error => {
+            this.disableSubmit=false;
+	  })
 	}
       },
       handlePDF(row) {
