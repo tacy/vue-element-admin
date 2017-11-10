@@ -169,8 +169,8 @@ class ExportPrint(views.APIView):
 class ExportUexTrack(views.APIView):
     def get(self, request, format=None):
         exportTemplete = {
-            '日本海关': ['待导出', 3],
-            '中国海关': ['日本海关', 6],
+            '日本海关': ['待导出', 2],
+            '中国海关': ['日本海关', 5],
         }
         exportType = request.query_params.get('exportType')
         data = exportTemplete[exportType]
