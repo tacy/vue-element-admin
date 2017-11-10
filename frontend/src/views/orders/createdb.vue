@@ -580,10 +580,10 @@
 	    duration: 2000
 	  });
 	  this.getOrder();
-	  this.disableSubmit=false;
           this.dialogCreateEMSVisible=false;
+	}).catch(error => {
+	  this.disableSubmit = false;
 	})
-
       },
       createShippingDB() {
         this.disableSubmit=true;
@@ -593,14 +593,16 @@
           createNoVerification(this.xloboData).then(response => {
             this.dialogFormVisible = false
             this.getOrder();
-	    this.disableSubmit=false;
-          })
+          }).catch(error => {
+            this.disableSubmit=false;
+	  })
         } else {
           createfbxbill(this.xloboData).then(response => {
-            this.dialogFormVisible = false;
+            this.dialogFormVisible = false
             this.getOrder();
-	    this.disableSubmit=false;
-          })
+          }).catch(error => {
+	    this.disableSubmit = false;
+	  })
         }
       },
       createUexShippingDB() {
@@ -614,10 +616,11 @@
         this.disableSubmit=true;
         this.xloboData.orders = this.selectRow;
         manualallocatedb(this.xloboData).then(response => {
-          this.dialogDBInputVisible = false
+	  this.dialogDBInputVisible = false
           this.getOrder();
-          this.disableSubmit=false;
-        })
+        }).catch(error => {
+            this.disableSubmit=false;
+	})
       },
       handleRollbackToPreprocess(row) {
         this.rollbackOrderData.orderid = row.orderid;
@@ -644,8 +647,9 @@
             type: 'success',
             duration: 2000
           });
-	  this.disableSubmit=false;
-        });
+        }).catch(error => {
+            this.disableSubmit=false;
+	})
       }
     },
   }
