@@ -166,6 +166,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'django.template': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'stock': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
