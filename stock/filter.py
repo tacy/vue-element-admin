@@ -20,6 +20,7 @@ class OrderFilter(FilterSet):
     purchaseorder__orderid = CharFilter(lookup_expr='exact')
     product_title = CharFilter(lookup_expr='icontains')
     shipping_name = CharFilter(name='shipping__name')
+    delivery_type_exclude = CharFilter(name='delivery_type', exclude=True)
 
     class Meta:
         model = Order

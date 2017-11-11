@@ -232,6 +232,7 @@
           receiver_name: undefined,
 	  jancode: undefined,
           status: '待处理',
+	  delivery_type_exclude: '第三方保税',
           sort: '+id'
         },
         temp: {

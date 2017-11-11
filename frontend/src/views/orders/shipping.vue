@@ -75,6 +75,9 @@
 	    <el-form-item label="条码">
 	      <span>{{ p.jancode }}</span>
 	    </el-form-item>
+	    <el-form-item label="数量">
+	      <span>{{ p.quantity }}</span>
+	    </el-form-item>
 	    <el-form-item label="收件人">
 	      <span>{{ p.receiver_name }}</span>
 	    </el-form-item>
@@ -401,6 +404,7 @@
 		'receiver_zip': ordinfo[9],
 		'product_id': product_id,
 		'jancode': ordinfo[11],
+		'quantity': ordinfo[12],
 	      });
 	      if ( ordinfo[2] === '已采购'|| ordinfo[2] === '待采购') {
 	        this.list[index].stockStatus = '在途';
