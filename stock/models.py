@@ -232,12 +232,12 @@ class Order(models.Model):
         ordering = ['id', 'piad_time', 'receiver_mobile']
 
     def __str__(self):
-        return '%d@%s@%s@%s@%s@%s@%s@%s@%s@%s@%s' % (
+        return '%d@%s@%s@%s@%s@%s@%s@%s@%s@%s@%s@%s' % (
             self.id, self.orderid, self.status, self.purchaseorder.orderid
             if self.purchaseorder else 'none', self.product_title,
             self.sku_properties_name, self.receiver_name,
             self.receiver_address, self.receiver_mobile, self.receiver_zip,
-            self.product_id)
+            self.product_id, self.jancode)
 
     # Todo:订单需要拆分
     # 订单状态:
