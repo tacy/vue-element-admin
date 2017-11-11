@@ -509,6 +509,7 @@
       },
       handleCreate() {
         this.resetXloboData()
+	this.disableSubmit=false;
         this.xloboData.IsRePacking=0;
         if (this.selectRow.length===0) {
           this.$message({
@@ -549,6 +550,7 @@
       },
       handleDBInput() {
         this.resetXloboData()
+	this.disableSubmit=false
         if (this.selectRow.length===0) {
           this.$message({
             type: 'error',
@@ -625,6 +627,7 @@
       handleRollbackToPreprocess(row) {
         this.rollbackOrderData.orderid = row.orderid;
         this.dialogRollbackToPreprocessVisible = true;
+	this.disableSubmit=false;
       },
       rollbackToPreprocess() {
         this.disableSubmit=true;
