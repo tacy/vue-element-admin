@@ -37,7 +37,7 @@
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <el-button class="filter-item" type="success" style="float:right" :disabled="disableSubmit" v-waves icon="edit" @click="handleCreate">生成面单</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleCreate">生成面单</el-button>
       <el-button class="filter-item" type="danger" style="float:right" v-waves icon="document" @click="handleDBInput">面单回填</el-button>
     </div>
 
