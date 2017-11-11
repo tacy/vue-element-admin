@@ -577,7 +577,7 @@
 		if (o.id===s.id) {
 		  const index = this.list.indexOf(o);
 		  this.list[index].print_status = '已打印';
-                  this.disableSubmit=false;
+                  this.disableSubmit2=false;
 		  break;
 		}
 	      }
