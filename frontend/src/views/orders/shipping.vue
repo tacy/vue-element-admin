@@ -45,7 +45,7 @@
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
       <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleStockOut">出库</el-button>
-      <el-button class="filter-item" type="success" style="float:right" :disabled="disableSubmit" v-waves icon="edit" @click="handleDBPrint">打印面单</el-button>
+      <el-button class="filter-item" type="success" style="float:right" :disabled="disableSubmit2" v-waves icon="edit" @click="handleDBPrint">打印面单</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
@@ -283,6 +283,7 @@
 	dialogFormVisible: false,
         inventoryOptions: [],
 	disableSubmit: false,
+	disableSubmit2: false,
         selectRow: [],
 	channelOptions: ['洋码头', '京东'],
 	shippingOptions: [],
@@ -536,7 +537,7 @@
 	  return blob;
 	};
 
-        this.disableSubmit=true
+        this.disableSubmit2=true
         if ( "EMS_SAL_EPACK_SURFACE".includes(this.selectRow[0].shipping_name) ) {
 	  fetchEMSPDF(this.xloboData).then(response => {
 	    const blob = b64toBlob(response.data.Result[0].BillPdfLabel, "application/pdf");
@@ -549,12 +550,13 @@
 		if (o.id===s.id) {
 		  const index = this.list.indexOf(o);
 		  this.list[index].print_status = '已打印';
+                  this.disableSubmit2=false;
 		  break;
 		}
 	      }
 	    }
 	   }).catch(error => {
-             this.disableSubmit=false;
+             this.disableSubmit2=false;
 	   })
         } else {
 	  fetchPDF(this.xloboData).then(response => {
@@ -575,12 +577,13 @@
 		if (o.id===s.id) {
 		  const index = this.list.indexOf(o);
 		  this.list[index].print_status = '已打印';
+                  this.disableSubmit=false;
 		  break;
 		}
 	      }
 	    }
 	  }).catch(error => {
-            this.disableSubmit=false;
+            this.disableSubmit2=false;
 	  })
 	}
       },
