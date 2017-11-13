@@ -520,7 +520,7 @@
         });
       },
       handleDelete(row) {
-        if ( row.shippingdb !== null ) {
+        if ( row.shippingdb !== null && ! row.db_number.includes('UE') ) {
           this.$notify({
             title: '警告',
             message: '订单已经出面单, 需先在系统删除对应面单',

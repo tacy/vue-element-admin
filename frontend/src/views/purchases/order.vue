@@ -151,7 +151,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogPOItemVisible=false">取消</el-button>
-        <el-button type="primary" @click="clearPurchaseOrder">提交</el-button>
+        <el-button type="primary" :disabled="disableSubmit" @click="clearPurchaseOrder">提交</el-button>
       </div>
     </el-dialog>
 
@@ -170,6 +170,7 @@
         listLoading: true,
         total: null,
         dialogItemVisible: false,
+	disableSubmit: false,
 	dialogPOItemVisible: false,
 	dialogFormVisible: false,
         inventoryOptions: [],
@@ -279,8 +280,10 @@
       handleStockIn(row) {
         this.poitemp = row;
 	this.dialogPOItemVisible = true;
+	this.disableSubmit=false;
       },
       clearPurchaseOrder() {
+        this.disableSubmit=true
         purchaseOrderClear(this.poitemp).then(response => {
 	  this.$notify({
 	    title: '成功',

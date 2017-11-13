@@ -485,6 +485,7 @@
         this.xloboData.disable_checkOrderDelivery=false
         this.xloboData.disable_channel_delivery=false
 	this.xloboData.tax_includec_channel=false
+        this.xloboData.IsRePacking=0
       },
       checkSelectable(row) {
         return row.status !== '待采购' & row.status !== '需介入'
@@ -510,7 +511,6 @@
       handleCreate() {
         this.resetXloboData()
 	this.disableSubmit=false;
-        this.xloboData.IsRePacking=0;
         if (this.selectRow.length===0) {
           this.$message({
             type: 'error',
@@ -591,7 +591,7 @@
         this.disableSubmit=true;
         this.xloboData.orders = this.selectRow;
         let shipping_type = this.selectRow[0].shipping_name;
-        if ( shipping_type==='直邮电商' | shipping_type==='贝海直邮电商' ) {
+        if ( shipping_type==='直邮电商' || shipping_type==='贝海直邮电商' ) {
           createNoVerification(this.xloboData).then(response => {
             this.dialogFormVisible = false
             this.getOrder();
