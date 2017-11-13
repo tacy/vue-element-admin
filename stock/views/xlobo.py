@@ -644,7 +644,11 @@ class YmatouStockUpdate(views.APIView):
                 stock = stockObj.quantity + stockObj.inflight - stockObj.preallocation
                 if stock < 0:
                     stock = 0
-                msg = [{'sku_id': sku['sku_id'], 'stock_num': stock}]
+                msg = [{
+                    'outer_sku_id': sku['outer_id'],
+                    'sku_id': sku['sku_id'],
+                    'stock_num': stock
+                }]
                 result = loop.run_until_complete(ymtapi.syncProductStock(msg))
                 logger.debug('YmatouStockUpdate: %s', result)
             except Stock.DoesNotExist:
