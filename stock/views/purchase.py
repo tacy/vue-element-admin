@@ -417,8 +417,15 @@ class PurchaseOrderClear(views.APIView):
                     )
                     stockORObj.save()
 
+                # 如果订单没有面单, 进入需面单状态, 否则待发货状态
                 poObj.order.filter(
-                    status='已采购', jancode=poi['jancode']).update(status='待发货')
+                    status='已采购',
+                    jancode=poi['jancode'],
+                    shippingdb__isnull=False).update(status='待发货')
+                poObj.order.filter(
+                    status='已采购',
+                    jancode=poi['jancode'],
+                    shippingdb__isnull=True).update(status='需面单')
 
             count = poObj.purchaseorderitem.filter(
                 status__in=['已入库', '东京仓', '转运中']).count()

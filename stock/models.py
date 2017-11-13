@@ -216,7 +216,7 @@ class Order(models.Model):
     purchaseorder = models.ForeignKey(
         PurchaseOrder, related_name='order', null=True)
     status = models.CharField(
-        max_length=3, null=True, default='待处理')  # 待处理/待发货/已发货
+        max_length=3, null=True, default='待处理')  # 待处理/需面单/待采购/已采购/待发货/已发货
     channel_delivery_status = models.CharField(
         max_length=3, null=True, default='')  # 已发货/null
     importstatus = models.CharField(max_length=3, null=True)  # 是否已经导入贝海后台
