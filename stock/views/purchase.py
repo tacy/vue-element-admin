@@ -93,7 +93,7 @@ class OrderPurchase(views.APIView):
                         try:
                             po = PurchaseOrder.objects.get(
                                 orderid=po_id, supplier=supplierOb)
-                            if '在途' not in po.status:
+                            if '在途中' not in po.status:
                                 results = {
                                     'errmsg':
                                     '注文编号{}已经存在, 且状态非在途. 请更换注文编号'.format(po_id)
@@ -105,7 +105,7 @@ class OrderPurchase(views.APIView):
                                 supplier=supplierOb,
                                 inventory=inventoryOb,
                                 create_time=createtime,
-                                status='在途',
+                                status='在途中',
                             )
                             po.save()
                         pos[po_id] = po
@@ -199,7 +199,7 @@ class NoOrderPurchase(views.APIView):
                 try:
                     poObj = PurchaseOrder.objects.get(
                         orderid=data['orderid'], supplier=supplierObj)
-                    if '在途' not in poObj.status:
+                    if '在途中' not in poObj.status:
                         results = {'errmsg': '注文编号已经存在, 且状态非在途. 请更换注文编号'}
                         raise InputError
                 except PurchaseOrder.DoesNotExist:
@@ -208,7 +208,7 @@ class NoOrderPurchase(views.APIView):
                         supplier=supplierObj,
                         inventory=inventoryObj,
                         create_time=createtime,
-                        status='在途',
+                        status='在途中',
                     )
                     poObj.save()
 
@@ -321,7 +321,7 @@ class PurchaseOrderDelete(views.APIView):
                     stockTokyo.save()
 
             # mark purchaseorder status as '删除'
-            poObj.status = '删除'
+            poObj.status = '已删除'
             poObj.save(update_fields=['status'])
             return Response(status=status.HTTP_200_OK)
 
@@ -358,7 +358,7 @@ class PurchaseOrderClear(views.APIView):
                 if not poi['qty'] or '已入库' == poiObj.status:
                     continue
 
-                if inventory_id == 3:  # 如果是广州仓库, 只标记订单明细状态
+                if inventory_id == 3:  # 如果是广州仓库, 只标记订单明细状态, 和采购单状态(入库中/转运中)
                     if poiObj.status in ['东京仓', '转运中']:
                         continue
                     poiObj.status = '东京仓'
@@ -420,14 +420,16 @@ class PurchaseOrderClear(views.APIView):
                 poObj.order.filter(
                     status='已采购', jancode=poi['jancode']).update(status='待发货')
 
-            count = poObj.purchaseorderitem.filter(status='已入库').count()
+            count = poObj.purchaseorderitem.filter(
+                status__in=['已入库', '东京仓', '转运中']).count()
             all = poObj.purchaseorderitem.count(
             )  # 不能和用户提交的采购明细条数比较, 用户可能在其他页面增加了采购明细, 却不刷新提交页面
             if count > 0:
                 if count != all:
-                    poObj.status = '部分入库'
+                    poObj.status = '入库中'
                 else:
-                    poObj.status = '入库'
+                    poObj.status = '转运中' if inventory_id == 3 else '已入库'
+
                 poObj.save(update_fields=[
                     'status',
                 ])

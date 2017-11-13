@@ -28,3 +28,7 @@ select * from (select a.jancode, a.inventory_id,  a.quantity, a.inflight, a.prea
 
 # 查入库异常记录
 select poi.*, po.create_time, po.orderid from stock_purchaseorderitem poi inner join stock_purchaseorder po on poi.purchaseorder_id=po.id where po.status='入库' and poi.status is null order by po.create_time ;
+
+
+    # update
+select * from stock_purchaseorder where id in (select a.purchaseorder_id from (select purchaseorder_id, count(*) c from stock_purchaseorderitem where status is not null group by purchaseorder_id) as a inner join (select purchaseorder_id, count(*) c from stock_purchaseorderitem group by purchaseorder_id) as b on a.purchaseorder_id=b.purchaseorder_id and a.c=b.c) and inventory_id=3 and status='在途';

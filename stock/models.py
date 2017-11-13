@@ -145,7 +145,8 @@ class PurchaseOrder(models.Model):
     supplier = models.ForeignKey(Supplier, related_name='purchaseorder')
     inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
     delivery_id = models.CharField(max_length=255, blank=True)
-    status = models.CharField(max_length=255, default='create')  # 在途/入库/部分入库
+    status = models.CharField(
+        max_length=255, default='create')  # 在途中/已入库/入库中/转运中/已删除
     create_time = models.DateTimeField(auto_now_add=True)
     memo = models.CharField(
         max_length=128, null=True)  # 如果订单派单之后弹回, 订单对应的采购单需要记录他们之间关系, 便于追溯采购异常

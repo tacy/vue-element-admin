@@ -311,11 +311,16 @@ class DomesticStockIn(views.APIView):
 
             count = poObj.purchaseorderitem.filter(status='已入库').count()
             total = poObj.purchaseorderitem.all().count()
-            if count > 0:
-                if count != total:
-                    poObj.status = '部分入库'
-                else:
-                    poObj.status = '入库'
+            # if count > 0:
+            #     if count != total:
+            #         poObj.status = '部分入库'
+            #     else:
+            #         poObj.status = '入库'
+            #     poObj.save(update_fields=[
+            #         'status',
+            #     ])
+            if count == total:
+                poObj.status = '已入库'
                 poObj.save(update_fields=[
                     'status',
                 ])
