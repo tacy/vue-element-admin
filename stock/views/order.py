@@ -312,7 +312,7 @@ class OrderAllocate(views.APIView):
                                 purchaseorderitem__product__jancode=dborder.
                                 jancode,
                                 # purchaseorderitem__status__isnull=True,    # 不知道为什么要判断
-                                status__in=('在途', '部分入库')).aggregate(
+                                status__in=('在途中', '入库中', '转运中')).aggregate(
                                     Max('id'))
                             dborder.purchaseorder = PurchaseOrder.objects.get(
                                 id=id['id__max'])
@@ -328,6 +328,8 @@ class OrderAllocate(views.APIView):
                     if uex_number:
                         dborder.shippingdb = shippingdbObj
                         dborder.export_status = '待导出'
+                        if dborder.status == '需面单':
+                            dborder.status = '待发货'
 
                     dborder.save()
 
