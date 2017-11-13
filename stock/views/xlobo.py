@@ -635,6 +635,8 @@ class YmatouStockUpdate(views.APIView):
         # 获取商品详情
         result = loop.run_until_complete(ymtapi.getProductInfo(product_id))
         for sku in result['content']['product_info']['skus']:
+            if not sku['outer_id']:
+                continue
             logger.debug(sku)
             try:
                 stockObj = Stock.objects.get(

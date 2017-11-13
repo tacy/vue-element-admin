@@ -121,7 +121,7 @@ class YmatouAPI():
         return result
 
     async def syncProductStock(self, sku_stocks):
-        method = 'ymatou.product.detail.get'
+        method = 'ymatou.sku.stock.update'
         biz_content = {
             'sku_stocks': sku_stocks,
         }
