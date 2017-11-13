@@ -72,8 +72,8 @@ class YmatouAPI():
         while True:
             result = await self.callAPI(method, biz_content)
             if '0000' not in result.get('code'):
-                sys.exit(
-                    "Get order failed, ErrMsg: {}".format(result['message']))
+                sys.exit("Get order failed, ErrMsg: {}".format(
+                    result['message']))
             orders_info = result['content']['orders_info']
             if not orders_info:
                 return orders
@@ -112,6 +112,22 @@ class YmatouAPI():
         result = await self.callAPI(method, biz_content)
         return result
 
+    async def getProductInfo(self, productid):
+        method = 'ymatou.product.detail.get'
+        biz_content = {
+            'product_id': productid,
+        }
+        result = await self.callAPI(method, biz_content)
+        return result
+
+    async def syncProductStock(self, sku_stocks):
+        method = 'ymatou.product.detail.get'
+        biz_content = {
+            'sku_stocks': sku_stocks,
+        }
+        result = await self.callAPI(method, biz_content)
+        return result
+
     async def getLogisticCompany(self):
         method = 'ymatou.logistics.companies.get'
         result = await self.callAPI(method)
@@ -130,8 +146,8 @@ class XloboAPI():
     async def callAPI(self, method, msg_param):
         enc_msg = self.client_secret + msg_param.lower() + self.client_secret
         # print(enc_msg)
-        sign_str = hashlib.md5(
-            base64.b64encode(enc_msg.encode('utf-8'))).hexdigest()
+        sign_str = hashlib.md5(base64.b64encode(
+            enc_msg.encode('utf-8'))).hexdigest()
 
         payload = {
             'method': method,
@@ -151,7 +167,7 @@ class XloboAPI():
         try:
             with async_timeout.timeout(REQUEST_TIMEOUT):
                 async with self.session.post(
-                    self.url, data=payload, headers=h) as response:
+                        self.url, data=payload, headers=h) as response:
                     return await response.json()
         except asyncio.TimeoutError as e:
             log.exception(method, enc_msg)

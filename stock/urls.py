@@ -8,13 +8,13 @@ from .views import (
     PurchaseOrderItemDetail, SupplierList, OrderPurchase, OrderMarkConflict,
     OrderConflict, NoOrderPurchase, PurchaseOrderDelete, OrderDelete,
     CategoryGet, LogisticGet, XloboCreateNoVerification, CreateJapanEMS,
-    ShippingDBList, XloboCreateFBXBill, XloboGetPDF, getJapanEMSPDF,
-    XloboDeleteDBNumber, ManualAllocateDBNumber, OrderItemGet, StockOut,
-    OrderTPRCreate, PurchaseOrderClear, UexStockOut, ExportBondedOrder,
-    BondedProductList, BondedProductDetail, ProductUpdateJancode, SyncStock,
-    ExportDomesticOrder, OrderOut, PurchaseOrderTransform, DomesticStockIn,
-    OrderAllocateUpdate, OrderRollbackToPreprocess, ExportUexTrack,
-    AddUexNumber, ExportPrint)
+    YmatouStockUpdate, ShippingDBList, XloboCreateFBXBill, XloboGetPDF,
+    getJapanEMSPDF, XloboDeleteDBNumber, ManualAllocateDBNumber, OrderItemGet,
+    StockOut, OrderTPRCreate, PurchaseOrderClear, UexStockOut,
+    ExportBondedOrder, BondedProductList, BondedProductDetail,
+    ProductUpdateJancode, SyncStock, ExportDomesticOrder, OrderOut,
+    PurchaseOrderTransform, DomesticStockIn, OrderAllocateUpdate,
+    OrderRollbackToPreprocess, ExportUexTrack, AddUexNumber, ExportPrint)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -110,6 +110,9 @@ urlpatterns = {
     url(r'^xlobo/createnoverification/$',
         XloboCreateNoVerification.as_view(),
         name="createNoVerification"),
+    url(r'^ymatou/stockupdate/$',
+        YmatouStockUpdate.as_view(),
+        name="ymatouStockUpdate"),
     url(r'^xlobo/createfbxbill/$',
         XloboCreateFBXBill.as_view(),
         name="createFBXBill"),

@@ -615,3 +615,39 @@ class LogisticGet(views.APIView):
         } for i in result['Result']['LogisticInfoList']
                 if i['iCountryId'] == 6]
         return Response(data=data, status=status.HTTP_200_OK)
+
+
+# 更新洋码头产品库存
+class YmatouStockUpdate(views.APIView):
+    def post(self, request, format=None):
+        # construct api msg
+        data = request.data
+        product_id = data['product_id']
+        seller_name = data['seller_name']
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        sess = aiohttp.ClientSession(loop=loop)
+        skey = YMTKEY[seller_name]
+        ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'], skey['appsecret'],
+                                     skey['authcode'])
+
+        # 获取商品详情
+        result = loop.run_until_complete(ymtapi.getProductInfo(product_id))
+        for sku in result['content']['product_info']['skus']:
+            stockObj = Stock.objects.get(
+                product__jancode=sku['outer_id'], inventory__id=4)
+            stock = stockObj.quantity + stockObj.inflight - stockObj.preallocation
+            if stock < 0:
+                stock = 0
+            msg = {
+                'sku_stocks': [{
+                    'outer_sku_id': sku['outer_id'],
+                    'stock_num': stock
+                }]
+            }
+            result = loop.run_until_complete(ymatouapi.syncProductStock(msg))
+            logger.debug('YmatouStockUpdate: %s', result)
+        loop.close()
+
+        return Response(status=status.HTTP_200_OK)
