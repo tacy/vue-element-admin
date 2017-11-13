@@ -1,10 +1,9 @@
 import base64
-import random
 import logging
-import arrow
-from django.http import HttpResponse
-from datetime import timedelta, date
+import random
+from datetime import date, timedelta
 
+import arrow
 from django.db import connection, transaction
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
