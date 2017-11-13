@@ -635,19 +635,18 @@ class YmatouStockUpdate(views.APIView):
         # 获取商品详情
         result = loop.run_until_complete(ymtapi.getProductInfo(product_id))
         for sku in result['content']['product_info']['skus']:
-            stockObj = Stock.objects.get(
-                product__jancode=sku['outer_id'], inventory__id=4)
-            stock = stockObj.quantity + stockObj.inflight - stockObj.preallocation
-            if stock < 0:
-                stock = 0
-            msg = {
-                'sku_stocks': [{
-                    'outer_sku_id': sku['outer_id'],
-                    'stock_num': stock
-                }]
-            }
-            result = loop.run_until_complete(ymatouapi.syncProductStock(msg))
-            logger.debug('YmatouStockUpdate: %s', result)
+            logger.debug(sku)
+            try:
+                stockObj = Stock.objects.get(
+                    product__jancode=sku['outer_id'], inventory__id=4)
+                stock = stockObj.quantity + stockObj.inflight - stockObj.preallocation
+                if stock < 0:
+                    stock = 0
+                msg = [{'sku_id': sku['sku_id'], 'stock_num': stock}]
+                result = loop.run_until_complete(ymtapi.syncProductStock(msg))
+                logger.debug('YmatouStockUpdate: %s', result)
+            except Stock.DoesNotExist:
+                continue
         loop.close()
 
         return Response(status=status.HTTP_200_OK)
