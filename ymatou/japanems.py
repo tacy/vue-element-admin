@@ -138,9 +138,11 @@ def createJapanEMS(orderInfo, sendType, transType=None, storagePath=None):
     jemsAPI.call('M060800.do', payload)
 
     # 5. 注册商品内容
+    prod_name = '_'.join(
+        ['SUPPLYMENT', orderInfo['jancode'][1:], orderInfo['orderid']])
     payload = {
         'method:regist': '',
-        'itemBean.pkg': orderInfo['jancode'][1:] + '_' + orderInfo['orderid'],
+        'itemBean.pkg': prod_name,
         'itemBean.hsCode': '',
         'itemBean.couCd': '',
         'itemBean.weight.value': '',
