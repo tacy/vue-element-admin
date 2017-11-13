@@ -78,7 +78,7 @@ class OrderPurchase(views.APIView):
                     if not po_id:
                         continue
                     if not i['quantity'] or i['quantity'] < i['qty'] or not i['supplier'] or not i['price'] or (
-                            inventory == 3
+                            inventory == 3 and i['supplier'] == '东京仓'
                             and i['quantity'] > i['tokyo_stock']):
                         results = {
                             'errmsg':
