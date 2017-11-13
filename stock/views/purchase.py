@@ -214,6 +214,11 @@ class NoOrderPurchase(views.APIView):
 
                 for i in data['items']:
                     # add purchase item
+                    if i['quantity'] < 1:
+                        results = {
+                            'errmsg': '商品{}采购数量必须大于1)'.format(i['jancode'])
+                        }
+                        raise InputError(None, None)
                     try:
                         productObj = Product.objects.get(jancode=i['jancode'])
                     except Product.DoesNotExist:
@@ -265,7 +270,7 @@ class NoOrderPurchase(views.APIView):
                         o.save(update_fields=['status', 'purchaseorder'])
                         c = c - o.need_purchase
                 return Response(status=status.HTTP_201_CREATED)
-        except IntegrityError as e:
+        except (IntegrityError, InputError) as e:
             if e.args and e.args[0] == 1062:
                 return Response(
                     data={'errmsg': '同一产品需合并录入'},
