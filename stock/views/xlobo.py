@@ -78,7 +78,7 @@ def checkUserOtherOrder(ords):
         receiver_name=ords[0]['receiver_name'],
         receiver_mobile=ords[0]['receiver_mobile'],
         shippingdb__isnull=True,
-        status__in=['待处理', '待采购', '待发货', '已采购', '需介入'])
+        status__in=['待处理', '待采购', '需面单', '已采购', '需介入'])
     if len(check_ords) != len(ords):
         errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
         return errmsg
@@ -183,7 +183,9 @@ class XloboCreateNoVerification(views.APIView):
             for o in ords:
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
-                orderObj.save(update_fields=['shippingdb'])
+                if orderObj.status == '需面单':
+                    orderObj.status = '待发货'
+                orderObj.save(update_fields=['shippingdb', 'status'])
 
         return Response(data=result, status=status.HTTP_200_OK)
 
@@ -352,7 +354,9 @@ class CreateJapanEMS(views.APIView):
             for o in ords:
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
-                orderObj.save(update_fields=['shippingdb'])
+                if orderObj.status == '需面单':
+                    orderObj = '待发货'
+                orderObj.save(update_fields=['shippingdb', 'status'])
 
         return Response(status=status.HTTP_200_OK)
 
@@ -429,6 +433,8 @@ class ManualAllocateDBNumber(views.APIView):
                     stockObj.save()
                 if disable_channel_delivery:
                     orderObj.channel_delivery_status = '已发货'
+                if orderObj.status == '需面单':
+                    orderObj.status = '待发货'
                 orderObj.save(update_fields=[
                     'shippingdb', 'status', 'channel_delivery_status'
                 ])
@@ -463,6 +469,7 @@ class XloboDeleteDBNumber(views.APIView):
         with transaction.atomic():
             shippingdbObj = ShippingDB.objects.get(id=data['id'])
             shippingdbObj.status = '已删除'
+            shippingdbObj.order.filter(status='待发货').update(status='需面单')
             shippingdbObj.order.all().update(shippingdb=None)
             shippingdbObj.save(update_fields=[
                 'status',

@@ -317,7 +317,7 @@ class OrderAllocate(views.APIView):
                             dborder.purchaseorder = PurchaseOrder.objects.get(
                                 id=id['id__max'])
                         else:
-                            dborder.status = '待发货'
+                            dborder.status = '需面单'
 
                     # 更新订单和仓库信息, 如果是轨迹订单, 需要特殊处理
                     dborder.shipping = Shipping.objects.get(
@@ -397,7 +397,7 @@ class OrderRollbackToPreprocess(views.APIView):
                 '待采购',
                 '已采购',
                 '需介入',
-                '待发货',
+                '需面单',
             ],
         )
         with transaction.atomic():
@@ -515,7 +515,7 @@ class OrderConflict(views.APIView):
                     if data['quantity'] <= real_stock_qty:  # 库存足够, 记得取消采购标记(need_purchase=0)
                         stockObj.preallocation = F(
                             'preallocation') + data['quantity']
-                        orderObj.status = '待发货'
+                        orderObj.status = '需面单'
                         orderObj.need_purchase = 0
                         orderObj.jancode = data['jancode']
                     else:
@@ -561,7 +561,7 @@ class OrderDelete(views.APIView):
                 orderObj.status = '已删除'
                 orderObj.conflict_feedback = data['conflict_feedback']
                 orderObj.save()
-            elif ('待发货' in orderObj.status or '需介入' in orderObj.status
+            elif ('需面单' in orderObj.status or '需介入' in orderObj.status
                   or '已采购' in orderObj.status
                   or '待采购' in orderObj.status):  # 清除占用的库存
                 stockObj = Stock.objects.get(

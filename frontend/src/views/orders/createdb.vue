@@ -300,7 +300,7 @@
         inventoryOptions: [],
 	shippingOptions: [],
 	channelOptions: ['洋码头', '京东'],
-	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
+	statusOptions: ['需面单', '待采购', '已采购', '需介入'],
 	shipTypeOptions: [
 	  {key:'跨境空运杂货线路', value:24},
 	  {key:'空运关税补贴线', value:26}
@@ -349,7 +349,7 @@
           page: 1,
           limit: 10,
 	  labelVal: '1',
-	  status: "待发货,待采购,已采购,需介入",
+	  status: "需面单,待采购,已采购,需介入",
           inventory: undefined,
 	  purchaseorder__orderid: undefined,
 	  channel_name: undefined,
@@ -400,7 +400,7 @@
     filters: {
       statusFilter(status) {
         const statusMap = {
-          待发货: 'success',
+          需面单: 'success',
           已采购: 'primary',
           需介入: 'danger',
 	  待采购: 'warning',
@@ -438,7 +438,7 @@
 	  this.listQuery.purchaseorder__orderid=undefined
 	}
 	if ( ! this.listQuery.status ) {
-	  this.listQuery.status="待发货,待采购,已采购,需介入"
+	  this.listQuery.status="需面单,待采购,已采购,需介入"
 	}
         fetchOrder(this.listQuery).then(response => {
           this.list = response.data.results;
@@ -533,8 +533,8 @@
           return
         };
 
-	// 如果是ems, 直接出面单, 无需用户输入
-        if ( "EMS_SAL_EPACK_SURFACE".includes(this.selectRow[0].shipping_name) ) {
+	// 如果是ems,使用japanpost做单
+        if ( ["EMS","SAL","EPACK","SURFACE"].includes(this.selectRow[0].shipping_name) ) {
 	  this.dialogCreateEMSVisible = true;
 	  return
 	};

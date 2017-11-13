@@ -74,7 +74,10 @@ class SyncStock(views.APIView):
                                     break
                                 incr = incr - od.need_purchase
                                 od.need_purchase = None
-                                od.status = '待发货'
+                                if not od.shippingdb:
+                                    od.status = '需面单'
+                                else:
+                                    od.status = '待发货'
                                 od.save()
                                 if incr == 0: break
 
@@ -307,7 +310,12 @@ class DomesticStockIn(views.APIView):
 
                 poObj.order.filter(
                     jancode=poiObj.product.jancode,
-                    status='已采购').update(status='待发货')
+                    status='已采购',
+                    shippingdb__isnull=False).update(status='待发货')
+                poObj.order.filter(
+                    jancode=poiObj.product.jancode,
+                    status='已采购',
+                    shippingdb__isnull=True).update(status='需面单')
 
             count = poObj.purchaseorderitem.filter(status='已入库').count()
             total = poObj.purchaseorderitem.all().count()
