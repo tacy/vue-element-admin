@@ -77,10 +77,15 @@ class OrderPurchase(views.APIView):
                     po_id = i.get('purchaseorderid')
                     if not po_id:
                         continue
-                    if (not i['quantity'] or i['quantity'] < i['qty']
-                            or not i['supplier'] or not i['price']):
-                        results = {'errmsg': '请检查输入'}
-                        raise InputError
+                    if not i['quantity'] or i['quantity'] < i['qty'] or not i['supplier'] or not i['price'] or (
+                            inventory == 3
+                            and i['quantity'] > i['tokyo_stock']):
+                        results = {
+                            'errmsg':
+                            '请检查商品{}输入. (注意, 从东京仓采购, 采购数量不能超过库存)'.format(
+                                i['jancode'])
+                        }
+                        raise InputError(None, None)
                     jancode = i['jancode']
                     if po_id not in pos:
                         supplierOb = Supplier.objects.get(id=i['supplier'])
@@ -90,9 +95,10 @@ class OrderPurchase(views.APIView):
                                 orderid=po_id, supplier=supplierOb)
                             if '在途' not in po.status:
                                 results = {
-                                    'errmsg': '注文编号已经存在, 且状态非在途. 请更换注文编号'
+                                    'errmsg':
+                                    '注文编号{}已经存在, 且状态非在途. 请更换注文编号'.format(po_id)
                                 }
-                                raise InputError
+                                raise InputError(None, None)
                         except PurchaseOrder.DoesNotExist:
                             po = PurchaseOrder(
                                 orderid=po_id,

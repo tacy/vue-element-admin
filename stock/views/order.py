@@ -427,45 +427,6 @@ class OrderRollbackToPreprocess(views.APIView):
         return Response(status=status.HTTP_200_OK)
 
 
-# 获取采购列表
-class OrderPurchaseList(views.APIView):
-    # TODO: 分页
-    # 需要返回查询时间, 创建采购单的时候, 我们需要用这个时间来和订单的派单时间做对比, 看看是否能关联相关订单
-    # 国内的拼邮单, 采购之前需要看看东京仓库是否有货.
-    #
-    def get(self, request, format=None):
-        sql = "select p.jancode, p.name product_name, p.purchase_link1, p.purchase_link2, p.purchase_link3, p.specification sku_properties_name, min(piad_time) piad_time, max(o.price) product_price, sum(o.need_purchase) qty from stock_product p inner join stock_order o on o.jancode=p.jancode where o.status='待采购' and o.inventory_id=%s group by jancode order by o.id"
-        sql2 = "select quantity+inflight-preallocation tokyo_stock from stock_stock where inventory_id='4' and product_id=(select id from stock_product where jancode=%s)"
-        sql3 = "select jancode from stock_order where seller_name='天狗' and status='待采购' and jancode=%s"
-
-        def dictfetchall(cursor):
-            "Return all rows from a cursor as a dict"
-            columns = [col[0] for col in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()]
-
-        inventory = request.query_params.get('inventory')
-        with connection.cursor() as c:
-            c.execute(sql, [inventory])
-            results = dictfetchall(c)
-            for i, r in enumerate(results):
-                c.execute(sql3, [r['jancode']])
-                isTiangou = c.fetchall()
-                results[i]['isTiangou'] = '是' if isTiangou else '否'
-                if int(inventory) == 3:  # 需要查东京库存
-                    c.execute(sql2, [r['jancode']])
-                    rt = c.fetchone()
-                    results[i]['tokyo_stock'] = rt[0] if rt else 0
-                else:
-                    results[i]['tokyo_stock'] = 0
-            logger.debug('orderPurchaseList: %s', results)
-            data = {
-                'data': results,
-                'queryTime': arrow.now().format('YYYY-MM-DD HH:mm:ss')
-            }
-            return Response(data=data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
 # 采购标记订单疑难
 class OrderMarkConflict(views.APIView):
     # TODO: 分页
