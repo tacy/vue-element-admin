@@ -20,7 +20,7 @@
         </el-option>
       </el-select>
 
-      <el-select clearable multiple style="width: 200px" class="filter-item" v-model="listQuery.status" placeholder="状态">
+      <el-select clearable style="width: 200px" class="filter-item" v-model="listQuery.status" placeholder="状态">
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
@@ -62,9 +62,9 @@
       </el-table-column>
       <el-table-column align="center" label="操作" width="240px">
         <template scope="scope">
-          <el-button size="small" :disabled="scope.row.status === '入库'||scope.row.status === '删除' ? true:false" type="success" @click="handleStockIn(scope.row)">入 库
+          <el-button size="small" :disabled="['已入库', '转运中', '已删除'].includes(scope.row.status) ? true:false" type="success" @click="handleStockIn(scope.row)">入 库
 	  </el-button>
-          <el-button size="small" :disabled="scope.row.status === '在途' ? false:true" type="danger" @click="handleDelete(scope.row)">删 除
+          <el-button size="small" :disabled="scope.row.status === '在途中' ? false:true" type="danger" @click="handleDelete(scope.row)">删 除
           </el-button>
           <el-button v-show='!scope.row.edit' type="primary" @click='scope.row.edit=true' size="small" icon="edit">编辑</el-button>
           <el-button v-show='scope.row.edit' type="success" @click='updatePurchaseOrder(scope.row)' size="small" icon="check">完成</el-button>
@@ -175,7 +175,7 @@
 	dialogFormVisible: false,
         inventoryOptions: [],
 	supplierOptions: [],
-	statusOptions: ['在途', '部分入库', '删除', '入库'],
+	statusOptions: ['在途中', '入库中', '转运中', '已入库', '已删除'],
         listQuery: {
           page: 1,
           limit: 10,
@@ -309,7 +309,7 @@
       },
       deletePurchaseOrder() {
         purchaseOrderDelete(this.temp).then(response => {
-          this.temp.status = '删除';
+          this.temp.status = '已删除';
 	  for (const v of this.list) {
 	    if (v.id === this.temp.id) {
 	      const index = this.list.indexOf(v);
