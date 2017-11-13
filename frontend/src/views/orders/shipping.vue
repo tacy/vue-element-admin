@@ -459,6 +459,7 @@
 	  delivery_no: undefined,
 	  db_numbers: undefined
 	}
+	this.disableSubmit=false
 	this.dialogStockOutVisible=true;
       },
       stockOut() {
