@@ -43,7 +43,8 @@ class YmatouAPI():
         }
         if biz_content:
             payload['biz_content'] = json.dumps(biz_content)
-
+        log.debug('call YmatouAPI, method {}, biz_content: {}'.format(
+            method, payload['biz_content']))
         payload['sign'] = self.getSign(payload)
         url = self.urltpl.format(self.appid, method)
         try:
