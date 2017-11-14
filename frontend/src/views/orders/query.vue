@@ -348,7 +348,7 @@
 	dialogMarkVisible: false,
         inventoryOptions: [],
 	statusOptions: ['待处理','需面单', '待采购','待发货','已采购','需介入','已发货','已删除'],
-	channelOptions: ['洋码头', '京东'],
+	channelOptions: ['洋码头', '京东', 'AMZN', 'YHOO', 'TOKYOWH'],
 	sellerOptions: ['东京彩虹桥', '妈妈宝宝日本馆', '天狗'],
 	deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
         selectedOptions: [{
