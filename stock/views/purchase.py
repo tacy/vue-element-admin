@@ -201,7 +201,7 @@ class NoOrderPurchase(views.APIView):
                         orderid=data['orderid'], supplier=supplierObj)
                     if '在途中' not in poObj.status:
                         results = {'errmsg': '注文编号已经存在, 且状态非在途. 请更换注文编号'}
-                        raise InputError
+                        raise InputError(None, None)
                 except PurchaseOrder.DoesNotExist:
                     poObj = PurchaseOrder(
                         orderid=data['orderid'],

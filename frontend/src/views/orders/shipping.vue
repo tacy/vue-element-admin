@@ -588,6 +588,15 @@
 	      }
 	    }
 	  }).catch(error => {
+	    for (const i of error.response.data.idmis) {
+	      for (const o of this.list) {
+	        if (i === o.db_number) {
+  		  const index = this.list.indexOf(o);
+		  this.list[index].print_status = '身份证异常';
+		  break;
+		}
+	      }
+	    }
             this.disableSubmit2=false;
 	  })
 	}
