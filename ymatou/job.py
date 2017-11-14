@@ -343,17 +343,17 @@ async def deliveryYmtOrder(ymtapi, pool):
         async with conn.cursor() as cur:
             await cur.execute(sql)
             rs = await cur.fetchall()
-            for i in rs:
-                orderid = i[0].split('-')[0]
-                r = await ymtapi.deliver(orderid, i[1], i[2])
+            dudepOrds = set([(i[0].split('-')[0], i[1:]) for i in rs])
+            for i in dudepOrds:
+                r = await ymtapi.deliver(i[0], i[1], i[2])
                 if not r:
                     continue
                 if '0000' in r.get('code') and r.get('content'):
                     info = r['content']['results']
                     if info[0]['exec_success']:
                         await cur.execute(
-                            "update stock_order set channel_delivery_status='已发货' where orderid=%s",
-                            (i[0], ))
+                            "update stock_order set channel_delivery_status='已发货' where orderid like %s",
+                            (i[0] + '%', ))
                         await conn.commit()
                     else:
                         logging.error(
