@@ -65,6 +65,11 @@
 	  <span>{{scope.row.piad_time}}</span>
 	</template>
       </el-table-column>
+      <el-table-column align="center" label="采购单" width="120px">
+	<template scope="scope">
+	  <span>{{scope.row.purchaseorder_orderid}}</span>
+	</template>
+      </el-table-column>
       <el-table-column align="center" label="收件人" width="95px">
 	<template scope="scope">
 	  <span>{{scope.row.receiver_name}}</span>
