@@ -355,7 +355,7 @@ class CreateJapanEMS(views.APIView):
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
                 if orderObj.status == '需面单':
-                    orderObj = '待发货'
+                    orderObj.status = '待发货'
                 orderObj.save(update_fields=['shippingdb', 'status'])
 
         return Response(status=status.HTTP_200_OK)

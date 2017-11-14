@@ -2,6 +2,7 @@ import logging
 
 import arrow.arrow
 from django.db import IntegrityError, connection, transaction
+from django.db.models import Sum, Max
 from rest_framework import status, views
 from rest_framework.response import Response
 from django.db.models import F
@@ -284,32 +285,76 @@ class PurchaseOrderDelete(views.APIView):
     #
     # 流程:
     #   1. 标记采购单状态: 删除.
-    #   2. 取消关联订单的采购信息, 并重新标识订单状态为待采购.
-    #   3. 修改关联库存记录, 减少在途库存.
+    #   2. 修改关联库存记录, 回滚在途库存.
+    #   3. 修改订单状态
+    #      a. 需要走类似派单判断订单状态流程, 如果现有库存不满足, 置为需采购
+    #         记得需要计算need_purchase
+    #      b. 如果库存满足, 需要判断是否是在途库存满足还是在库库存满足(quantity)
+    #         如果在库库存满足, 直接标记订单需面单或待发货(看看是否有面单)
+    #         如果在途库存满足, 关联采购单, 标记订单状态已采购
     #
     #   request param: id
     def put(self, request, format=None):
         id = request.data.get('id')
         poObj = PurchaseOrder.objects.get(id=id)  # 采购单
         poitemObjs = poObj.purchaseorderitem.all()  # 关联采购商品
-        orderObjs = poObj.order.filter(status='已采购')  # 关联订单, 状态为已采购
+        # orderObjs = poObj.order.filter(status='已采购')  # 关联订单, 状态为已采购
 
         with transaction.atomic():
 
-            # rollback order, set order status
-            for o in orderObjs:
-                o.status = '待采购'
-                o.purchaseorder = None  # clear relate po
-                o.save(update_fields=['status', 'purchaseorder'])
+            # # rollback order, set order status
+            # for o in orderObjs:
+            #     o.status = '待采购'
+            #     o.purchaseorder = None  # clear relate po
+            #     o.save(update_fields=['status', 'purchaseorder'])
 
             # rollback stock, set stock preallocation
             for poi in poitemObjs:
+                ordObjs = Order.objects.filter(
+                    purchaseorder__id=id,
+                    jancode=poi.product.jancode,
+                    status='已采购')
+                totalQuantity = ordObjs.aggregate(
+                    Sum('quantity'))['quantity__sum']
+
+                # 回滚在途
                 stockObj = Stock.objects.get(
                     product=poi.product, inventory=poObj.inventory)
                 stockObj.inflight = F('inflight') - poi.quantity
-                stockObj.save(update_fields=[
-                    'inflight',
-                ])
+                stockObj.save(update_fields=['inflight'])
+                stockObj.refresh_from_db()
+
+                stockPreallocation = stockObj.preallocation - totalQuantity  # 伪回滚占用
+                stockQuantity = stockObj.quantity
+                stockInflight = stockObj.inflight
+                for o in ordObjs:
+                    stockPreallocation += o.quantity
+                    purchaseQuantity = stockPreallocation - (
+                        stockQuantity + stockInflight)
+
+                    if purchaseQuantity > 0:  # 订单需采购
+                        if purchaseQuantity < o.quantity:
+                            o.need_purchase = purchaseQuantity
+                        else:
+                            o.need_purchase = o.quantity
+                        o.status = '待采购'
+                        o.purchaseorder = None
+                    else:
+                        # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
+                        # 在途的采购单绑定, 同时标记状态为已采购
+                        if stockPreallocation > stockQuantity:
+                            o.status = '已采购'
+                            # 找到最新的采购单
+                            id = PurchaseOrder.objects.filter(
+                                purchaseorderitem__product__jancode=poi.
+                                product.jancode,
+                                status__in=('在途中', '入库中', '转运中')).aggregate(
+                                    Max('id'))
+                            o.purchaseorder = PurchaseOrder.objects.get(
+                                id=id['id__max'])
+                        else:
+                            o.status = '待发货' if o.shippingdb else '需面单'
+                    o.save()
 
                 # rollback tokyo stock if supplier is tokyo
                 if '东京仓' in poObj.supplier.name:
