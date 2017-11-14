@@ -504,12 +504,15 @@ class XloboGetPDF(views.APIView):
         if result['ErrorCount'] > 0:
             info = result['ErrorInfoList']
             msg = []
+            idmis = []
             for i in info:
+                db_number = i['Identity']
                 if i['ErrorCode'] == 'xlobo.bill.param_not_upload_id':
-                    ShippingDB.objects.get(db_number=info['Identity'].update(
-                        print_status='身份证异常'))
-                msg.append(info['Identity'] + ':' + info['ErrorDescription'])
-            errmsg = {'errmsg': '|'.join(msg)}
+                    ShippingDB.objects.filter(db_number=db_number).update(
+                        print_status='身份证异常')
+                    idmis.append(db_number)
+                msg.append(db_number + ':' + i['ErrorDescription'])
+            errmsg = {'errmsg': '|'.join(msg), 'idmis': idmis}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
         merger = PdfFileMerger()
         pdftool = utils.PDFTool()
