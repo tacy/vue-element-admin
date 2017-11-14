@@ -502,10 +502,14 @@ class XloboGetPDF(views.APIView):
         logger.debug('XloboGetPDF: %s, User input: %s: ',
                      result['ErrorInfoList'], data)
         if result['ErrorCount'] > 0:
-            info = result['ErrorInfoList'][0]
-            errmsg = {
-                'errmsg': info['Identity'] + ':' + info['ErrorDescription']
-            }
+            info = result['ErrorInfoList']
+            msg = []
+            for i in info:
+                if i['ErrorCode'] == 'xlobo.bill.param_not_upload_id':
+                    ShippingDB.objects.get(db_number=info['Identity'].update(
+                        print_status='身份证异常'))
+                msg.append(info['Identity'] + ':' + info['ErrorDescription'])
+            errmsg = {'errmsg': '|'.join(msg)}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
         merger = PdfFileMerger()
         pdftool = utils.PDFTool()
@@ -637,7 +641,6 @@ class YmatouStockUpdate(views.APIView):
         for sku in result['content']['product_info']['skus']:
             if not sku['outer_id']:
                 continue
-            logger.debug(sku)
             try:
                 stockObj = Stock.objects.get(
                     product__jancode=sku['outer_id'], inventory__id=4)
