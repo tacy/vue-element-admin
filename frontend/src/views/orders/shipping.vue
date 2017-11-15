@@ -174,7 +174,7 @@
     <el-dialog title="出库" :visible.sync="dialogStockOutVisible">
       <el-form class="small-space" :model="stockOutData" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
         <el-form-item label="运单号:">
-          <el-input v-model.trim="stockOutData.delivery_no"></el-input>
+          <el-input v-model.trim="stockOutData.delivery_no" @keyup.enter.native="stockOut"></el-input>
         </el-form-item>
         <el-form-item label="面单号:">
           <el-input type="textarea" :autosize="{minRows: 8, maxRows: 12}" v-model.trim="stockOutData.db_numbers"></el-input>
