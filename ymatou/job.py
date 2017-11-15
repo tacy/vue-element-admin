@@ -97,7 +97,6 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                     except TypeError as e:
                         logging.exception('emergy msg orderid %s, %s' %
                                           (o['order_id'], jancode))
-                        continue
 
                 it = (o['seller_id'], '洋码头', o['order_id'], o['receiver_name'],
                       o['receiver_address'], o['receiver_zip'],
@@ -363,7 +362,7 @@ async def deliveryYmtOrder(ymtapi, pool):
 
 # 推送宁波保税仓订单
 async def pushUbayBondedOrder(ubayapi, pool):
-    sql = "select * from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.status='待处理' and export_status is null and channel_name='洋码头' and  b.bonded_name='宁波保税'"
+    sql = "select * from stock_order o inner join stock_bondedproduct b on o.jancode=b.jancode where o.status='待处理' and export_status is null and channel_name='洋码头' and  b.bonded_name='宁波保税' and receiver_idcard<>''"
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(sql)
