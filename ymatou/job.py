@@ -343,7 +343,7 @@ async def deliveryYmtOrder(ymtapi, pool):
         async with conn.cursor() as cur:
             await cur.execute(sql)
             rs = await cur.fetchall()
-            dudepOrds = set([(i[0].split('-')[0], i[1:]) for i in rs])
+            dudepOrds = set([(i[0].split('-')[0], i[1], i[2]) for i in rs])
             for i in dudepOrds:
                 r = await ymtapi.deliver(i[0], i[1], i[2])
                 if not r:
