@@ -306,6 +306,7 @@ class CreateJapanEMS(views.APIView):
         data = request.data
         ords = data['orders']
         disable_check = data['disable_check']
+        country = data['country']
         tax_included_channel = data['tax_included_channel']
 
         loop = asyncio.new_event_loop()
@@ -336,7 +337,8 @@ class CreateJapanEMS(views.APIView):
         }
         sendType = shippingInfo[ords[0]['shipping_name']][0]
         transType = shippingInfo[ords[0]['shipping_name']][1]
-        ems_number = japanems.createJapanEMS(ords[0], sendType, transType)
+        ems_number = japanems.createJapanEMS(ords[0], sendType, transType,
+                                             country)
 
         with transaction.atomic():
             shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
@@ -650,15 +652,15 @@ class YmatouStockUpdate(views.APIView):
                 stock = stockObj.quantity + stockObj.inflight - stockObj.preallocation
                 if stock < 0:
                     stock = 0
-                msg = [{
-                    'outer_sku_id': sku['outer_id'],
-                    'sku_id': sku['sku_id'],
-                    'stock_num': stock
-                }]
-                result = loop.run_until_complete(ymtapi.syncProductStock(msg))
-                logger.debug('YmatouStockUpdate: %s', result)
             except Stock.DoesNotExist:
-                continue
+                stock = 0
+            msg = [{
+                'outer_sku_id': sku['outer_id'],
+                'sku_id': sku['sku_id'],
+                'stock_num': stock
+            }]
+            result = loop.run_until_complete(ymtapi.syncProductStock(msg))
+            logger.debug('YmatouStockUpdate: %s', result)
         loop.close()
 
         return Response(status=status.HTTP_200_OK)

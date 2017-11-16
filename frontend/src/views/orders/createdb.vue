@@ -229,6 +229,12 @@
 
     <el-dialog title="生成EMS面单" size="tiny" :visible.sync="dialogCreateEMSVisible">
       <el-form class="small-space" :model="xloboData" label-position="left" label-width="80px">
+	<el-form-item label="发往:">
+	  <el-select clearable style="width: 180px" v-model="xloboData.country" placeholder="选择国家">
+	    <el-option v-for="item in countryOptions" :key="item.key" :label="item.key" :value="item.value">
+	    </el-option>
+	  </el-select>
+	</el-form-item>
 	<el-form-item label="订单遗漏">
 	  <el-checkbox v-model="xloboData.disable_check">无需校验</el-checkbox>
 	</el-form-item>
@@ -305,6 +311,10 @@
 	  {key:'跨境空运杂货线路', value:24},
 	  {key:'空运关税补贴线', value:26}
 	],
+	countryOptions: [
+	  {key: '中国', value: 'CN'},
+	  {key: '美国', value: 'US'},
+	],
         selectedOptions: [{
           value: '1',
 	  label: '订单号'
@@ -373,6 +383,7 @@
 	  disable_checkOrderDelivery: false,
 	  disable_channel_delivery: false,
 	  tax_included_channel: false,
+	  country: 'CN',
 	  orders: []
 	},
 	uexData: {
@@ -486,6 +497,7 @@
         this.xloboData.disable_channel_delivery=false
 	this.xloboData.tax_includec_channel=false
         this.xloboData.IsRePacking=0
+	this.xloboData.country='CN'
       },
       checkSelectable(row) {
         return row.status !== '待采购' & row.status !== '需介入'
