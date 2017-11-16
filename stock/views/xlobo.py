@@ -471,7 +471,8 @@ class XloboDeleteDBNumber(views.APIView):
         with transaction.atomic():
             shippingdbObj = ShippingDB.objects.get(id=data['id'])
             shippingdbObj.status = '已删除'
-            shippingdbObj.order.filter(status='待发货').update(status='需面单')
+            shippingdbObj.order.filter(status='待发货').update(
+                status='需面单', channel_delivery_status='')
             shippingdbObj.order.all().update(shippingdb=None)
             shippingdbObj.save(update_fields=[
                 'status',
