@@ -1,3 +1,5 @@
+{"product_id":"1817ad36-a0df-4819-89e8-d862fc41da47", "seller_name":"东京彩虹桥"}
+
 select concat('update stock_stock set preallocation=', sum(quantity), ' where inventory_id=', inventory_id, ' and jancode=', jancode, ';') from st
     ock_order where status in ( '待发货',  '待采购',  '需介入',  '已采购') group by jancode, inventory_id;
 
