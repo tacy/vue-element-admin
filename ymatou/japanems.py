@@ -43,7 +43,11 @@ class JapanEmsAPI():
 
 
 # 生成日本邮政EMS面单
-def createJapanEMS(orderInfo, sendType, transType=None, storagePath=None):
+def createJapanEMS(orderInfo,
+                   sendType,
+                   transType=None,
+                   storagePath=None,
+                   country='CN'):
     # sendType
     #    EMS(物品): 1 / 国际e包裹: 4 / 国际邮包: 5
     # transType
@@ -101,18 +105,24 @@ def createJapanEMS(orderInfo, sendType, transType=None, storagePath=None):
     jemsAPI.call('M060105.do', payload)
 
     # 3. 收件人登入
+    add2 = addrSplit[3] if country=='CN' else orderInfo['receiver_address']
+    add3 = ','.join(addrSplit[1:3]) if country=='CN' else addrSplit[1]
+    addPref = addrSplit[0] if country=='CN' else addrSplit[2]
     payload = {
         'method:regist': '',
         'addrToBean.courierFlg': '0',
         'addrToBean.nam': orderInfo['receiver_name'],
         'addrToBean.companyName': '',
         'addrToBean.postName': '',
-        'addrToBean.couCode': 'CN',
+        'addrToBean.couCode': country,
         'addrToBean.sortNum': 1,
         'addrToBean.add1': '',
-        'addrToBean.add2': addrSplit[3],
-        'addrToBean.add3': ','.join(addrSplit[1:3]),
-        'addrToBean.pref': addrSplit[0],
+        # 'addrToBean.add2': addrSplit[3],
+        # 'addrToBean.add3': ','.join(addrSplit[1:3]),
+        # 'addrToBean.pref': addrSplit[0],
+        'addrToBean.add2': add2,
+        'addrToBean.add3': add3,
+        'addrToBean.pref': addPref,        
         'addrToBean.postal': orderInfo['receiver_zip'],
         'addrToBean.tel': orderInfo['receiver_mobile'],
         'addrToBean.fax': '',
@@ -263,8 +273,8 @@ def createJapanEMS(orderInfo, sendType, transType=None, storagePath=None):
 # sendType  EMS(物品): 1 / 国际e包裹: 4 / 国际邮包: 5  | transType 航空: 1 / 标准航空(SAL): 3 / 海运: 2
 if __name__ == '__main__':
     orderinfo = {
-        'receiver_name': '李春龙',
-        'receiver_address': '北京,北京,朝阳区,北苑路172号',
+        'receiver_name': 'lichunlong',
+        'receiver_address': '168-22 Powell Cove Blvd #9, Beechhurst, NY',
         'receiver_zip': '100000',
         'receiver_mobile': '12922929192',
         'jancode': '4383829292',
@@ -274,4 +284,5 @@ if __name__ == '__main__':
         orderinfo,
         5,
         2,
+        country='US',
         storagePath='/home/tacy/workspace/python/lelewu/emspdfs')
