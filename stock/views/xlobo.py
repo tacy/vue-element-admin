@@ -337,8 +337,8 @@ class CreateJapanEMS(views.APIView):
         }
         sendType = shippingInfo[ords[0]['shipping_name']][0]
         transType = shippingInfo[ords[0]['shipping_name']][1]
-        ems_number = japanems.createJapanEMS(ords[0], sendType, transType,
-                                             country)
+        ems_number = japanems.createJapanEMS(
+            ords[0], sendType, transType, country=country)
 
         with transaction.atomic():
             shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
