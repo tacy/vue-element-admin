@@ -563,9 +563,13 @@ class OrderDelete(views.APIView):
                 orderObj.status = '已删除'
                 orderObj.conflict_feedback = data['conflict_feedback']
                 orderObj.save()
-            elif ('需面单' in orderObj.status or '需介入' in orderObj.status
-                  or '已采购' in orderObj.status
-                  or '待采购' in orderObj.status):  # 清除占用的库存
+            elif orderObj.status in [
+                    '需面单',
+                    '需介入',
+                    '已采购',
+                    '待采购',
+            ] or ('待发货' in orderObj.status
+                  and orderObj.shipping.name in ['拼邮', '轨迹']):  # 清除占用的库存
                 stockObj = Stock.objects.get(
                     inventory=orderObj.inventory,
                     product__jancode=orderObj.jancode)
