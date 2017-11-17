@@ -6,6 +6,8 @@ import arrow
 import requests
 from django.conf import settings
 
+logging = logging.getLogger(__name__)
+
 
 def getJapanEMSStorageLocal():
     return settings.EMS_STORAGE_DIR
@@ -105,9 +107,9 @@ def createJapanEMS(orderInfo,
     jemsAPI.call('M060105.do', payload)
 
     # 3. 收件人登入
-    add2 = addrSplit[3] if country=='CN' else orderInfo['receiver_address']
-    add3 = ','.join(addrSplit[1:3]) if country=='CN' else addrSplit[1]
-    addPref = addrSplit[0] if country=='CN' else addrSplit[2]
+    add2 = addrSplit[3] if country == 'CN' else orderInfo['receiver_address']
+    add3 = ','.join(addrSplit[1:3]) if country == 'CN' else addrSplit[1]
+    addPref = addrSplit[0] if country == 'CN' else addrSplit[2]
     payload = {
         'method:regist': '',
         'addrToBean.courierFlg': '0',
@@ -122,7 +124,7 @@ def createJapanEMS(orderInfo,
         # 'addrToBean.pref': addrSplit[0],
         'addrToBean.add2': add2,
         'addrToBean.add3': add3,
-        'addrToBean.pref': addPref,        
+        'addrToBean.pref': addPref,
         'addrToBean.postal': orderInfo['receiver_zip'],
         'addrToBean.tel': orderInfo['receiver_mobile'],
         'addrToBean.fax': '',
@@ -259,11 +261,14 @@ def createJapanEMS(orderInfo,
     urlsuf = match.group(1)
     ems_number = urlsuf.split('=')[1][14:27]
     pdfurl = jemsAPI.urltpl + urlsuf
-    print(pdfurl, ems_number)
     r = jemsAPI.sess.get(pdfurl)
     if not storagePath:
         storagePath = getJapanEMSStorageLocal()
     fileName = os.path.join(storagePath, ems_number + '.pdf')
+    logging.debug(
+        'japanemsAPI: pdfurl: {}, ems_number: {}, fileName: {}'.format(
+            pdfurl, ems_number, fileName))
+
     with open(fileName, 'wb') as f:
         f.write(r.content)
 
