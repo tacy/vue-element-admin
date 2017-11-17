@@ -1,6 +1,9 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
+      <el-button class="filter-item" type="success" v-waves icon="edit" @click="handleCreate">生成面单</el-button>
+      <el-button class="filter-item" type="danger" v-waves icon="document" @click="handleDBInput">面单回填</el-button>
+
       <el-select v-model="listQuery.labelVal" style="width: 120px;" class="filter-item" placeholder="请选择">
 	<el-option
 	    v-for="item in selectedOptions"
@@ -37,8 +40,8 @@
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleCreate">生成面单</el-button>
-      <el-button class="filter-item" type="danger" style="float:right" v-waves icon="document" @click="handleDBInput">面单回填</el-button>
+      <!--el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleCreate">生成面单</el-button>
+      <el-button class="filter-item" type="danger" style="float:right" v-waves icon="document" @click="handleDBInput">面单回填</el-button-->
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
