@@ -168,17 +168,23 @@ class StockOut(views.APIView):
         try:
             with transaction.atomic():
                 for db in dbs:
-                    shippingdbObj = ShippingDB.objects.get(db_number=db)
-                    if '已出库' in shippingdbObj.status:
-                        results = {
-                            'errmsg':
-                            '面单:{} 已出库, 运单号:{}, 请确认订单是否已发货'.format(
-                                db, shippingdbObj.delivery_no)
-                        }
-                        if shippingdbObj.delivery_no == delivery_no:
+                    try:
+                        shippingdbObj = ShippingDB.objects.get(db_number=db)
+                        if '已出库' in shippingdbObj.status:
                             results = {
-                                'errmsg': '面单:{} 重复录入或重复打包, 请检查'.format(db)
+                                'errmsg':
+                                '面单:{} 已出库, 运单号:{}, 请确认订单是否已发货'.format(
+                                    db, shippingdbObj.delivery_no)
                             }
+                            if shippingdbObj.delivery_no == delivery_no:
+                                results = {
+                                    'errmsg': '面单:{} 重复录入或重复打包, 请检查'.format(db)
+                                }
+                            logger.debug('出库调试-异常, Errmsg: %s',
+                                         results['errmsg'])
+                            raise IntegrityError
+                    except ShippingDB.DoesNotExist:
+                        results = {'errmsg': '面单:{} 不存在, 请检查录入面单号'.format(db)}
                         logger.debug('出库调试-异常, Errmsg: %s', results['errmsg'])
                         raise IntegrityError
                     shippingdbObj.status = '已出库'
