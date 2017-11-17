@@ -85,7 +85,7 @@ class UbayAPI():
             }
             items.append(item)
 
-        msg['Message']['Body']['Details'] = {'detail': items}
+        msg['Message']['Body']['Details'] = {'Detail': items}
 
         xml = xmltodict.unparse(msg, full_document=False)
         sign = hashlib.md5((self.user_code + self.password + xml +
