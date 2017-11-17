@@ -74,22 +74,20 @@ class UbayAPI():
                 }
             }
         }
-        details = []
+        items = []
         for o in orders:
             item = {
-                'Detail': {
-                    'ProductNumberCode': o['filing_no'],
-                    'SaleGoodsName': o['product_title'],
-                    'SaleGoodsPrice': (o['price']) * rate,
-                    'SaleNumber': o['quantity'],
-                    'SaleSubTotal': (o['price']) * rate * o['quantity'],
-                }
+                'ProductNumberCode': o['filing_no'],
+                'SaleGoodsName': o['product_title'],
+                'SaleGoodsPrice': (o['price']) * rate,
+                'SaleNumber': o['quantity'],
+                'SaleSubTotal': (o['price']) * rate * o['quantity'],
             }
-            details.append(item)
+            items.append(item)
 
-        msg['Message']['Body']['Details'] = details
+        msg['Message']['Body']['Details'] = {'detail': items}
 
-        xml = xmltodict.unparse(msg, full_document=False, pretty=True)
+        xml = xmltodict.unparse(msg, full_document=False)
         sign = hashlib.md5((self.user_code + self.password + xml +
                             self.key).encode('utf-8')).hexdigest()
         result = await self.callAPI(url, xml, sign)
