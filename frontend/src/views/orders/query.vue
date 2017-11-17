@@ -521,7 +521,7 @@
         });
       },
       handleDelete(row) {
-        if ( row.shippingdb !== null && row.db_number.indexOf('UE') == -1 ) {
+        if ( row.shippingdb !== null && ! ['拼邮', '轨迹'].includes(row.shipping_name) ) {
           this.$notify({
             title: '警告',
             message: '订单已经出面单, 需先在系统删除对应面单',
