@@ -331,7 +331,7 @@ class CreateJapanEMS(views.APIView):
         #    航空: 1 / 标准航空(SAL): 3 / 海运: 2
         shippingInfo = {
             'EMS': (1, None),
-            'EPACK': (1, None),
+            'EPACK': (4, None),
             'SAL': (5, 3),
             'SURFACE': (5, 2)
         }
