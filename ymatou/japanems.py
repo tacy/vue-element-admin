@@ -1,7 +1,7 @@
 import os.path
 import random
 import re
-
+import logging
 import arrow
 import requests
 from django.conf import settings
