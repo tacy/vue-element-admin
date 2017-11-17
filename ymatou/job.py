@@ -80,8 +80,11 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                 jinfo = j.split('*')
                 jancode = jinfo
                 num = int(oi['num'])
-                price = int(oi['price']) / len(js)
-                payment = int(oi['payment']) / len(js)
+                # price = int(oi['price']) / len(js)
+                # payment = int(oi['payment']) / len(js)
+                payment = (
+                    int(oi['payment']) + int(oi['upon_discount'])) / len(js)
+                price = payment / len(js)
                 sku_properties_name = oi['sku_properties_name'] if oi[
                     'sku_properties_name'] else '无'
                 if len(jinfo) == 2:
