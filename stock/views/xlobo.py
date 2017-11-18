@@ -402,6 +402,12 @@ class ManualAllocateDBNumber(views.APIView):
                         errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        c = shippingdbObj.order.count()
+                        if c>40:
+                            errmsg = {'errmsg': '该国际单号被重复使用次数过多, 请换新单号发货'}
+                        return Response(
+                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
