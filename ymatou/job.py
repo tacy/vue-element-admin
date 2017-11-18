@@ -85,7 +85,7 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                 payment = (
                     float(oi['payment']) + float(oi['p_coupon_discount'])
                 ) / len(js)
-                price = payment / len(js)
+                price = payment / num
                 sku_properties_name = oi['sku_properties_name'] if oi[
                     'sku_properties_name'] else '无'
                 if len(jinfo) == 2:
