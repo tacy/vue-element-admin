@@ -588,7 +588,6 @@
       createEMSShippingDB() {
 	this.disableSubmit=true;
 	this.xloboData.orders = this.selectRow;
-	this.xloboData.disable_check = false;
 	createJapanEMS(this.xloboData).then(response => {
 	  this.$notify({
 	    title: '成功',
