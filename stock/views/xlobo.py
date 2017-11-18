@@ -406,8 +406,8 @@ class ManualAllocateDBNumber(views.APIView):
                         c = shippingdbObj.order.count()
                         if c>40:
                             errmsg = {'errmsg': '该国际单号被重复使用次数过多, 请换新单号发货'}
-                        return Response(
-                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                            return Response(
+                                data=errmsg, status=status.HTTP_400_BAD_REQUEST)
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
