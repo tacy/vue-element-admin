@@ -85,6 +85,15 @@ def checkUserOtherOrder(ords):
     return None
 
 
+def checkInputOrder(ords):
+    t = set([(o['inventory'], o['shipping'], o['receiver_name'],
+              o['receiver_address'], o['receiver_mobile']) for o in ords])
+    if len(t) > 1:
+        errmsg = {'errmsg': '订单信息不一致, 请检查.'}
+        return errmsg
+    return None
+
+
 def getJapanEMSStorageLocal():
     return settings.EMS_STORAGE_DIR
 
@@ -102,6 +111,10 @@ class XloboCreateNoVerification(views.APIView):
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
 
+        checkResult = checkInputOrder(ords)
+        if checkResult:
+            return Response(
+                data=checkResult, status=status.HTTP_400_BAD_REQUEST)
         ordStatus = checkOrderStatus(loop, sess, ords)
         if ordStatus:
             return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
@@ -212,6 +225,10 @@ class XloboCreateFBXBill(views.APIView):
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
 
+        checkResult = checkInputOrder(ords)
+        if checkResult:
+            return Response(
+                data=checkResult, status=status.HTTP_400_BAD_REQUEST)
         ordStatus = checkOrderStatus(loop, sess, ords)
         if ordStatus:
             return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
@@ -314,7 +331,12 @@ class CreateJapanEMS(views.APIView):
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
 
+        checkResult = checkInputOrder(ords)
+        if checkResult:
+            return Response(
+                data=checkResult, status=status.HTTP_400_BAD_REQUEST)
         ordStatus = checkOrderStatus(loop, sess, ords)
+
         if ordStatus:
             return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
 
@@ -377,6 +399,11 @@ class ManualAllocateDBNumber(views.APIView):
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
 
+        checkResult = checkInputOrder(ords)
+        if checkResult:
+            return Response(
+                data=checkResult, status=status.HTTP_400_BAD_REQUEST)
+
         ordStatus = checkOrderStatus(loop, sess, ords,
                                      disable_checkOrderDelivery)
         if ordStatus:
@@ -404,10 +431,11 @@ class ManualAllocateDBNumber(views.APIView):
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         c = shippingdbObj.order.count()
-                        if c>40:
+                        if c > 40:
                             errmsg = {'errmsg': '该国际单号被重复使用次数过多, 请换新单号发货'}
                             return Response(
-                                data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                                data=errmsg,
+                                status=status.HTTP_400_BAD_REQUEST)
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
