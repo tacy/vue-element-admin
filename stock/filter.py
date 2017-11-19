@@ -1,6 +1,6 @@
 from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter, NumberFilter
 from .models import Order, Product, Stock, ShippingDB, PurchaseOrder, PurchaseOrderItem
-from django.db.models import F
+from django.db.models import F, Q
 
 
 class CharInFilter(BaseInFilter, CharFilter):
@@ -82,6 +82,12 @@ class ShippingDBFilter(FilterSet):
         lookup_expr='icontains',
         distinct=True)
     receiver_name = CharFilter(name='order__receiver_name', distinct=True)
+    print_status__ne = CharFilter(name='print_status', method='filter_ne')
+
+    def filter_ne(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(~Q(print_status=value))
 
     class Meta:
         model = ShippingDB
@@ -94,6 +100,7 @@ class ShippingDBFilter(FilterSet):
             'inventory',
             'delivery_time',
             'tax_included_channel',
+            'print_status',
         ]
 
 
