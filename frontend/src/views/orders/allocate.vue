@@ -62,15 +62,9 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="备注" width="150px">
+      <el-table-column align="center" label="备注" width="120px">
         <template scope="scope">
           <span>卖:{{scope.row.seller_memo}}|买:{{scope.row.buyer_remark}}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column width="120px" align="center" label="支付时间">
-        <template scope="scope">
-          <span>{{scope.row.piad_time}}</span>
         </template>
       </el-table-column>
 
@@ -80,13 +74,19 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="操作" width="150">
+      <el-table-column width="120px" align="center" label="支付时间">
+        <template scope="scope">
+          <span>{{scope.row.piad_time}}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" label="操作" width="140">
         <template scope="scope">
           <el-button v-if="scope.row.inventory===null" :disabled="scope.row.jancode===''?true:false" size="small" type="success" @click="handleFetchStock(scope.row)">派单
           </el-button>
           <!--el-button v-if="scope.row.inventory != null" size="small" type="danger" @click="handleFetchStock(scope.row)">重派
           </el-button-->
-          <el-button size="small" type="primary" @click="handleProduct(scope.row)">新产品
+          <el-button size="small" type="primary" @click="handleProduct(scope.row)">新品
           </el-button>
         </template>
       </el-table-column>

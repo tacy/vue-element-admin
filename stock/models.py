@@ -129,7 +129,7 @@ class ShippingDB(models.Model):
         max_length=8, null=True)  # 是否走保税通道 是/否
     # error_msg = models.CharField(max_length=256, null=True)  # 如果打印面单出错, 需要记录
     delivery_time = models.DateTimeField(null=True)
-    print_status = models.CharField(max_length=8, null=True)  # 已打印
+    print_status = models.CharField(max_length=8, null=True, default='')  # 已打印
 
     class Meta:
         ordering = ['order_piad_time']

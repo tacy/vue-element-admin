@@ -1,46 +1,42 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-select v-model="listQuery.labelVal" style="width: 120px;" class="filter-item" placeholder="请选择">
+      <el-select v-model="listQuery.labelVal" style="width: 105px;" class="filter-item" placeholder="请选择">
 	<el-option
 	    v-for="item in selectedOptions"
 	    :label="item.label"
 	    :value="item.value">
 	</el-option>
       </el-select>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入面单号" v-model="listQuery.db_number" v-show="listQuery.labelVal == '1'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 130px;" class="filter-item" placeholder="输入面单号" v-model="listQuery.db_number" v-show="listQuery.labelVal == '1'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入商品名称" v-model="listQuery.product_title" v-show="listQuery.labelVal == '2'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 130px;" class="filter-item" placeholder="输入商品名称" v-model="listQuery.product_title" v-show="listQuery.labelVal == '2'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入商品条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '3'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 130px;" class="filter-item"  placeholder="输入商品条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '3'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入运单号" v-model="listQuery.delivery_no" v-show="listQuery.labelVal == '4'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 130px;" class="filter-item"  placeholder="输入运单号" v-model="listQuery.delivery_no" v-show="listQuery.labelVal == '4'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '5'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 130px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '5'">
       </el-input>
 
       <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item"  placeholder="商品规格" v-model="listQuery.sku_properties_name">
       </el-input>
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
+      <el-select clearable style="width: 105px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
         <el-option v-for="item in shippingOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="状态">
+      <el-select clearable style="width: 100px" class="filter-item" v-model="listQuery.status" placeholder="状态">
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
+      <el-select clearable style="width: 105px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
         <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
       </el-select>
 
-      <!--el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
-        <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
-        </el-option>
-      </el-select-->
-
+      <el-checkbox clearable class="filter-item" size="large" v-model="listQuery.isWaitingPrint">待打印</el-checkbox>
       <el-checkbox clearable class="filter-item" style="width: 80px" size="large" v-model="listQuery.isTaxIncluded">包税单</el-checkbox>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
@@ -322,7 +318,9 @@
 	  sku_properties_name: undefined,
 	  jancode: undefined,
   	  isTaxIncluded: false,
+	  isWaitingPrint: false,
 	  tax_included_channel: undefined,
+	  print_status__ne: undefined,
         },
 	queryOrderItems: {
 	  shippingdb_id: undefined,
@@ -378,6 +376,11 @@
 	  this.listQuery.tax_included_channel = '是'
 	} else {
 	  this.listQuery.tax_included_channel = undefined
+	}
+	if ( this.listQuery.isWaitingPrint ) {
+	  this.listQuery.print_status__ne = '已打印'
+	} else {
+	  this.listQuery.print_status__ne = undefined
 	}
         fetchShippingDB(this.listQuery).then(response => {
 	  this.list = response.data.results;
