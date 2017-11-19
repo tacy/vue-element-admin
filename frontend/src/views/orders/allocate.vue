@@ -169,6 +169,8 @@
           <el-option v-for="item in  shippingOptions" :key="item.name" :label="item.name" :value="item.id">
           </el-option>
         </el-select>
+	<el-checkbox clearable size="large" v-if="isDomestic" class="filter-item" v-model="isSwitchDeliveryType">转直邮</el-checkbox>
+	<el-checkbox clearable size="large" v-if="! isDomestic" class="filter-item" v-model="isSwitchDeliveryType">转拼邮</el-checkbox>
       </div>
 
       <el-table :data="stockData" border fit highlight-current-row style="width: 100%">
@@ -223,6 +225,8 @@
         list: null,
         total: null,
 	submitting: false,
+	isDomestic: false,
+	isSwitchDeliveryType: false,
         listLoading: true,
         listQuery: {
           page: 1,
@@ -247,7 +251,8 @@
 	  price: undefined,
 	  quantity: undefined,
 	  category: undefined,
-	  sku_properties_name: undefined
+	  sku_properties_name: undefined,
+	  delivery_type: undefined,
         },
 	tempProduct: {
 	  name: undefined,
@@ -407,6 +412,17 @@
         });
       },
       allocate() {
+        if ( ! this.isSwitchDeliveryType ) {
+	  if ( (["拼邮", "轨迹"].includes(this.temp.delivery_type) && this.temp.inventory !== 3) || (! ["拼邮", "轨迹"].includes(this.temp.delivery_type) && this.temp.inventory === 3)) {
+	    this.$notify({
+	      title: '警告',
+	      message: '请选择正确的仓库发货!',
+	      type: 'warning',
+	      duration: 2000
+	    });
+	    return
+	  }
+	};
         this.submitting = true;
         orderAllocate(this.temp).then(response => {
           // 刷新列表数据
@@ -450,7 +466,16 @@
       handleFetchStock(row) {
         this.temp = Object.assign({}, row);
         this.listStockQuery.jancode = this.temp.jancode;
-        this.getShipping();
+	this.isSwitchDeliveryType = false;
+	this.temp.delivery_type=row.delivery_type
+	if ( row.delivery_type.includes('拼邮') ) {
+	  this.isDomestic = true
+	  this.temp.inventory=3
+	} else {
+	  this.isDomestic=false
+	  this.temp.inventory=4
+	}
+	this.getShipping()
         fetchStock(this.listStockQuery).then(response => {
           this.stockData = response.data.results;
           // this.inventoryOptions = response.data.results;  // 需要优化, 构造{id,name}结构
