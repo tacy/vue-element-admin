@@ -292,7 +292,7 @@
 	    duration: 2000
 	  });
 	  this.dialogPOItemVisible = false;
-	  this.handleFilter();
+	  this.handleCurrentChange(this.listQuery.page);
 	});
       },
       updatePurchaseOrder(row) {
