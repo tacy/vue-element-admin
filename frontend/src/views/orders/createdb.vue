@@ -44,7 +44,8 @@
       <el-button class="filter-item" type="danger" style="float:right" v-waves icon="document" @click="handleDBInput">面单回填</el-button-->
     </div>
 
-    <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
+    <!--el-table :data="list" v-loading.body="listLoading" ref="ords" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%"-->
+    <el-table :data="list" v-loading.body="listLoading" ref="ords" @select="handleSelect" border fit highlight-current-row style="width: 100%">
       <el-table-column type="selection" width="45" :selectable="checkSelectable">
       </el-table-column>
       <el-table-column align="center" label="订单号" width="100px">
@@ -487,7 +488,25 @@
         this.listQuery.page = val;
         this.getOrder();
       },
-      handleSelect(val) {
+      handleSelect(val, row) {
+	if ( val.length > 0) {
+	  var rowIn = false
+	  for (const v of val) {
+	    if (v.id===row.id) {
+	      rowIn = true
+	      break
+	    }
+	  };
+	  if (rowIn) {
+	    for (const v of this.list) {
+	      if (v.id !== row.id && v.shipping === row.shipping && v.receiver_address === row.receiver_address) {
+		val.push(v);
+		const index = this.list.indexOf(v);
+		this.$refs.ords.toggleRowSelection(this.list[index], true);
+	      }
+	    };
+	  }
+	}
         this.selectRow = val;
       },
       handleUpdate(row) {
