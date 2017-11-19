@@ -499,7 +499,7 @@
 	  };
 	  if (rowIn) {
 	    for (const v of this.list) {
-	      if (v.id !== row.id && v.shipping === row.shipping && v.receiver_address === row.receiver_address) {
+	      if (v.id !== row.id && v.shipping === row.shipping && v.receiver_address === row.receiver_address && ['需面单','已采购'].includes(v.status)) {
 		val.push(v);
 		const index = this.list.indexOf(v);
 		this.$refs.ords.toggleRowSelection(this.list[index], true);
