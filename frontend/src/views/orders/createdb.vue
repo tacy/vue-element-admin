@@ -45,7 +45,7 @@
     </div>
 
     <!--el-table :data="list" v-loading.body="listLoading" ref="ords" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%"-->
-    <el-table :data="list" v-loading.body="listLoading" ref="ords" @select="handleSelect" border fit highlight-current-row style="width: 100%">
+    <el-table :data="list" v-loading.body="listLoading" ref="ords" @select="handleSelect" @select-all="handleAllSelect" border fit highlight-current-row style="width: 100%">
       <el-table-column type="selection" width="45" :selectable="checkSelectable">
       </el-table-column>
       <el-table-column align="center" label="订单号" width="100px">
@@ -487,6 +487,9 @@
       handleCurrentChange(val) {
         this.listQuery.page = val;
         this.getOrder();
+      },
+      handleAllSelect(val) {
+        this.selectRow = val;
       },
       handleSelect(val, row) {
 	if ( val.length > 0) {
