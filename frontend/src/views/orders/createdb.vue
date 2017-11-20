@@ -561,6 +561,14 @@
           });
           return
         };
+	if ( this.selectRow[0].shipping_name.includes("拼邮") ) {
+          this.$message({
+            type: 'warning',
+            message: '拼邮单请使用面单回填操作',
+            duration: 2000
+          });
+          return
+	}
         if ( this.selectRow[0].shipping_name.includes("UEX") ) {
           this.isUEX = true;
           this.dialogUEXVisible = true;
