@@ -310,6 +310,7 @@
         })
       },
       getShipping() {
+        this.temp.shipping = null;
         if (this.temp.inventory === null) {
           this.temp.shipping = null;
           return
@@ -317,7 +318,7 @@
         this.listShippingQuery.inventory = this.temp.inventory;
         fetchShipping(this.listShippingQuery).then(response => {
           this.shippingOptions = response.data.results;
-	  this.temp.shipping = null;
+	  this.temp.shipping = response.data.results[0].id
         })
       },
       handleFilter() {
@@ -471,11 +472,12 @@
 	if ( row.delivery_type.includes('拼邮') ) {
 	  this.isDomestic = true
 	  this.temp.inventory=3
+  	  this.getShipping()
 	} else {
 	  this.isDomestic=false
 	  this.temp.inventory=4
+  	  this.getShipping()
 	}
-	this.getShipping()
         fetchStock(this.listStockQuery).then(response => {
           this.stockData = response.data.results;
           // this.inventoryOptions = response.data.results;  // 需要优化, 构造{id,name}结构
