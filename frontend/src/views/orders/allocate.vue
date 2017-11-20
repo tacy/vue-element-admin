@@ -414,7 +414,7 @@
       },
       allocate() {
         if ( ! this.isSwitchDeliveryType ) {
-	  if ( (["拼邮", "轨迹"].includes(this.temp.delivery_type) && this.temp.inventory !== 3) || (! ["拼邮", "轨迹"].includes(this.temp.delivery_type) && this.temp.inventory === 3)) {
+	  if ( (["拼邮"].includes(this.temp.delivery_type) && this.temp.inventory !== 3) || (! ["拼邮", "第三方"].includes(this.temp.delivery_type) && this.temp.inventory === 3)) {
 	    this.$notify({
 	      title: '警告',
 	      message: '请选择正确的仓库发货!',
