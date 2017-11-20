@@ -494,15 +494,12 @@
       handleSelect(val, row) {
 	if ( val.length > 0) {
 	  var rowIn = false
-	  for (const v of val) {
-	    if (v.id===row.id) {
-	      rowIn = true
-	      break
-	    }
+	  if (val.includes(row)){
+	    rowIn = true
 	  };
 	  if (rowIn) {
 	    for (const v of this.list) {
-	      if (v.id !== row.id && v.shipping === row.shipping && v.receiver_address === row.receiver_address && ['需面单','已采购'].includes(v.status)) {
+	      if (v.id !== row.id && v.shipping === row.shipping && v.receiver_address === row.receiver_address && ['需面单','已采购'].includes(v.status) && ! val.includes(v) ) {
 		val.push(v);
 		const index = this.list.indexOf(v);
 		this.$refs.ords.toggleRowSelection(this.list[index], true);
