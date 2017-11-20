@@ -45,7 +45,7 @@
     </div>
 
     <!--el-table :data="list" v-loading.body="listLoading" ref="ords" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%"-->
-    <el-table :data="list" v-loading.body="listLoading" ref="ords" @select="handleSelect" border fit highlight-current-row style="width: 100%">
+    <el-table :data="list" v-loading.body="listLoading" ref="ords" @select="handleSelect" @select-all="handleAllSelect" border fit highlight-current-row style="width: 100%">
       <el-table-column type="selection" width="45" :selectable="checkSelectable">
       </el-table-column>
       <el-table-column align="center" label="订单号" width="100px">
@@ -488,6 +488,9 @@
         this.listQuery.page = val;
         this.getOrder();
       },
+      handleAllSelect(val) {
+        this.selectRow = val;
+      },
       handleSelect(val, row) {
 	if ( val.length > 0) {
 	  var rowIn = false
@@ -561,6 +564,14 @@
           });
           return
         };
+	if ( this.selectRow[0].shipping_name.includes("拼邮") ) {
+          this.$message({
+            type: 'warning',
+            message: '拼邮单请使用面单回填操作',
+            duration: 2000
+          });
+          return
+	}
         if ( this.selectRow[0].shipping_name.includes("UEX") ) {
           this.isUEX = true;
           this.dialogUEXVisible = true;
