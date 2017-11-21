@@ -3,7 +3,7 @@
       <div class="filter-container">
 	<el-button class="filter-item" style="float:right" @click="handlePurchase" type="primary" icon="edit">保存采购单</el-button>
       </div>
-      <el-table :data="postData.data" v-loading.body="listLoading" :row-class-name="tableRowClassName" border fit highlight-current-row style="width: 100%">
+      <el-table :data="postData.data" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
 	<el-table-column align="center" label="条码" width="120">
 	  <template scope="scope">
 	    <span class="link-type" @click="getOrder(scope.row)">{{scope.row.jancode}}</span>

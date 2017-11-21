@@ -311,6 +311,7 @@ class OrderAllocate(views.APIView):
                             id = PurchaseOrder.objects.filter(
                                 purchaseorderitem__product__jancode=dborder.
                                 jancode,
+                                inventory=stockObj.inventory,
                                 # purchaseorderitem__status__isnull=True,    # 不知道为什么要判断
                                 status__in=('在途中', '入库中', '转运中')).aggregate(
                                     Max('id'))
