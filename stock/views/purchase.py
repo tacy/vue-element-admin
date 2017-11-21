@@ -93,7 +93,9 @@ class OrderPurchase(views.APIView):
                         inventoryOb = Inventory.objects.get(id=inventory)
                         try:
                             po = PurchaseOrder.objects.get(
-                                orderid=po_id, supplier=supplierOb)
+                                orderid=po_id,
+                                supplier=supplierOb,
+                                inventory=inventoryOb)
                             if '在途中' not in po.status:
                                 results = {
                                     'errmsg':
@@ -199,7 +201,9 @@ class NoOrderPurchase(views.APIView):
                 inventoryObj = Inventory.objects.get(id=inventory)
                 try:
                     poObj = PurchaseOrder.objects.get(
-                        orderid=data['orderid'], supplier=supplierObj)
+                        orderid=data['orderid'],
+                        supplier=supplierObj,
+                        inventory=inventoryObj)
                     if '在途中' not in poObj.status:
                         results = {'errmsg': '注文编号已经存在, 且状态非在途. 请更换注文编号'}
                         raise InputError(None, None)
@@ -348,6 +352,7 @@ class PurchaseOrderDelete(views.APIView):
                             id = PurchaseOrder.objects.filter(
                                 purchaseorderitem__product__jancode=poi.
                                 product.jancode,
+                                inventory=stockObj.inventory,
                                 status__in=('在途中', '入库中', '转运中')).aggregate(
                                     Max('id'))
                             o.purchaseorder = PurchaseOrder.objects.get(
