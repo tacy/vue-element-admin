@@ -339,3 +339,120 @@ class DomesticStockIn(views.APIView):
                     'status',
                 ])
             return Response(status=status.HTTP_200_OK)
+
+
+# 清采购单(采购单入库)
+class PurchaseOrderClear(views.APIView):
+    # 流程:
+    #   1. 标记采购单状态: 已入库.
+    #   2. stock入库(减inflight, 增加quantity).
+    #   3. 标记订单待发货.
+    # 需要支持部分入库
+    # 采购流程中, 国内采购需要增加转运, 流程如下:
+    #   1. 采购商品到达东京, 东京仓库入库, 这个入库只是标记purchaseorderitem状态为"东京仓", 不做其他操作
+    #   2. 增加页面, 显示所有状态为东京仓的purchaseorderitem, 东京仓库根据这个页面转运商品, 关联转运单号
+    #   3. 广州仓人员收到转运包括, 做入库操作
+    def put(self, request, format=None):
+        id = request.data.get('id')
+        inventory_id = request.data.get('inventory')
+        pois = request.data.get('pois')
+        logger.debug('PurchaseOrderClear入库调试: 用户输入 - {}'.format(request.data))
+        poObj = PurchaseOrder.objects.get(id=id)  # 采购单
+
+        with transaction.atomic():
+            # mark purchaseorder
+            # poObj.status = '入库'
+            # poObj.save(update_fields=['status'])
+
+            # stock in
+            for poi in pois:
+                poiObj = poObj.purchaseorderitem.get(
+                    product__jancode=poi['jancode'])
+                if not poi['qty'] or '已入库' == poiObj.status:
+                    continue
+
+                if inventory_id == 3:  # 如果是广州仓库, 只标记订单明细状态, 和采购单状态(入库中/转运中)
+                    if poiObj.status in ['东京仓', '转运中']:
+                        continue
+                    poiObj.status = '东京仓'
+                    poiObj.save()
+                    continue
+
+                poiObj.status = '已入库'
+                poiObj.stockin_date = arrow.now().format('YYYY-MM-DD HH:mm:ss')
+                poiObj.save()
+
+                inventory = Inventory.objects.get(id=inventory_id)
+                stockObj = Stock.objects.get(
+                    product__jancode=poi['jancode'], inventory=inventory)
+                # poi.quantity记录的是采购数量, qty是实际到库数量.
+                # 入库实际到库数量, 扣减inflight数量用采购数量.
+                # TODO: 如果实际到库少于采购数量, 需要处理漏采(漏采需补采购)
+                cp = 0
+                if poiObj.quantity < poi['qty']:
+                    cp = poi['qty']
+                else:
+                    cp = poiObj.quantity
+                stockObj.quantity = F('quantity') + cp
+                stockObj.inflight = F('inflight') - poiObj.quantity
+                stockObj.save()
+                # 记录入库操作stockinrecord(采购单入库)
+                stockIRObj = StockInRecord(
+                    orderid=poObj.orderid,
+                    inventory=poObj.inventory,
+                    quantity=cp,
+                    in_date=poiObj.stockin_date,
+                    product=poiObj.product,
+                )
+                stockIRObj.save()
+
+                # tokyo stock out if supplier is tokyo
+                if '东京仓' in poObj.supplier.name:
+                    stockTokyo = Stock.objects.get(
+                        inventory=Inventory.objects.get(name='东京'),
+                        product__jancode=poi['jancode'],
+                    )
+                    stockTokyo.preallocation = F(
+                        'preallocation') - poiObj.quantity
+                    # if poiObj.quantity < poi['qty']:
+                    #     stockTokyo.quantity = F('quantity') - poi['qty']
+                    # else:
+                    #     stockTokyo.quantity = F('quantity') - poiObj.quantity
+                    stockTokyo.quantity = F('quantity') - cp
+                    stockTokyo.save()
+                    # 记录出库到stockoutrecord表, 这里的orderid用采购单id
+                    stockORObj = StockOutRecord(
+                        orderid=poObj.orderid,
+                        quantity=cp,
+                        inventory=stockTokyo.inventory,
+                        product=poiObj.product,
+                        out_date=poiObj.stockin_date,
+                    )
+                    stockORObj.save()
+
+                # 如果订单没有面单, 进入需面单状态, 否则待发货状态
+                poObj.order.filter(
+                    status='已采购',
+                    jancode=poi['jancode'],
+                    shippingdb__isnull=False).update(status='待发货')
+                poObj.order.filter(
+                    status='已采购',
+                    jancode=poi['jancode'],
+                    shippingdb__isnull=True).update(status='需面单')
+
+            count = poObj.purchaseorderitem.filter(
+                status__in=['已入库', '东京仓', '转运中']).count()
+            all = poObj.purchaseorderitem.count(
+            )  # 不能和用户提交的采购明细条数比较, 用户可能在其他页面增加了采购明细, 却不刷新提交页面
+            if count > 0:
+                if count != all:
+                    poObj.status = '入库中'
+                else:
+                    poObj.status = '转运中' if inventory_id == 3 else '已入库'
+
+                poObj.save(update_fields=[
+                    'status',
+                ])
+            return Response(status=status.HTTP_200_OK)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
