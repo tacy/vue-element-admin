@@ -74,7 +74,7 @@
       </el-table-column>
       <el-table-column align="center" label="操作" width="100">
         <template scope="scope">
-          <el-button size="small" :disabled="scope.row.status==='转运中'?false:true" type="primary" @click="handleDomesticStockIn(scope.row)">入库
+          <el-button size="small" :disabled="scope.row.status==='转运中'?false:true" type="primary" @click="handleStockIn(scope.row)">入库
           </el-button>
         </template>
       </el-table-column>
@@ -87,14 +87,29 @@
     </div>
 
     <el-dialog title="转运国内" size="small" :visible.sync="dialogTransformVisible">
-      <el-form class="small-space" :model="stockInData" label-position="left" label-width="80px">
+      <el-form class="small-space" :model="transformData" label-position="left" label-width="80px">
         <el-form-item label="运单号">
-          <el-input v-model.trim="stockInData.delivery_no"></el-input>
+          <el-input v-model.trim="transformData.delivery_no"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogTransformVisible=false">取 消</el-button>
         <el-button type="primary" @click="transform()">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog title="入库" size="tiny" :visible.sync="dialogStockInVisible">
+      <el-form class="small-space" :model="stockInData" label-position="left" label-width="80px">
+        <el-form-item label="采购数量">
+          <el-input :disabled="true" v-model.number="stockInData.quantity" type="number"></el-input>
+        </el-form-item>
+        <el-form-item label="到库数量">
+          <el-input v-model.number="stockInData.qty" type="number"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogStockInVisible=false">取 消</el-button>
+        <el-button type="primary" @click="stockIn">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -112,6 +127,7 @@
         statusOptions: ['东京仓', '转运中', '已入库'],
         selectRow: [],
         dialogTransformVisible: false,
+        dialogStockInVisible: false,
         selectedOptions: [{
           value: '1',
 	  label: '注文编号'
@@ -137,9 +153,14 @@
 	  jancode: undefined,
 	  delivery_no: undefined,
         },
-	stockInData: {
+	transformData: {
 	  purchaseorderitems: undefined,
 	  delivery_no: undefined
+	},
+	stockInData: {
+	  id: undefined,
+	  quantity: undefined,
+	  qty: undefined,
 	},
       }
     },
@@ -201,12 +222,12 @@
           });
           return;
         };
-	this.stockInData.delivery_no = null;
+	this.transformData.delivery_no = null;
         this.dialogTransformVisible = true;
       },
       transform() {
-	this.stockInData.purchaseorderitems = this.selectRow
-        purchaseOrderTransform(this.stockInData).then(response => {
+	this.transformData.purchaseorderitems = this.selectRow
+        purchaseOrderTransform(this.transformData).then(response => {
 	  this.$notify({
 	    title: '成功',
 	    message: '转运完成',
@@ -218,7 +239,7 @@
 	      if (o.id===s.id) {
 	        const index = this.list.indexOf(o);
 	        // this.list[index].status = '转运中';
-		// this.list[index].delivery_no = this.stockInData.delivery_no;
+		// this.list[index].delivery_no = this.transformData.delivery_no;
 	        this.list.splice(index, 1);
 		break;
 	      }
@@ -228,8 +249,12 @@
 	  this.dialogTransformVisible=false;
 	});
       },
-      handleDomesticStockIn(row) {
-        domesticStockIn(row).then(response => {
+      handleStockIn(row) {
+	this.stockInData = row;
+        this.dialogStockInVisible = true;
+      },
+      stockIn(row) {
+        domesticStockIn(this.stockInData).then(response => {
 	  this.$notify({
 	    title: '成功',
 	    message: '入库完成',
@@ -243,6 +268,7 @@
 	      break;
 	    }
 	  }
+	  this.dialogStockInVisible = false;
 	});
       },
     }

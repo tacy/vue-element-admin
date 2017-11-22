@@ -90,7 +90,7 @@ def createPO(orderid, inventory, supplier, items, createtime):
                 'errmsg': '商品库中无该商品%s, 请先创建产品资料' % (i['jancode'], )
             }
 
-        # 下面这段代码无需判断, 直接抛出异常, 让用户知道
+        # 下面这段代码不需要, 直接抛出异常, 让用户知道
         # if poObj.purchaseorderitem.filter(
         #         product=Product.objects.get(jancode=i['jancode'])).count():
         #     logger.warning(
