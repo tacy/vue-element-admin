@@ -1,12 +1,13 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
+      <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
       </el-input>
 
+      <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item" placeholder="商品条码" v-model="listQuery.jancode">
+      </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
       </el-input>
-
       <el-select style="width: 120px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
         <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
         </el-option>
@@ -44,6 +45,11 @@
       <el-table-column align="center" label="导出状态" width="100px">
 	<template scope="scope">
 	  <span>{{scope.row.export_status}}</span>
+	</template>
+      </el-table-column>
+      <el-table-column align="center" label="打印状态" width="100px">
+	<template scope="scope">
+	  <span>{{scope.row.importstatus}}</span>
 	</template>
       </el-table-column>
       <el-table-column align="center" label="发货方式" width="100px">
@@ -198,6 +204,7 @@
           limit: 10,
 	  status: "待发货,待采购,已采购,需介入",
           inventory: undefined,
+	  jancode: undefined,
 	  shipping: undefined,
 	  channel_name: undefined,
 	  shipping_name: '轨迹',
@@ -357,7 +364,7 @@
 	  link.download = "uextrack.xlsx"
 	  link.click()
 	  this.dialogUexTrackVisible=false
-          this.getOrder();
+          this.handleCurrentChange(this.listQuery.page);
 	});
       }
     }
