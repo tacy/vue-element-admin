@@ -283,7 +283,6 @@ def inStock(poObj, poiObj, qty):
 
     # poi.quantity记录的是采购数量, qty是实际到库数量.
     # 入库实际到库数量, 扣减inflight数量用采购数量.
-    # TODO: 如果实际到库少于采购数量, 需要处理漏采(漏采需补采购)
     if poiObj.quantity <= qty:  # 实际到库数量大于等于采购数量
         # 如果订单没有面单, 进入需面单状态, 否则待发货状态
         poObj.order.filter(
@@ -344,7 +343,8 @@ def inStock(poObj, poiObj, qty):
     )
     stockIRObj.save()
 
-    # 如果目标仓库是广州, 因为之前到东京仓的时候, 已经入库了东京仓和预分配了库存, 所有这里要做东京仓出库操作
+    # 如果目标仓库是广州, 因为之前到东京仓的时候, 已经入库了东京仓和预分配了库存,
+    # 所以这里要对东京仓做出库操作
     # if '东京仓' in poObj.supplier.name:
     if '广州' in poObj.inventory.name:
         stockTokyo = Stock.objects.get(
@@ -365,6 +365,9 @@ def inStock(poObj, poiObj, qty):
         stockORObj.save()
 
     if poiObj.quantity != qty:  # 修正采购项采购数量为实际值
+        logger.warning(
+            'PurchaseOrderClear: 采购单[%s], 商品[%s]的采购数量[%d]和实际到库数量[%d]不符',
+            poObj.orderid, poiObj.product.jancode, poiObj.quantity, qty)
         poiObj.quantity = qty
         poiObj.save()
 
@@ -398,16 +401,12 @@ class DomesticStockIn(views.APIView):
 # 清采购单(采购单入库)
 class PurchaseOrderClear(views.APIView):
     # 流程:
-    #   1. 标记采购单状态: 已入库.
-    #   2. stock入库(减inflight, 增加quantity).
-    #   3. 标记订单待发货.
-    # 需要支持部分入库
-    # 采购流程中, 国内采购需要增加转运, 流程如下:
-    #   1. 采购商品到达东京, 东京仓库入库, 这个入库:
-    #      a. 标记purchaseorderitem状态为"东京仓",
-    #      b. 增加东京仓库存, 同时增加预分配
-    #   2. 增加页面, 显示所有状态为东京仓的purchaseorderitem, 东京仓库根据这个页面转运商品, 关联转运单号
-    #   3. 广州仓人员收到转运包括, 做入库操作
+    # 1. 如果是目标仓库是广州仓, 需要先把商品入库东京仓, 这里的入库和最终入库不一样,
+    #    是增加库存数量, 同时增加预分配数量 ( 类似从东京仓采购做的操作 ), 不会把订单
+    #    状态置为需面单/待发货
+    # 2. 如果目标仓库是其他, 入库商品(增加商品库存数量, 减少在途商品数量), 同时标记
+    #    关联订单为需面单/待发货
+    # 两者都需要考虑到库数量有出入的情况
     def put(self, request, format=None):
         id = request.data.get('id')
         inventory_id = request.data.get('inventory')
@@ -429,13 +428,18 @@ class PurchaseOrderClear(views.APIView):
                 # 1. 标记订单明细状态
                 # 2. 采购单状态(入库中/转运中)
                 # 3. 入东京仓, 增加预分配(preallocation)
-                if inventory_id == 3:
+                if poObj.inventory.name == '广州':
                     if poiObj.status in ['东京仓', '转运中']:
                         continue
                     poiObj.status = '东京仓'
                     poiObj.save()
 
-                    # 不是从东京仓采购的, 入东京仓, 然后
+                    # 需要区分采购渠道
+                    # 1. 不是从东京仓渠道采购的, 入东京仓, 如果是东京仓渠道采购的, 采购的时候
+                    #    已经完成了该操作(占用库存).
+                    # 2. 另外如果是从东京仓渠道采购, 本身是个虚假采购(并没有真正的发生采购, 换
+                    #    句话说就是商品数量没有增加), 所以无需修改商品在库数量. 而对于非东京仓
+                    #    采购增加东京仓的在库数量
                     if '东京仓' not in poObj.supplier.name:
                         # 修改东京仓库存和预分配
                         try:
@@ -443,18 +447,19 @@ class PurchaseOrderClear(views.APIView):
                                 inventory=Inventory.objects.get(name='东京'),
                                 product=poiObj.product,
                             )
+                            stockTokyoObj.quantity = F('quantity') + poi['qty']
+                            stockTokyoObj.preallocation = F(
+                                'preallocation') + poi['qty']
                         except Stock.DoesNotExist:
                             stockTokyoObj = Stock(
                                 product=poiObj.product,
-                                quantity=0,
+                                quantity=poi['qty'],
                                 inventory=Inventory.objects.get(name='东京'),
-                                preallocation=0,
+                                preallocation=poi['qty'],
                                 inflight=0,
                             )
-                        stockTokyoObj.quantity = stockTokyoObj.quantity + poi['qty']
-                        stockTokyoObj.preallocation = stockTokyoObj.preallocation + poi['qty']
                         stockTokyoObj.save()
-                        # 记录入库操作stockinrecord(采购单入库)
+                        # 记录东京仓入库操作stockinrecord(采购单入库)
                         stockIRObj = StockInRecord(
                             orderid=poObj.orderid,
                             inventory=Inventory.objects.get(name='东京'),
@@ -463,54 +468,63 @@ class PurchaseOrderClear(views.APIView):
                             product=poiObj.product,
                         )
                         stockIRObj.save()
-                        if poiObj.quantity > poi['qty']:  # 少采了
-                            ords = poObj.order.filter(
-                                status='已采购',
-                                jancode=poiObj.product.jancode,
-                            ).order_by('id')
-                            incr = poi['qty']
-                            for o in ords:
-                                if o.need_purchase > incr:  # 需要把一些订单打回到待采购
-                                    o.status = '待采购'
-                                    if incr > 0:
-                                        o.need_purchase = F(
-                                            'need_purchase') - incr
-                                        incr -= o.need_purchase
-                                    o.purchaseorder = None
-                                    o.save()
 
-                                else:
+                    # 看看实际到库数量是否和采购数量一致, 这里要非常小心
+                    # 1. 少采了, 需要让关联到这个采购项的订单, 一部分打回待采购状态, 采购重新补采
+                    # 2. 多采了, 需要看看是多采的部分, 是否能满足其他待采购订单, 将其置为已采购
+                    # 另外, 记住, 这里不是最终入库, 所以不能把订单状态置为需面单/待发货, 需要等国内
+                    # 入库的时候, 采购单才是真正完成, 订单才能置位
+                    if poiObj.quantity > poi['qty']:  # 少采了
+                        ords = poObj.order.filter(
+                            status='已采购',
+                            jancode=poiObj.product.jancode,
+                        ).order_by('id')
+                        incr = poi['qty']
+                        for o in ords:
+                            if o.need_purchase > incr:  # 需要把一些订单打回到待采购
+                                o.status = '待采购'
+                                if incr > 0:
+                                    o.need_purchase = F('need_purchase') - incr
                                     incr -= o.need_purchase
-                        else:  # 正好或者多采
-                            incr = poi['qty'] - poiObj.quantity
-                            if incr == 0:
-                                continue
-                            ords = Order.objects.filter(
-                                status='待采购',
-                                jancode=poiObj.product.jancode,
-                                inventory=poObj.inventory).order_by('id')
-                            for wo in ords:  # 看看能不能匹配到跟多待采购订单
-                                if wo.need_purchase <= incr:
-                                    wo.purchaseorder = poObj
-                                    wo.status = '已采购'
-                                    wo.save()
-                                    incr -= wo.need_purchase
-                                else:
-                                    wo.need_purchase = F('need_purchase') - incr
-                                    wo.save()
-                                    break
+                                o.purchaseorder = None
+                                o.save()
 
-                        # 如果采购数量和到库数量不符合, 修正数据
-                        if poiObj.quantity != poi['qty']:
-                            stockObj = Stock.objects.get(
-                                inventory=poObj.inventory,
-                                product=poiObj.product,
-                            )
-                            stockObj.inflight = F(
-                                'inflight') - poiObj.quantity + poi['qty']
-                            stockObj.save()
-                            poiObj.quantity = poi['qty']
-                            poiObj.save()
+                            else:
+                                incr -= o.need_purchase
+                    else:  # 正好或者多采
+                        incr = poi['qty'] - poiObj.quantity
+                        if incr == 0:
+                            continue
+                        ords = Order.objects.filter(
+                            status='待采购',
+                            jancode=poiObj.product.jancode,
+                            inventory=poObj.inventory).order_by('id')
+                        for wo in ords:  # 看看能不能匹配到跟多待采购订单
+                            if wo.need_purchase <= incr:
+                                wo.purchaseorder = poObj
+                                wo.status = '已采购'
+                                wo.save()
+                                incr -= wo.need_purchase
+                            else:
+                                wo.need_purchase = F('need_purchase') - incr
+                                wo.save()
+                                break
+
+                    # 如果采购数量和到库数量不符合, 修正数据
+                    if poiObj.quantity != poi['qty']:
+                        logger.warning(
+                            'PurchaseOrderClear: 采购单[%s], 商品[%s]的采购数量[%d]和实际到库数量[%d]不符',
+                            poObj.orderid, poi['jancode'], poiObj.quantity,
+                            poi['qty'])
+                        stockObj = Stock.objects.get(
+                            inventory=poObj.inventory,
+                            product=poiObj.product,
+                        )
+                        stockObj.inflight = F(
+                            'inflight') - poiObj.quantity + poi['qty']
+                        stockObj.save()
+                        poiObj.quantity = poi['qty']
+                        poiObj.save()
 
                 else:
                     inStock(poObj, poiObj, poi['qty'])

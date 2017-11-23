@@ -2,14 +2,14 @@ import logging
 
 import arrow.arrow
 from django.db import IntegrityError, connection, transaction
-from django.db.models import Sum, Max
 from rest_framework import status, views
 from rest_framework.response import Response
-from django.db.models import F
+from django.db.models import F, Sum
 from stock.exceptions import InputError
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
                           PurchaseOrderItem, Stock, Supplier)
 
+from .order import computeOrderStatus
 logger = logging.getLogger(__name__)
 
 
@@ -289,13 +289,6 @@ class PurchaseOrderDelete(views.APIView):
         # orderObjs = poObj.order.filter(status='已采购')  # 关联订单, 状态为已采购
 
         with transaction.atomic():
-
-            # # rollback order, set order status
-            # for o in orderObjs:
-            #     o.status = '待采购'
-            #     o.purchaseorder = None  # clear relate po
-            #     o.save(update_fields=['status', 'purchaseorder'])
-
             # rollback stock, set stock preallocation
             for poi in poitemObjs:
                 ordObjs = Order.objects.filter(
@@ -320,29 +313,16 @@ class PurchaseOrderDelete(views.APIView):
                     purchaseQuantity = stockPreallocation - (
                         stockQuantity + stockInflight)
 
-                    if purchaseQuantity > 0:  # 订单需采购
-                        if purchaseQuantity < o.quantity:
-                            o.need_purchase = purchaseQuantity
-                        else:
-                            o.need_purchase = o.quantity
-                        o.status = '待采购'
-                        o.purchaseorder = None
-                    else:
-                        # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
-                        # 在途的采购单绑定, 同时标记状态为已采购
-                        if stockPreallocation > stockQuantity:
-                            o.status = '已采购'
-                            # 找到最新的采购单
-                            id = PurchaseOrder.objects.filter(
-                                purchaseorderitem__product__jancode=poi.
-                                product.jancode,
-                                inventory=stockObj.inventory,
-                                status__in=('在途中', '入库中', '转运中')).aggregate(
-                                    Max('id'))
-                            o.purchaseorder = PurchaseOrder.objects.get(
-                                id=id['id__max'])
-                        else:
-                            o.status = '待发货' if o.shippingdb else '需面单'
+                    (
+                        o.status,
+                        o.need_purchase,
+                        o.purchaseorder,
+                    ) = computeOrderStatus(
+                        purchaseQuantity,
+                        o,
+                        stockPreallocation,
+                        stockQuantity,
+                    )
                     o.save()
 
                 # rollback tokyo stock if supplier is tokyo
