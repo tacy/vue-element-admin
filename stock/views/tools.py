@@ -134,7 +134,7 @@ class ExportPrint(views.APIView):
         excel_data = [
             ['物流单号', '订单号', '收件人', '地址', '产品', '电话', '发件人', '发件人地址', '发件人电话'],
         ]
-
+        ids = [o['id'] for o in ords]
         for o in ords:
             orderObjs = Order.objects.filter(orderid=o['orderid'])
             oObj = orderObjs[0]
@@ -162,6 +162,7 @@ class ExportPrint(views.APIView):
         base64Data = base64.b64encode(save_virtual_workbook(wb))
         msg = {'tableData': base64Data}
 
+        Order.objects.filter(id__in=ids).update(importstatus='已打印')
         return Response(data=msg, status=status.HTTP_200_OK)
 
 

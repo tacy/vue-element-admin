@@ -279,7 +279,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
         "a.product_title, a.quantity, a.price, c.category_id, c.category_version, "
         "b.weight, b.brand, b.specification, a.jancode "
         "from stock_order as a inner join stock_product as b "
-        "on a.jancode=b.jancode and a.channel_name='京东' and delivery_type<>'拼邮' and a.importstatus is null and a.status in ('待采购', '需面单', '已采购') "
+        "on a.jancode=b.jancode and a.channel_name='京东' and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购') "
         "inner join stock_category as c "
         "on b.category_id=c.id")
     async with pool.acquire() as conn:
