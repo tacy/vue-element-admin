@@ -2,15 +2,14 @@ import logging
 
 import arrow.arrow
 from django.db import IntegrityError, connection, transaction
-from django.db.models import Sum, Max
 from rest_framework import status, views
 from rest_framework.response import Response
-from django.db.models import F
+from django.db.models import F, Sum
 from stock.exceptions import InputError
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
-                          PurchaseOrderItem, Stock, Supplier, StockInRecord,
-                          StockOutRecord)
+                          PurchaseOrderItem, Stock, Supplier)
 
+from .order import computeOrderStatus
 logger = logging.getLogger(__name__)
 
 
@@ -53,6 +52,98 @@ class OrderPurchaseList(views.APIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+def createPO(orderid, inventory, supplier, items, createtime):
+    # 如果在一个采购单里面, 重复录入一个商品, 会抛一致性异常
+    supplierObj = Supplier.objects.get(id=supplier)
+    inventoryObj = Inventory.objects.get(id=inventory)
+
+    try:
+        poObj = PurchaseOrder.objects.get(
+            orderid=orderid, supplier=supplierObj, inventory=inventoryObj)
+        if '在途中' not in poObj.status:
+            return {
+                'errtype': 'InputError',
+                'errmsg': '注文编号{}已经存在, 且状态非在途. 请更换注文编号'.format(orderid),
+            }
+    except PurchaseOrder.DoesNotExist:
+        poObj = PurchaseOrder(
+            orderid=orderid,
+            supplier=supplierObj,
+            inventory=inventoryObj,
+            create_time=createtime,
+            status='在途中',
+        )
+        poObj.save()
+
+    for i in items:
+        # add purchase item
+        if i['quantity'] < 1:
+            return {
+                'errtype': 'InputError',
+                'errmsg': '商品{}采购数量必须大于1)'.format(i['jancode'])
+            }
+        try:
+            productObj = Product.objects.get(jancode=i['jancode'])
+        except Product.DoesNotExist:
+            return {
+                'errtype': 'InputError',
+                'errmsg': '商品库中无该商品%s, 请先创建产品资料' % (i['jancode'], )
+            }
+
+        # 下面这段代码不需要, 直接抛出异常, 让用户知道
+        # if poObj.purchaseorderitem.filter(
+        #         product=Product.objects.get(jancode=i['jancode'])).count():
+        #     logger.warning(
+        #         'createPurchaseOrder: [%s], jancode:[%s]重复保存, 数量: %s',
+        #         orderid,
+        #         i['jancode'],
+        #         i['quantity'],
+        #     )
+        #     continue  # 之前已经保存过了
+
+        poitemObj = PurchaseOrderItem(
+            product=productObj,
+            quantity=i['quantity'],
+            purchaseorder=poObj,
+            price=i['price'])
+        poitemObj.save()
+
+        try:
+            stockObj = Stock.objects.get(
+                inventory=inventoryObj, product__jancode=i['jancode'])
+        except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
+            stockObj = Stock(
+                product=productObj,
+                inventory=inventoryObj,
+                quantity=0,
+                inflight=0,
+                preallocation=0)
+        stockObj.inflight = F('inflight') + int(i['quantity'])
+        stockObj.save()
+
+        # preallocation stock if supplier is tokyo
+        if '东京仓' in supplierObj.name:
+            stockTokyo = Stock.objects.get(
+                inventory=Inventory.objects.get(name='东京'),
+                product__jancode=i['jancode'],
+            )
+            stockTokyo.preallocation = F('preallocation') + int(i['quantity'])
+            stockTokyo.save()
+
+        orders = Order.objects.filter(
+            inventory__id=inventory, jancode=i['jancode'],
+            status='待采购').order_by('id')
+        c = int(i['quantity'])
+        for o in orders:
+            if o.need_purchase > c:
+                break
+            o.purchaseorder = poObj
+            o.status = '已采购'
+            o.save(update_fields=['status', 'purchaseorder'])
+            c = c - o.need_purchase
+    return None
+
+
 # 生成采购单
 class OrderPurchase(views.APIView):
     # TODO: 分页 / 限制只能多采不能少采
@@ -60,19 +151,20 @@ class OrderPurchase(views.APIView):
     # 流程:
     #   1. 根据注文编号(purchaseorderid)生成purchaseorder.
     #   2. 同时生成purchaseitem.
-    #   3. 标记关联订单状态:已采购, 并标注关联purchaseorder. (这里需要考虑采购和派单同时进行情况, 关联订单时需要比较时间)
+    #   3. 标记关联订单状态:已采购, 并标注关联purchaseorder. (这里需要考虑采购和派单同时进行情况, 关联订单时需要比较时间[这个废弃, 直接按照订单id先后, 去关联订单])
     #   4. 修改关联库存记录, 增加在途库存.
     #   5. 采购渠道是东京, 占用库存
     #
     def put(self, request, format=None):
         data = request.data.get('data')
-        queryTime = request.data.get('queryTime')
+        # queryTime = request.data.get('queryTime')
         inventory = request.data.get('inventory')
         results = {}
         try:
             with transaction.atomic():
                 createtime = arrow.now()
                 pos = {}
+                # 转换输入参数成{'orderid': {'supplier':, 'inventory':, 'items':[{'jancode':,'quantity':,'price':}]},}
                 for i in data:
                     # create purchaseorder
                     po_id = i.get('purchaseorderid')
@@ -80,88 +172,46 @@ class OrderPurchase(views.APIView):
                         continue
                     if not i['quantity'] or i['quantity'] < i['qty'] or not i['supplier'] or not i['price'] or (
                             inventory == 3 and i['supplier'] == '东京仓'
-                            and i['quantity'] > i['tokyo_stock']):
+                            and i['quantity'] > i['tokyo_stock']) or (
+                                po_id in pos
+                                and pos[po_id]['supplier'] != i['supplier']):
                         results = {
                             'errmsg':
                             '请检查商品{}输入. (注意, 从东京仓采购, 采购数量不能超过库存)'.format(
                                 i['jancode'])
                         }
                         raise InputError(None, None)
-                    jancode = i['jancode']
-                    if po_id not in pos:
-                        supplierOb = Supplier.objects.get(id=i['supplier'])
-                        inventoryOb = Inventory.objects.get(id=inventory)
-                        try:
-                            po = PurchaseOrder.objects.get(
-                                orderid=po_id,
-                                supplier=supplierOb,
-                                inventory=inventoryOb)
-                            if '在途中' not in po.status:
-                                results = {
-                                    'errmsg':
-                                    '注文编号{}已经存在, 且状态非在途. 请更换注文编号'.format(po_id)
-                                }
-                                raise InputError(None, None)
-                        except PurchaseOrder.DoesNotExist:
-                            po = PurchaseOrder(
-                                orderid=po_id,
-                                supplier=supplierOb,
-                                inventory=inventoryOb,
-                                create_time=createtime,
-                                status='在途中',
-                            )
-                            po.save()
-                        pos[po_id] = po
-
-                    # add purchase item
-                    price = i['price']
-                    if pos[po_id].purchaseorderitem.filter(
-                            product=Product.objects.get(
-                                jancode=jancode)).count():
-                        continue  # 之前已经保存过了
-
-                    poitem = PurchaseOrderItem(
-                        product=Product.objects.get(jancode=jancode),
-                        quantity=i['quantity'],
-                        purchaseorder=pos[po_id],
-                        price=price)
-                    poitem.save()
-
-                    # set inflight in stock
-                    stock = Stock.objects.get(
-                        inventory=inventory,
-                        product__jancode=jancode,
+                    item = {
+                        'jancode': i['jancode'],
+                        'quantity': i['quantity'],
+                        'price': i['price'],
+                    }
+                    if po_id in pos:
+                        pos[po_id]['items'].append(item)
+                    else:
+                        pos[po_id] = {
+                            'inventory': inventory,
+                            'supplier': i['supplier'],
+                            'items': [
+                                item,
+                            ]
+                        }
+                for k, v in pos.items():
+                    results = createPO(
+                        k,
+                        v['inventory'],
+                        v['supplier'],
+                        v['items'],
+                        createtime,
                     )
-                    stock.inflight = F('inflight') + int(i['quantity'])
-                    stock.save()
-
-                    # preallocation stock if supplier is tokyo
-                    if '东京仓' in supplierOb.name:
-                        stockTokyo = Stock.objects.get(
-                            inventory=Inventory.objects.get(name='东京'),
-                            product__jancode=jancode,
-                        )
-                        stockTokyo.preallocation = F('preallocation') + int(
-                            i['quantity'])
-                        stockTokyo.save()
-
-                    # 1. update order, notes: may qty != quantity
-                    # 2. if allocate_time > querytime, don't relation it.
-                    orders = Order.objects.filter(
-                        inventory=inventory, jancode=jancode, status='待采购')
-                    # orders_qty_sum = 0
-                    for o in orders:
-                        # django存的是naive的时间, 所以我们这里也要用才能比较
-                        if o.allocate_time > arrow.get(queryTime).naive:
-                            continue
-                        o.purchaseorder = pos[po_id]
-                        o.status = '已采购'
-                        o.save(update_fields=['status', 'purchaseorder'])
-                        # orders_qty_sum += o.need_purchase
-                        # if orders_qty_sum > int(i['quantity']):
-                        #     break
+                    if results:
+                        raise InputError
         except (IntegrityError, InputError) as e:
             logger.exception('保存采购单异常')
+            if e.args and e.args[0] == 1062:
+                return Response(
+                    data={'errmsg': '同一产品需合并录入'},
+                    status=status.HTTP_400_BAD_REQUEST)
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_201_CREATED)
@@ -192,95 +242,29 @@ class NoOrderPurchase(views.APIView):
         data = request.data
         logger.debug('新建采购单调试:%s', data)
         inventory = data['inventory']
+        supplier = data['supplier']
         results = {}
         try:
             with transaction.atomic():
                 createtime = arrow.now()
                 # create purchaseorder
-                supplierObj = Supplier.objects.get(id=data['supplier'])
-                inventoryObj = Inventory.objects.get(id=inventory)
-                try:
-                    poObj = PurchaseOrder.objects.get(
-                        orderid=data['orderid'],
-                        supplier=supplierObj,
-                        inventory=inventoryObj)
-                    if '在途中' not in poObj.status:
-                        results = {'errmsg': '注文编号已经存在, 且状态非在途. 请更换注文编号'}
-                        raise InputError(None, None)
-                except PurchaseOrder.DoesNotExist:
-                    poObj = PurchaseOrder(
-                        orderid=data['orderid'],
-                        supplier=supplierObj,
-                        inventory=inventoryObj,
-                        create_time=createtime,
-                        status='在途中',
-                    )
-                    poObj.save()
 
-                for i in data['items']:
-                    # add purchase item
-                    if i['quantity'] < 1:
-                        results = {
-                            'errmsg': '商品{}采购数量必须大于1)'.format(i['jancode'])
-                        }
-                        raise InputError(None, None)
-                    try:
-                        productObj = Product.objects.get(jancode=i['jancode'])
-                    except Product.DoesNotExist:
-                        results = {
-                            'errmsg': '商品库中无该商品%s, 请先创建产品资料' % (i['jancode'], )
-                        }
-                        raise IntegrityError
-                    poitemObj = PurchaseOrderItem(
-                        product=productObj,
-                        quantity=i['quantity'],
-                        purchaseorder=poObj,
-                        price=i['price'])
-                    poitemObj.save()
-
-                    try:
-                        stockObj = Stock.objects.get(
-                            inventory=inventoryObj,
-                            product__jancode=i['jancode'])
-                    except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
-                        stockObj = Stock(
-                            product=productObj,
-                            inventory=inventoryObj,
-                            quantity=0,
-                            inflight=0,
-                            preallocation=0)
-                    stockObj.inflight = stockObj.inflight + int(i['quantity'])
-                    stockObj.save()
-
-                    # preallocation stock if supplier is tokyo
-                    if '东京仓' in supplierObj.name:
-                        stockTokyo = Stock.objects.get(
-                            inventory=Inventory.objects.get(name='东京'),
-                            product__jancode=i['jancode'],
-                        )
-                        stockTokyo.preallocation = F('preallocation') + int(
-                            i['quantity'])
-                        stockTokyo.save()
-
-                    orders = Order.objects.filter(
-                        inventory__id=inventory,
-                        jancode=i['jancode'],
-                        status='待采购').order_by('id')
-                    c = int(i['quantity'])
-                    for o in orders:
-                        if o.need_purchase > c:
-                            break
-                        o.purchaseorder = poObj
-                        o.status = '已采购'
-                        o.save(update_fields=['status', 'purchaseorder'])
-                        c = c - o.need_purchase
-                return Response(status=status.HTTP_201_CREATED)
+                results = createPO(
+                    data['orderid'],
+                    inventory,
+                    supplier,
+                    data['items'],
+                    createtime,
+                )
+                if results:
+                    raise InputError
         except (IntegrityError, InputError) as e:
             if e.args and e.args[0] == 1062:
                 return Response(
                     data={'errmsg': '同一产品需合并录入'},
                     status=status.HTTP_400_BAD_REQUEST)
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_201_CREATED)
 
 
 # 删除采购单
@@ -305,13 +289,6 @@ class PurchaseOrderDelete(views.APIView):
         # orderObjs = poObj.order.filter(status='已采购')  # 关联订单, 状态为已采购
 
         with transaction.atomic():
-
-            # # rollback order, set order status
-            # for o in orderObjs:
-            #     o.status = '待采购'
-            #     o.purchaseorder = None  # clear relate po
-            #     o.save(update_fields=['status', 'purchaseorder'])
-
             # rollback stock, set stock preallocation
             for poi in poitemObjs:
                 ordObjs = Order.objects.filter(
@@ -336,29 +313,16 @@ class PurchaseOrderDelete(views.APIView):
                     purchaseQuantity = stockPreallocation - (
                         stockQuantity + stockInflight)
 
-                    if purchaseQuantity > 0:  # 订单需采购
-                        if purchaseQuantity < o.quantity:
-                            o.need_purchase = purchaseQuantity
-                        else:
-                            o.need_purchase = o.quantity
-                        o.status = '待采购'
-                        o.purchaseorder = None
-                    else:
-                        # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
-                        # 在途的采购单绑定, 同时标记状态为已采购
-                        if stockPreallocation > stockQuantity:
-                            o.status = '已采购'
-                            # 找到最新的采购单
-                            id = PurchaseOrder.objects.filter(
-                                purchaseorderitem__product__jancode=poi.
-                                product.jancode,
-                                inventory=stockObj.inventory,
-                                status__in=('在途中', '入库中', '转运中')).aggregate(
-                                    Max('id'))
-                            o.purchaseorder = PurchaseOrder.objects.get(
-                                id=id['id__max'])
-                        else:
-                            o.status = '待发货' if o.shippingdb else '需面单'
+                    (
+                        o.status,
+                        o.need_purchase,
+                        o.purchaseorder,
+                    ) = computeOrderStatus(
+                        purchaseQuantity,
+                        o,
+                        stockPreallocation,
+                        stockQuantity,
+                    )
                     o.save()
 
                 # rollback tokyo stock if supplier is tokyo
@@ -373,123 +337,6 @@ class PurchaseOrderDelete(views.APIView):
             # mark purchaseorder status as '删除'
             poObj.status = '已删除'
             poObj.save(update_fields=['status'])
-            return Response(status=status.HTTP_200_OK)
-
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-# 清采购单(采购单入库)
-class PurchaseOrderClear(views.APIView):
-    # 流程:
-    #   1. 标记采购单状态: 已入库.
-    #   2. stock入库(减inflight, 增加quantity).
-    #   3. 标记订单待发货.
-    # 需要支持部分入库
-    # 采购流程中, 国内采购需要增加转运, 流程如下:
-    #   1. 采购商品到达东京, 东京仓库入库, 这个入库只是标记purchaseorderitem状态为"东京仓", 不做其他操作
-    #   2. 增加页面, 显示所有状态为东京仓的purchaseorderitem, 东京仓库根据这个页面转运商品, 关联转运单号
-    #   3. 广州仓人员收到转运包括, 做入库操作
-    def put(self, request, format=None):
-        id = request.data.get('id')
-        inventory_id = request.data.get('inventory')
-        pois = request.data.get('pois')
-        logger.debug('PurchaseOrderClear入库调试: 用户输入 - {}'.format(request.data))
-        poObj = PurchaseOrder.objects.get(id=id)  # 采购单
-
-        with transaction.atomic():
-            # mark purchaseorder
-            # poObj.status = '入库'
-            # poObj.save(update_fields=['status'])
-
-            # stock in
-            for poi in pois:
-                poiObj = poObj.purchaseorderitem.get(
-                    product__jancode=poi['jancode'])
-                if not poi['qty'] or '已入库' == poiObj.status:
-                    continue
-
-                if inventory_id == 3:  # 如果是广州仓库, 只标记订单明细状态, 和采购单状态(入库中/转运中)
-                    if poiObj.status in ['东京仓', '转运中']:
-                        continue
-                    poiObj.status = '东京仓'
-                    poiObj.save()
-                    continue
-
-                poiObj.status = '已入库'
-                poiObj.stockin_date = arrow.now().format('YYYY-MM-DD HH:mm:ss')
-                poiObj.save()
-
-                inventory = Inventory.objects.get(id=inventory_id)
-                stockObj = Stock.objects.get(
-                    product__jancode=poi['jancode'], inventory=inventory)
-                # poi.quantity记录的是采购数量, qty是实际到库数量.
-                # 入库实际到库数量, 扣减inflight数量用采购数量.
-                # TODO: 如果实际到库少于采购数量, 需要处理漏采(漏采需补采购)
-                cp = 0
-                if poiObj.quantity < poi['qty']:
-                    cp = poi['qty']
-                else:
-                    cp = poiObj.quantity
-                stockObj.quantity = F('quantity') + cp
-                stockObj.inflight = F('inflight') - poiObj.quantity
-                stockObj.save()
-                # 记录入库操作stockinrecord(采购单入库)
-                stockIRObj = StockInRecord(
-                    orderid=poObj.orderid,
-                    inventory=poObj.inventory,
-                    quantity=cp,
-                    in_date=poiObj.stockin_date,
-                    product=poiObj.product,
-                )
-                stockIRObj.save()
-
-                # tokyo stock out if supplier is tokyo
-                if '东京仓' in poObj.supplier.name:
-                    stockTokyo = Stock.objects.get(
-                        inventory=Inventory.objects.get(name='东京'),
-                        product__jancode=poi['jancode'],
-                    )
-                    stockTokyo.preallocation = F(
-                        'preallocation') - poiObj.quantity
-                    # if poiObj.quantity < poi['qty']:
-                    #     stockTokyo.quantity = F('quantity') - poi['qty']
-                    # else:
-                    #     stockTokyo.quantity = F('quantity') - poiObj.quantity
-                    stockTokyo.quantity = F('quantity') - cp
-                    stockTokyo.save()
-                    # 记录出库到stockoutrecord表, 这里的orderid用采购单id
-                    stockORObj = StockOutRecord(
-                        orderid=poObj.orderid,
-                        quantity=cp,
-                        inventory=stockTokyo.inventory,
-                        product=poiObj.product,
-                        out_date=poiObj.stockin_date,
-                    )
-                    stockORObj.save()
-
-                # 如果订单没有面单, 进入需面单状态, 否则待发货状态
-                poObj.order.filter(
-                    status='已采购',
-                    jancode=poi['jancode'],
-                    shippingdb__isnull=False).update(status='待发货')
-                poObj.order.filter(
-                    status='已采购',
-                    jancode=poi['jancode'],
-                    shippingdb__isnull=True).update(status='需面单')
-
-            count = poObj.purchaseorderitem.filter(
-                status__in=['已入库', '东京仓', '转运中']).count()
-            all = poObj.purchaseorderitem.count(
-            )  # 不能和用户提交的采购明细条数比较, 用户可能在其他页面增加了采购明细, 却不刷新提交页面
-            if count > 0:
-                if count != all:
-                    poObj.status = '入库中'
-                else:
-                    poObj.status = '转运中' if inventory_id == 3 else '已入库'
-
-                poObj.save(update_fields=[
-                    'status',
-                ])
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)

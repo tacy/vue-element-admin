@@ -12,29 +12,6 @@ from stock.models import (Inventory, Order, Product, PurchaseOrder, Shipping,
 logger = logging.getLogger(__name__)
 
 
-# 拼邮订单和第三方保税订单出库操作
-# 更新订单状态, 扣减库存
-class OrderOut(views.APIView):
-    def post(self, request, format=None):
-        ord = request.data
-        with transaction.atomic():
-            ordObjs = Order.objects.get(id=ord['id'])
-            if '已发货' not in ordObjs.status:
-                ordObjs.status = '已发货'
-                ordObjs.save(update_fields=['status'])
-                productObj = Product.objects.get(jancode=ordObjs.jancode)
-                stockObj = Stock.objects.get(
-                    product=productObj, inventory=ordObjs.inventory)
-                stockObj.preallocation = F('preallocation') - ordObjs.quantity
-                stockObj.quantity = F('quantity') - ordObjs.quantity
-                stockObj.save()
-                return Response(status=status.HTTP_200_OK)
-            else:
-                results = {'errmsg': '订单已发货'}
-                return Response(
-                    data=results, status=status.HTTP_400_BAD_REQUEST)
-
-
 # 不要使用, 有问题, stock没有jancode字段了
 class OrderItemGet(views.APIView):
     def get(self, request, format=None):
@@ -139,6 +116,34 @@ class OrderTPRCreate(views.APIView):
                 orderObj = Order(**o)
                 orderObj.save()
         return Response(status=status.HTTP_200_OK)
+
+
+def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
+                       stockQuantity):
+    need_purchase = None
+    status = None
+    purchaseorder = None
+    if purchaseQuantity > 0:  # 订单需采购
+        if purchaseQuantity < ord.quantity:
+            need_purchase = purchaseQuantity
+        else:
+            need_purchase = ord.quantity
+        status = '待采购'
+        purchaseorder = None
+    else:
+        # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
+        # 在途的采购单绑定, 同时标记状态为已采购
+        if stockPreallocation > stockQuantity:
+            status = '已采购'
+            # 找到最新的采购单
+            id = PurchaseOrder.objects.filter(
+                purchaseorderitem__product__jancode=ord.jancode,
+                inventory=ord.inventory,
+                status__in=('在途中', '入库中', '转运中')).aggregate(Max('id'))
+            purchaseorder = PurchaseOrder.objects.get(id=id['id__max'])
+        else:
+            status = '待发货' if ord.shippingdb else '需面单'
+    return (status, need_purchase, purchaseorder)
 
 
 # 订单预处理
@@ -262,25 +267,7 @@ class OrderAllocate(views.APIView):
                     if not dbinventory:  # 派单
                         stockObj.preallocation = F(
                             'preallocation') + dborder.quantity  # 分配订单需要占库存
-                    # else:  # 重新派单
-                    #     if dbinventory.id != paramInventory:  # 重派单, 订单派给了新的仓库, 需要回滚之前的库存占用
-                    #         rollbackstock = Stock.objects.get(
-                    #             inventory=dbinventory.id,
-                    #             product__id=productObj.id)
-                    #         rollbackstock.preallocation = F(
-                    #             'preallocation') - dborder.quantity
-                    #         stockObj.preallocation = F(
-                    #             'preallocation') + dborder.quantity
-                    #     else:  # 重派单, 但是仓库没有改变, 无需对库存做更新
-                    #         if dborder.shipping.id == allocateData[
-                    #                 'shipping']:  # 派单信息没有变化, 无需处理.
-                    #             return Response(status=status.HTTP_200_OK)
-                    #         dborder.shipping = Shipping.objects.get(
-                    #             id=allocateData['shipping'])
-                    #         dborder.save(update_fields=[
-                    #             'shipping',
-                    #         ])
-                    #         return Response(status=status.HTTP_200_OK)
+                        dborder.inventory = relate_inventory
                     else:
                         errmsg = {
                             'errmsg':
@@ -296,34 +283,44 @@ class OrderAllocate(views.APIView):
                     dborder.allocate_time = allocate_time  # 如果更新库存表, 就需要更新派单时间
                     purchaseQuantity = stockObj.preallocation - (
                         stockObj.quantity + stockObj.inflight)
-                    if purchaseQuantity > 0:  # 订单需采购
-                        if purchaseQuantity < dborder.quantity:
-                            dborder.need_purchase = purchaseQuantity
-                        else:
-                            dborder.need_purchase = dborder.quantity
-                        dborder.status = '待采购'
-                    else:
-                        # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
-                        # 在途的采购单绑定, 同时标记状态为已采购
-                        if stockObj.preallocation > stockObj.quantity:
-                            dborder.status = '已采购'
-                            # 找到最新的采购单
-                            id = PurchaseOrder.objects.filter(
-                                purchaseorderitem__product__jancode=dborder.
-                                jancode,
-                                inventory=stockObj.inventory,
-                                # purchaseorderitem__status__isnull=True,    # 不知道为什么要判断
-                                status__in=('在途中', '入库中', '转运中')).aggregate(
-                                    Max('id'))
-                            dborder.purchaseorder = PurchaseOrder.objects.get(
-                                id=id['id__max'])
-                        else:
-                            dborder.status = '需面单'
+                    # if purchaseQuantity > 0:  # 订单需采购
+                    #     if purchaseQuantity < dborder.quantity:
+                    #         dborder.need_purchase = purchaseQuantity
+                    #     else:
+                    #         dborder.need_purchase = dborder.quantity
+                    #     dborder.status = '待采购'
+                    # else:
+                    #     # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
+                    #     # 在途的采购单绑定, 同时标记状态为已采购
+                    #     if stockObj.preallocation > stockObj.quantity:
+                    #         dborder.status = '已采购'
+                    #         # 找到最新的采购单
+                    #         id = PurchaseOrder.objects.filter(
+                    #             purchaseorderitem__product__jancode=dborder.
+                    #             jancode,
+                    #             inventory=stockObj.inventory,
+                    #             # purchaseorderitem__status__isnull=True,    # 不知道为什么要判断
+                    #             status__in=('在途中', '入库中', '转运中')).aggregate(
+                    #                 Max('id'))
+                    #         dborder.purchaseorder = PurchaseOrder.objects.get(
+                    #             id=id['id__max'])
+                    #     else:
+                    #         dborder.status = '需面单'
+
+                    (
+                        dborder.status,
+                        dborder.need_purchase,
+                        dborder.purchaseorder,
+                    ) = computeOrderStatus(
+                        purchaseQuantity,
+                        dborder,
+                        stockObj.preallocation,
+                        stockObj.quantity,
+                    )
 
                     # 更新订单和仓库信息, 如果是轨迹订单, 需要特殊处理
                     dborder.shipping = Shipping.objects.get(
                         id=allocateData['shipping'])
-                    dborder.inventory = relate_inventory
 
                     # 轨迹订单处理: 轨迹订单直接分配uex单号,不管是否需要采购
                     if uex_number:

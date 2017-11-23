@@ -373,6 +373,7 @@
       handleBatchAllocate() {
         this.temp.id = 'batchallocate'  // 特殊标记
 	this.temp.orderid = 'batchallocate'
+	this.temp.jancode = undefined
         this.dialogBatchAllocateVisible = true
       },
       handleUpdate(row) {
