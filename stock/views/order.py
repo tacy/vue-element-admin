@@ -136,6 +136,11 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
         if stockPreallocation > stockQuantity:
             status = '已采购'
             # 找到最新的采购单
+            t = stockPreallocation - stockQuantity
+            if t >= ord.quantity:  # 完全靠采购单满足
+                need_purchase = ord.quantity
+            else:
+                need_purchase = ord.quantity - t  # 部分靠采购单满足
             id = PurchaseOrder.objects.filter(
                 purchaseorderitem__product__jancode=ord.jancode,
                 inventory=ord.inventory,
