@@ -253,8 +253,9 @@
 	this.stockInData = row;
         this.dialogStockInVisible = true;
       },
-      stockIn(row) {
+      stockIn() {
         domesticStockIn(this.stockInData).then(response => {
+	  this.dialogStockInVisible = false;
 	  this.$notify({
 	    title: '成功',
 	    message: '入库完成',
@@ -268,7 +269,6 @@
 	      break;
 	    }
 	  }
-	  this.dialogStockInVisible = false;
 	});
       },
     }
