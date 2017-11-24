@@ -9,7 +9,7 @@ import async_timeout
 import xmltodict
 
 REQUEST_TIMEOUT = 30
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class UbayAPI():
@@ -26,13 +26,13 @@ class UbayAPI():
             'xml': xml,
             'sign': sign,
         }
-        log.debug('ubayapi call msg %s', data)
+        logger.debug('ubayapi call msg %s', data)
         try:
             with async_timeout.timeout(REQUEST_TIMEOUT):
                 async with self.session.post(url, data=data) as response:
                     return await response.text()
         except asyncio.TimeoutError as e:
-            log.exception(url, data)
+            logger.exception(url, data)
             return None
 
     async def pushOrder(self, orders):

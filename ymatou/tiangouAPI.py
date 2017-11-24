@@ -4,7 +4,7 @@ import logging
 import async_timeout
 
 REQUEST_TIMEOUT = 30
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class TiangouAPI():
@@ -20,7 +20,7 @@ class TiangouAPI():
                 async with self.session.post(url, data=payload) as response:
                     return await response.json()
         except asyncio.TimeoutError as e:
-            log.exception(url, payload)
+            logger.exception(url, payload)
             return None
 
     async def login(self):

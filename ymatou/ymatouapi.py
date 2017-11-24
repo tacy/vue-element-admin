@@ -11,7 +11,7 @@ import arrow
 import async_timeout
 
 REQUEST_TIMEOUT = 30
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class YmatouAPI():
@@ -43,7 +43,7 @@ class YmatouAPI():
         }
         if biz_content:
             payload['biz_content'] = json.dumps(biz_content)
-        log.debug('call YmatouAPI, method {}, biz_content: {}'.format(
+        logger.debug('call YmatouAPI, method {}, biz_content: {}'.format(
             method, payload['biz_content']))
         payload['sign'] = self.getSign(payload)
         url = self.urltpl.format(self.appid, method)
@@ -52,7 +52,7 @@ class YmatouAPI():
                 async with self.session.post(url, json=payload) as response:
                     return await response.json()
         except asyncio.TimeoutError as e:
-            log.exception(method)
+            logger.exception(method)
             return None
 
     async def getOrderList(self, start, end):
@@ -159,7 +159,7 @@ class XloboAPI():
             'sign': sign_str,
         }
 
-        log.debug('xlobo api debug %s', payload)
+        logger.debug('xlobo api debug %s', payload)
 
         h = {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -171,7 +171,7 @@ class XloboAPI():
                         self.url, data=payload, headers=h) as response:
                     return await response.json()
         except asyncio.TimeoutError as e:
-            log.exception(method, enc_msg)
+            logger.exception(method, enc_msg)
             return None
 
     async def getCategory(self):
