@@ -1,0 +1,377 @@
+[
+{
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+        "password": "pbkdf2_sha256$36000$vZBMcVax7J1O$SR6BjNKSt7tB8/AD8HCnB36QWY+OH2WMkPX9oiQWFtA=",
+        "last_login": "2017-11-21T14:46:28",
+        "is_superuser": true,
+        "username": "tacy_lee",
+        "first_name": "admin",
+        "last_name": "",
+        "email": "tacy.lee@gmail.com",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2017-02-04T15:28:42",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "stock.inventory",
+    "pk": 1,
+    "fields": {
+        "name": "\u8d1d\u6d77",
+        "address": "\u4e1c\u4eac",
+        "phone": "11111111",
+        "priority": "3"
+    }
+},
+{
+    "model": "stock.inventory",
+    "pk": 3,
+    "fields": {
+        "name": "\u5e7f\u5dde",
+        "address": "\u5e7f\u5dde\u4f5b\u5c71",
+        "phone": "2029302",
+        "priority": "2"
+    }
+},
+{
+    "model": "stock.inventory",
+    "pk": 4,
+    "fields": {
+        "name": "\u4e1c\u4eac",
+        "address": "\u81ea\u5df1\u4ed3",
+        "phone": "00000000",
+        "priority": "1"
+    }
+},
+{
+    "model": "stock.supplier",
+    "pk": 1,
+    "fields": {
+        "name": "Amazon",
+        "address": "tokyo",
+        "phone": "11111111",
+        "priority": "10"
+    }
+},
+{
+    "model": "stock.supplier",
+    "pk": 2,
+    "fields": {
+        "name": "Rakuten",
+        "address": "333",
+        "phone": "333",
+        "priority": "11"
+    }
+},
+{
+    "model": "stock.supplier",
+    "pk": 12,
+    "fields": {
+        "name": "\u4e1c\u4eac\u4ed3",
+        "address": "\u4e1c\u4eac",
+        "phone": "\u8c03\u62e8\u5e93\u5b58",
+        "priority": "21"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 1,
+    "fields": {
+        "inventory": 1,
+        "name": "\u865a\u4ed3\u7535\u5546",
+        "delivery_company": "Y068",
+        "tiangou_company": "735",
+        "priority": "70"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 2,
+    "fields": {
+        "inventory": 1,
+        "name": "\u8d1d\u6d77\u76f4\u90ae\u7535\u5546",
+        "delivery_company": "Y068",
+        "tiangou_company": "735",
+        "priority": "71"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 5,
+    "fields": {
+        "inventory": 3,
+        "name": "\u62fc\u90ae",
+        "delivery_company": "Y048",
+        "tiangou_company": "767",
+        "priority": "11"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 6,
+    "fields": {
+        "inventory": 4,
+        "name": "\u76f4\u90ae\u7535\u5546",
+        "delivery_company": "Y068",
+        "tiangou_company": "735",
+        "priority": "10"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 8,
+    "fields": {
+        "inventory": 4,
+        "name": "EMS",
+        "delivery_company": "Y048",
+        "tiangou_company": "742",
+        "priority": "12"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 9,
+    "fields": {
+        "inventory": 4,
+        "name": "EPACK",
+        "delivery_company": "Y048",
+        "tiangou_company": "742",
+        "priority": "21"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 10,
+    "fields": {
+        "inventory": 4,
+        "name": "SAL",
+        "delivery_company": "Y048",
+        "tiangou_company": "742",
+        "priority": "22"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 11,
+    "fields": {
+        "inventory": 4,
+        "name": "SURFACE",
+        "delivery_company": "Y048",
+        "tiangou_company": "742",
+        "priority": "23"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 15,
+    "fields": {
+        "inventory": 1,
+        "name": "\u8d1d\u6d77EMS",
+        "delivery_company": "Y048",
+        "tiangou_company": "742",
+        "priority": "90"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 16,
+    "fields": {
+        "inventory": 3,
+        "name": "\u8f68\u8ff9",
+        "delivery_company": "Y139",
+        "tiangou_company": "767",
+        "priority": "13"
+    }
+},
+{
+    "model": "stock.shipping",
+    "pk": 18,
+    "fields": {
+        "inventory": 4,
+        "name": "\u65e5\u672c\u56fd\u5185",
+        "delivery_company": "\u65e0",
+        "tiangou_company": "\u65e0",
+        "priority": "99"
+    }
+},
+{
+    "model": "stock.category",
+    "pk": 1,
+    "fields": {
+        "category_id": "1",
+        "category_cn_name": "\u5f69\u5986\u62a4\u7406",
+        "category_en_name": "Cosmetics/Skin Care",
+        "category_level": 1,
+        "category_parent_id": "0",
+        "category_version": "1.0"
+    }
+},
+{
+    "model": "stock.category",
+    "pk": 6,
+    "fields": {
+        "category_id": "6",
+        "category_cn_name": "\u5bb6\u7528\u62a4\u7406\u54c1/\u5c0f\u7535\u5668",
+        "category_en_name": "Household/Small Electrical Appliances",
+        "category_level": 1,
+        "category_parent_id": "0",
+        "category_version": "1.0"
+    }
+},
+{
+    "model": "stock.category",
+    "pk": 63,
+    "fields": {
+        "category_id": "63",
+        "category_cn_name": "\u7535\u5439\u98ce",
+        "category_en_name": "Hair Dryer",
+        "category_level": 2,
+        "category_parent_id": "6",
+        "category_version": "1.0"
+    }
+},
+{
+    "model": "stock.category",
+    "pk": 64,
+    "fields": {
+        "category_id": "64",
+        "category_cn_name": "\u7535\u52a8\u7259\u5237",
+        "category_en_name": "Electric Toothbrush",
+        "category_level": 2,
+        "category_parent_id": "6",
+        "category_version": "1.0"
+    }
+},
+{
+    "model": "stock.category",
+    "pk": 129,
+    "fields": {
+        "category_id": "129",
+        "category_cn_name": "\u9762\u971c",
+        "category_en_name": "Face Cream",
+        "category_level": 2,
+        "category_parent_id": "1",
+        "category_version": "1.0"
+    }
+},
+{
+    "model": "stock.category",
+    "pk": 130,
+    "fields": {
+        "category_id": "130",
+        "category_cn_name": "\u773c\u971c",
+        "category_en_name": "Eye Cream",
+        "category_level": 2,
+        "category_parent_id": "1",
+        "category_version": "1.0"
+    }
+},
+{
+    "model": "stock.product",
+    "pk": 1,
+    "fields": {
+        "name": "\u6bd4\u57fa\u5c3c\u6cf3\u8863\u84dd\u8272\u788e\u82b1",
+        "jancode": "11417081900023",
+        "category": 63,
+        "brand": "\u672a\u77e5",
+        "origin": null,
+        "model": null,
+        "specification": " F\u5747\u7801",
+        "size": null,
+        "proddesc": null,
+        "unit": null,
+        "expired": null,
+        "weight": null,
+        "purchase_link1": null,
+        "purchase_link2": null,
+        "purchase_link3": null
+    }
+},
+{
+    "model": "stock.product",
+    "pk": 2,
+    "fields": {
+        "name": "SAKURA LOVE\u6a31\u7231\u81c0\u90e8\u4fdd\u6e7f\u971c",
+        "jancode": "4589923572727",
+        "category": 64,
+        "brand": "SL",
+        "origin": null,
+        "model": null,
+        "specification": "100ml",
+        "size": null,
+        "proddesc": null,
+        "unit": null,
+        "expired": null,
+        "weight": null,
+        "purchase_link1": null,
+        "purchase_link2": null,
+        "purchase_link3": null
+    }
+},
+{
+    "model": "stock.product",
+    "pk": 3,
+    "fields": {
+        "name": "JINS PC \u6210\u4eba\u62a4\u76ee\u773c\u955cdaily use",
+        "jancode": "4560414840143",
+        "category": 129,
+        "brand": "JINS",
+        "origin": "\u4e2d\u56fd",
+        "model": null,
+        "specification": "\u767d\u6846 25% \u5851\u6599",
+        "size": null,
+        "proddesc": null,
+        "unit": null,
+        "expired": null,
+        "weight": null,
+        "purchase_link1": null,
+        "purchase_link2": null,
+        "purchase_link3": null
+    }
+},
+{
+    "model": "stock.product",
+    "pk": 4,
+    "fields": {
+        "name": "champion\u4e03\u5206\u8896\u62fc\u8272\u5706\u9886T\u6064",
+        "jancode": "10617081900013",
+        "category": 130,
+        "brand": "champion",
+        "origin": null,
+        "model": null,
+        "specification": "\u7070\u9ed1\u8272 L",
+        "size": null,
+        "proddesc": null,
+        "unit": null,
+        "expired": null,
+        "weight": null,
+        "purchase_link1": null,
+        "purchase_link2": null,
+        "purchase_link3": null
+    }
+},
+{
+    "model": "stock.bondedproduct",
+    "pk": 8,
+    "fields": {
+        "product_name": "\u8d1d\u4eb2\u6bcd\u4e73\u5b9e\u611f\u5bbd\u53e3\u8010\u70ed\u5851\u6599\u5976\u74f6 3\u4e2a\u6708\u4ee5\u4e0a\u7528 240ml \u6d45\u7eff",
+        "bonded_name": "\u5b81\u6ce2\u4fdd\u7a0e",
+        "jancode": "0305JP06101089",
+        "filing_no": "310517616780003278"
+    }
+},
+{
+    "model": "stock.bondedproduct",
+    "pk": 97,
+    "fields": {
+        "product_name": "SANA\u8c46\u4e73\u6d53\u7f29\u7f8e\u808c\u6e29\u548c\u6d17\u9762\u5976\u6d01\u9762\u4e73150g",
+        "bonded_name": "\u90d1\u5dde\u4fdd\u7a0e",
+        "jancode": "4964596457814",
+        "filing_no": "4964596457814"
+    }
+}
+]
