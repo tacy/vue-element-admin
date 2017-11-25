@@ -111,14 +111,14 @@ def createPO(orderid, inventory, supplier, items, createtime):
         try:
             stockObj = Stock.objects.get(
                 inventory=inventoryObj, product__jancode=i['jancode'])
+            stockObj.inflight = F('inflight') + int(i['quantity'])
         except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
             stockObj = Stock(
                 product=productObj,
                 inventory=inventoryObj,
                 quantity=0,
-                inflight=0,
+                inflight=int(i['quantity']),
                 preallocation=0)
-        stockObj.inflight = F('inflight') + int(i['quantity'])
         stockObj.save()
 
         # preallocation stock if supplier is tokyo
