@@ -56,6 +56,7 @@ class SyncStock(views.APIView):
                     stockObj = Stock.objects.get(
                         product=productObj, inventory=inventoryObj)
                     oldQuantity = stockObj.quantity
+                    if oldQuantity == i[2]: continue
                     # if '东京' in impInventory:
                     #     stockObj.quantity = F('quantity') + i[2]
                     # else:
@@ -67,20 +68,35 @@ class SyncStock(views.APIView):
                     if incr > 0:  # 检查是否有待采购, 如果有待采购, 标记成待发货
                         ords = Order.objects.filter(
                             jancode=i[0], inventory=inventoryObj, status='待采购')
-                        if ords:
-                            for od in ords:
-                                if od.need_purchase > incr:
-                                    od.need_purchase = F('need_purchase') - incr
-                                    od.save()
-                                    break
-                                incr = incr - od.need_purchase
-                                od.need_purchase = None
-                                if not od.shippingdb:
-                                    od.status = '需面单'
-                                else:
-                                    od.status = '待发货'
+                        for od in ords:
+                            if od.need_purchase > incr:
+                                od.need_purchase = F('need_purchase') - incr
                                 od.save()
-                                if incr == 0: break
+                                break
+                            incr = incr - od.need_purchase
+                            od.need_purchase = None
+                            if not od.shippingdb:
+                                od.status = '需面单'
+                            else:
+                                od.status = '待发货'
+                            od.save()
+                            if incr == 0: break
+                    else:  # 实际库存小于系统在库库存
+                        ords = Order.objects.filter(
+                            jancode=i[0],
+                            inventory=inventoryObj,
+                            status='待发货',
+                            purchaseorder__isnull=True)
+                        incr = stockObj.quantity
+                        for od in ords:
+                            if od.quantity > incr:
+                                od.need_purchase = od.quantity - incr
+                                od.status = '待采购'
+                                od.save()
+                                incr = 0
+                                continue
+                            else:
+                                incr = incr - od.quantity
 
                 except Stock.DoesNotExist:
                     stockObj = Stock(
