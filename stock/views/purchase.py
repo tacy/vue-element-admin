@@ -291,13 +291,6 @@ class PurchaseOrderDelete(views.APIView):
         with transaction.atomic():
             # rollback stock, set stock preallocation
             for poi in poitemObjs:
-                ordObjs = Order.objects.filter(
-                    purchaseorder__id=id,
-                    jancode=poi.product.jancode,
-                    status='已采购')
-                totalQuantity = ordObjs.aggregate(
-                    Sum('quantity'))['quantity__sum']
-
                 # 回滚在途
                 stockObj = Stock.objects.get(
                     product=poi.product, inventory=poObj.inventory)
@@ -305,6 +298,24 @@ class PurchaseOrderDelete(views.APIView):
                 stockObj.save(update_fields=['inflight'])
                 stockObj.refresh_from_db()
 
+                # rollback tokyo stock if supplier is tokyo
+                if '东京仓' in poObj.supplier.name:
+                    stockTokyo = Stock.objects.get(
+                        inventory=Inventory.objects.get(name='东京'),
+                        product=poi.product,
+                    )
+                    stockTokyo.preallocation = F('preallocation') - poi.quantity
+                    stockTokyo.save()
+
+                # 判断是否关联订单, 如果有关联订单, 需要回滚, 如果没有, 跳过处理
+                ordObjs = Order.objects.filter(
+                    purchaseorder__id=id,
+                    jancode=poi.product.jancode,
+                    status='已采购')
+                totalQuantity = ordObjs.aggregate(
+                    Sum('quantity'))['quantity__sum']
+                if not totalQuantity:
+                    continue
                 stockPreallocation = stockObj.preallocation - totalQuantity  # 伪回滚占用
                 stockQuantity = stockObj.quantity
                 stockInflight = stockObj.inflight
@@ -324,15 +335,6 @@ class PurchaseOrderDelete(views.APIView):
                         stockQuantity,
                     )
                     o.save()
-
-                # rollback tokyo stock if supplier is tokyo
-                if '东京仓' in poObj.supplier.name:
-                    stockTokyo = Stock.objects.get(
-                        inventory=Inventory.objects.get(name='东京'),
-                        product=poi.product,
-                    )
-                    stockTokyo.preallocation = F('preallocation') - poi.quantity
-                    stockTokyo.save()
 
             # mark purchaseorder status as '删除'
             poObj.status = '已删除'
