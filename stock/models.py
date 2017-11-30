@@ -182,8 +182,7 @@ class PurchaseOrderItem(models.Model):
 class PurchaseDivergence(models.Model):
     purchaseorder = models.ForeignKey(
         PurchaseOrder, related_name='purchasedivergence')
-    purchaseorderitem = models.ForeignKey(
-        PurchaseOrderItem, related_name='purchasedivergence')
+    product = models.ForeignKey(Product, related_name='purchasedivergence')
     quantity = models.IntegerField(null=False)
     actually_quantity = models.IntegerField(null=False)
     inventory = models.ForeignKey(Inventory, related_name='purchasedivergence')

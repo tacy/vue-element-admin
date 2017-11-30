@@ -384,7 +384,7 @@ def inStock(poObj, poiObj, qty):
         PurchaseDivergence(
             inventory=poObj.inventory,
             purchaseorder=poObj,
-            purchaseorderitem=poiObj,
+            product=poiObj.product,
             quantity=poiObj.quantity,
             actually_quantity=qty).save()
         logger.warning(
@@ -537,7 +537,7 @@ class PurchaseOrderClear(views.APIView):
                         PurchaseDivergence(
                             inventory=Inventory.objects.get(name='东京'),
                             purchaseorder=poObj,
-                            purchaseorderitem=poiObj,
+                            product=poiObj.product,
                             quantity=poiObj.quantity,
                             actually_quantity=poi['qty']).save()
                         logger.warning(
