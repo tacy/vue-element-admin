@@ -31,39 +31,39 @@
     <el-table :data="list" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
 
       <el-table-column align="center" label="注文编号" width="150px">
-	<template scope="scope">
+        <template scope="scope">
           <el-input v-show="scope.row.edit" size="small" v-model.trim="scope.row.orderid"></el-input>
-	  <span v-show="!scope.row.edit" class="link-type" @click="getItem(scope.row)">{{scope.row.orderid}}</span>
-	</template>
+          <span v-show="!scope.row.edit" class="link-type" @click="getItem(scope.row)">{{scope.row.orderid}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="仓库" width="150px" show-overflow-tooltip>
-	<template scope="scope">
-	  <span>{{scope.row.inventory_name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.inventory_name}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="采购渠道" show-overflow-tooltip>
-	<template scope="scope">
-	  <span>{{scope.row.supplier_name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.supplier_name}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="状态">
-	<template scope="scope">
-	  <span>{{scope.row.status}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.status}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="采购时间" width="220px">
-	<template scope="scope">
-	  <span>{{scope.row.create_time}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.create_time}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="操作" width="240px">
         <template scope="scope">
           <el-button size="small" :disabled="['已入库', '转运中', '已删除'].includes(scope.row.status) ? true:false" type="success" @click="handleStockIn(scope.row)">入 库
-	  </el-button>
+          </el-button>
           <el-button size="small" :disabled="scope.row.status === '在途中' ? false:true" type="danger" @click="handleDelete(scope.row)">删 除
           </el-button>
           <el-button v-show='!scope.row.edit' type="primary" @click='scope.row.edit=true' size="small" icon="edit">编辑</el-button>
@@ -80,25 +80,25 @@
 
     <el-dialog title="订单明细" :visible.sync="dialogItemVisible" size="small">
       <el-table :data="itemData" border fit highlight-current-row style="width: 100%">
-	<el-table-column align="center" label="商品编码" width="150px">
-	  <template scope="scope">
-	    <span>{{scope.row.jancode}}</span>
-	  </template>
+        <el-table-column align="center" label="商品编码" width="150px">
+          <template scope="scope">
+            <span>{{scope.row.jancode}}</span>
+          </template>
         </el-table-column>
-	<el-table-column align="center" label="商品名称">
-	  <template scope="scope">
-	    <span>{{scope.row.product_name}}</span>
-	  </template>
+        <el-table-column align="center" label="商品名称">
+          <template scope="scope">
+            <span>{{scope.row.product_name}}</span>
+          </template>
         </el-table-column>
-	<el-table-column align="center" label="数量" width="80px">
-	  <template scope="scope">
-	    <span>{{scope.row.quantity}}</span>
-	  </template>
+        <el-table-column align="center" label="数量" width="80px">
+          <template scope="scope">
+            <span>{{scope.row.quantity}}</span>
+          </template>
         </el-table-column>
-	<el-table-column align="center" label="价格" width="100px">
-	  <template scope="scope">
-	    <span>{{scope.row.price}}</span>
-	  </template>
+        <el-table-column align="center" label="价格" width="100px">
+          <template scope="scope">
+            <span>{{scope.row.price}}</span>
+          </template>
         </el-table-column>
       </el-table>
 
@@ -121,33 +121,33 @@
 
     <el-dialog title="采购入库" size="large" :visible.sync="dialogPOItemVisible">
       <el-form class="small-space" :model="poitemp" label-position="left" label-width="80px">
-	<el-row v-for="(p, index) in poitemp.pois">
+        <el-row v-for="(p, index) in poitemp.pois">
           <el-col :span="4">
-	    <el-form-item label="条码:" label-width="50px">
-	      <el-input :disabled="true" style="width: 120px" v-model="p.jancode"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="条码:" label-width="50px">
+              <el-input :disabled="true" style="width: 120px" v-model="p.jancode"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="8">
-	    <el-form-item label="名称:" label-width="50px">
-	      <el-input :disabled="true" style="width: 300px" v-model="p.product_title"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="名称:" label-width="50px">
+              <el-input :disabled="true" style="width: 300px" v-model="p.product_title"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="4">
-	    <el-form-item label="规格:" label-width="50px">
-	      <el-input :disabled="true" style="width: 120px" v-model="p.sku_properties_name"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="规格:" label-width="50px">
+              <el-input :disabled="true" style="width: 120px" v-model="p.sku_properties_name"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="3">
-	    <el-form-item label="数量:" label-width="50px">
-	      <el-input :disabled="true" style="width: 80px" v-model="p.quantity"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="数量:" label-width="50px">
+              <el-input :disabled="true" style="width: 80px" v-model="p.quantity"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="5">
-	    <el-form-item label="实际到库:" label-width="80px">
-	      <el-input style="width: 120px" :disabled="p.status" v-model.number="p.qty" type="number"></el-input>
-	    </el-form-item>
-	  </el-col>
-	</el-row>
+            <el-form-item label="实际到库:" label-width="80px">
+              <el-input style="width: 120px" :disabled="p.status" v-model.number="p.qty" type="number"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogPOItemVisible=false">取消</el-button>
@@ -161,7 +161,7 @@
 <script>
   import { parseTime } from 'utils';
   import { fetchInventory, fetchSupplier } from 'api/orders';
-  import { fetchPurchaseOrder, fetchPurchaseOrderItem, purchaseOrderDelete, purchaseOrderClear,updateOrder } from 'api/purchases';
+  import { fetchPurchaseOrder, fetchPurchaseOrderItem, purchaseOrderDelete, purchaseOrderClear, updateOrder } from 'api/purchases';
 
   export default {
     data() {
@@ -170,36 +170,36 @@
         listLoading: true,
         total: null,
         dialogItemVisible: false,
-	disableSubmit: false,
-	dialogPOItemVisible: false,
-	dialogFormVisible: false,
+        disableSubmit: false,
+        dialogPOItemVisible: false,
+        dialogFormVisible: false,
         inventoryOptions: [],
-	supplierOptions: [],
-	statusOptions: ['在途中', '入库中', '转运中', '已入库', '已删除'],
+        supplierOptions: [],
+        statusOptions: ['在途中', '入库中', '转运中', '已入库', '已删除'],
         listQuery: {
           page: 1,
           limit: 10,
-	  status: undefined,
+          status: undefined,
           inventory: undefined,
-	  supplier: undefined,
-	  orderid: undefined,
-	  jancode: undefined,
-	  product_name: undefined,
+          supplier: undefined,
+          orderid: undefined,
+          jancode: undefined,
+          product_name: undefined
         },
-	temp: {
+        temp: {
           id: undefined,
-	  status: undefined
+          status: undefined
         },
-	poitemp: {
-	  id: undefined,
-	  inventory: undefined,
-	  pois: [],
-	},
-	listItem: {
-	  limit:50,
-	  purchaseorder: undefined
-	},
-        itemData: [],
+        poitemp: {
+          id: undefined,
+          inventory: undefined,
+          pois: []
+        },
+        listItem: {
+          limit: 50,
+          purchaseorder: undefined
+        },
+        itemData: []
       }
     },
     created() {
@@ -217,28 +217,28 @@
             return v
           });
           for (const t of this.list) {
- 	    const index = this.list.indexOf(t);
-	    const tmp = [];
-	    for (const o of t.purchaseorderitem) {
-	      const poi = o.split('@')
-	      const qty = null
-	      const disabledStatus = false
-	      if ( poi[5] !== 'None' ) {
-	        qty = poi[3]
-		disabledStatus = true
-	      }
-	      tmp.push({
-	        jancode: poi[0],
-		product_title: poi[1],
-		sku_properties_name: poi[2],
-		quantity: poi[3],
-		price: poi[4],
-		qty: qty,
-		status: disabledStatus
-	      });
-	    }
-	    this.list[index].pois = tmp;
-	  }
+            const index = this.list.indexOf(t);
+            const tmp = [];
+            for (const o of t.purchaseorderitem) {
+              const poi = o.split('@')
+              const qty = null
+              const disabledStatus = false
+              if (poi[5] !== 'None') {
+                qty = poi[3]
+                disabledStatus = true
+              }
+              tmp.push({
+                jancode: poi[0],
+                product_title: poi[1],
+                sku_properties_name: poi[2],
+                quantity: poi[3],
+                price: poi[4],
+                qty,
+                status: disabledStatus
+              });
+            }
+            this.list[index].pois = tmp;
+          }
           this.total = response.data.count;
           this.listLoading = false;
         })
@@ -255,7 +255,7 @@
         })
       },
       handleFilter() {
-        this.listQuery.page=1;
+        this.listQuery.page = 1;
         this.getPurchaseOrder();
       },
       handleSizeChange(val) {
@@ -268,56 +268,56 @@
       },
       getItem(row) {
         this.dialogItemVisible = true;
-	this.listItem.purchaseorder = row.id,
+        this.listItem.purchaseorder = row.id,
         fetchPurchaseOrderItem(this.listItem).then(response => {
           this.itemData = response.data.results;
         })
       },
       handleDelete(row) {
         this.temp = Object.assign({}, row);
-	this.dialogFormVisible = true;
+        this.dialogFormVisible = true;
       },
       handleStockIn(row) {
         this.poitemp = row;
-	this.dialogPOItemVisible = true;
-	this.disableSubmit=false;
+        this.dialogPOItemVisible = true;
+        this.disableSubmit = false;
       },
       clearPurchaseOrder() {
-        this.disableSubmit=true
+        this.disableSubmit = true
         purchaseOrderClear(this.poitemp).then(response => {
-	  this.$notify({
-	    title: '成功',
-	    message: '入库成功',
-	    type: 'success',
-	    duration: 2000
-	  });
-	  this.dialogPOItemVisible = false;
-	  this.handleCurrentChange(this.listQuery.page);
-	});
+          this.$notify({
+            title: '成功',
+            message: '入库成功',
+            type: 'success',
+            duration: 2000
+          });
+          this.dialogPOItemVisible = false;
+          this.handleCurrentChange(this.listQuery.page);
+        });
       },
       updatePurchaseOrder(row) {
-        const data = {'orderid': row.orderid}
-        updateOrder(data, '/purchase/'+row.id+'/').then(response => {
-	  this.$notify({
-	    title: '成功',
-	    message: '更新成功',
-	    type: 'success',
-	    duration: 2000
-	  });
-	  row.edit = false;
+        const data = { orderid: row.orderid }
+        updateOrder(data, '/purchase/' + row.id + '/').then(response => {
+          this.$notify({
+            title: '成功',
+            message: '更新成功',
+            type: 'success',
+            duration: 2000
+          });
+          row.edit = false;
         })
       },
       deletePurchaseOrder() {
         purchaseOrderDelete(this.temp).then(response => {
           this.temp.status = '已删除';
-	  for (const v of this.list) {
-	    if (v.id === this.temp.id) {
-	      const index = this.list.indexOf(v);
-	      this.list.splice(index, 1, this.temp);
-	      break;
-	    }
+          for (const v of this.list) {
+            if (v.id === this.temp.id) {
+              const index = this.list.indexOf(v);
+              this.list.splice(index, 1, this.temp);
+              break;
+            }
           }
-	  this.dialogFormVisible = false
+          this.dialogFormVisible = false
         })
       }
     }

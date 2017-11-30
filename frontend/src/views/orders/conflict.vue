@@ -108,14 +108,14 @@
         },
         temp: {
           id: undefined,
-	  conflict_feedback: undefined,
+          conflict_feedback: undefined,
           inventory: undefined,
           shipping: undefined,
           jancode: undefined,
           status: undefined
         },
         dialogFormVisible: false,
-	dialogDeleteVisible: false,
+        dialogDeleteVisible: false,
         dialogStatus: '',
         textMap: {
           update: '编辑',
@@ -137,7 +137,7 @@
         })
       },
       handleFilter() {
-        this.listQuery.page=1;
+        this.listQuery.page = 1;
         this.getList();
       },
       handleSizeChange(val) {
@@ -155,14 +155,14 @@
       },
       handleDelete(row) {
         this.temp = Object.assign({}, row);
-	this.temp.status = '已删除'
-	this.dialogDeleteVisible = true;
+        this.temp.status = '已删除'
+        this.dialogDeleteVisible = true;
       },
       conflict() {
-        this.temp.jancode=this.temp.jancode.trim();
-	this.temp.receiver_name=this.temp.receiver_name.trim();
-	this.temp.receiver_mobile=this.temp.receiver_mobile.trim();
-	this.temp.receiver_address=this.temp.receiver_address.trim();
+        this.temp.jancode = this.temp.jancode.trim();
+        this.temp.receiver_name = this.temp.receiver_name.trim();
+        this.temp.receiver_mobile = this.temp.receiver_mobile.trim();
+        this.temp.receiver_address = this.temp.receiver_address.trim();
         orderConflict(this.temp).then(response => {
           // 刷新列表数据
           for (const v of this.list) {
@@ -174,7 +174,7 @@
           }
 
           this.dialogFormVisible = false;
-	  this.dialogDeleteVisible = false;
+          this.dialogDeleteVisible = false;
           this.$notify({
             title: '成功',
             message: '操作成功',

@@ -3,7 +3,8 @@ from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from .models import (PurchaseOrder, Product, Order, Stock, Shipping, Inventory,
                      PurchaseOrderItem, Supplier, ShippingDB, BondedProduct,
-                     StockInRecord, StockOutRecord, UexTrack)
+                     StockInRecord, StockOutRecord, UexTrack,
+                     PurchaseDivergence)
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -43,6 +44,15 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = PurchaseOrderItem
+        fields = '__all__'
+
+
+class PurchaseDivergenceSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = PurchaseDivergence
         fields = '__all__'
 
 
@@ -204,4 +214,4 @@ class UexTrackSerializer(serializers.ModelSerializer):
         """Meta class to map serializer's fields with the model fields."""
         model = UexTrack
         # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
-        fields = '__all__'        
+        fields = '__all__'

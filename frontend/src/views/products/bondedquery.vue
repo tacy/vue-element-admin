@@ -15,29 +15,29 @@
     <el-table :data="list" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
 
       <el-table-column align="center" label="条码" width="150px">
-	<template scope="scope">
-	  <span>{{scope.row.jancode}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.jancode}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="保税仓" width="120px">
-	<template scope="scope">
-	  <span>{{scope.row.bonded_name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.bonded_name}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="名称">
-	<template scope="scope">
+        <template scope="scope">
           <el-input v-show="scope.row.edit" size="small" v-model.trim="scope.row.product_name"></el-input>
           <span v-show="!scope.row.edit">{{ scope.row.product_name }}</span>
-	</template>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="备案号" width="200px">
-	<template scope="scope">
+        <template scope="scope">
           <el-input v-show="scope.row.edit" size="small" v-model.trim="scope.row.filing_no"></el-input>
           <span v-show="!scope.row.edit">{{ scope.row.filing_no }}</span>
-	</template>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="操作" width="100">
         <template scope="scope">
@@ -56,11 +56,11 @@
           <el-input v-model.trim="temp.product_name"></el-input>
         </el-form-item>
         <el-form-item label="保税仓">
-	  <el-select clearable style="width: 330px" class="filter-item" v-model="temp.bonded_name" placeholder="选择保税仓">
-	    <el-option v-for="item in bondednameOptions" :key="item" :label="item" :value="item">
-	    </el-option>
-	  </el-select>
-	</el-form-item>
+          <el-select clearable style="width: 330px" class="filter-item" v-model="temp.bonded_name" placeholder="选择保税仓">
+            <el-option v-for="item in bondednameOptions" :key="item" :label="item" :value="item">
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="备案号">
           <el-input v-model.trim="temp.filing_no"></el-input>
         </el-form-item>
@@ -91,20 +91,20 @@
         list: [],
         listLoading: true,
         total: null,
-	inventoryOptions: [],
-	dialogCreateVisible: false,
-	bondednameOptions: ['郑州保税', '宁波保税'],
-	temp: {
-	  jancode: undefined,
-	  product_name: undefined,
-	  bonded_name: undefined,
-	  filing_no: undefined
-	},
+        inventoryOptions: [],
+        dialogCreateVisible: false,
+        bondednameOptions: ['郑州保税', '宁波保税'],
+        temp: {
+          jancode: undefined,
+          product_name: undefined,
+          bonded_name: undefined,
+          filing_no: undefined
+        },
         listQuery: {
           page: 1,
           limit: 10,
-	  jancode: undefined,
-	  bonded_name: undefined
+          jancode: undefined,
+          bonded_name: undefined
         }
       }
     },
@@ -125,7 +125,7 @@
         })
       },
       handleFilter() {
-        this.listQuery.page=1;
+        this.listQuery.page = 1;
         this.getProduct();
       },
       handleSizeChange(val) {
@@ -138,34 +138,34 @@
       },
       handleCreate(row) {
         this.temp = {
-	  jancode: undefined,
-	  product_name: undefined,
-	  bonded_name: undefined,
-	  filing_no: undefined
-	},
+          jancode: undefined,
+          product_name: undefined,
+          bonded_name: undefined,
+          filing_no: undefined
+        },
         this.dialogCreateVisible = true
       },
       createProduct() {
-	createBondedProduct(this.temp).then(response => {
-	  this.dialogCreateVisible = false;
-	  this.$notify({
-	    title: '成功',
-	    message: '创建成功',
-	    type: 'success',
-	    duration: 2000
-	  });
+        createBondedProduct(this.temp).then(response => {
+          this.dialogCreateVisible = false;
+          this.$notify({
+            title: '成功',
+            message: '创建成功',
+            type: 'success',
+            duration: 2000
+          });
         })
         this.getProduct();
       },
       update(row) {
-        updateBondedProduct(row, '/bondedproduct/'+row.id+'/').then(response => {
-	  this.$notify({
-	    title: '成功',
-	    message: '更新成功',
-	    type: 'success',
-	    duration: 2000
-	  });
-	  row.edit = false;
+        updateBondedProduct(row, '/bondedproduct/' + row.id + '/').then(response => {
+          this.$notify({
+            title: '成功',
+            message: '更新成功',
+            type: 'success',
+            duration: 2000
+          });
+          row.edit = false;
         })
       }
     }

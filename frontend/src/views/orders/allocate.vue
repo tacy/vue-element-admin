@@ -144,7 +144,7 @@
           <el-input v-model.trim="temp.brand"></el-input>
         </el-form-item>
         <el-form-item label="类目">
-	  <el-cascader :options="categoryOptions" v-model="temp.category" style='width: 330px;' filterable show-all-levels clearable placeholder="请选择产品类目">
+          <el-cascader :options="categoryOptions" v-model="temp.category" style='width: 330px;' filterable show-all-levels clearable placeholder="请选择产品类目">
           </el-cascader>
           <!--el-input v-model="temp.category"></el-input-->
         </el-form-item>
@@ -169,8 +169,8 @@
           <el-option v-for="item in  shippingOptions" :key="item.name" :label="item.name" :value="item.id">
           </el-option>
         </el-select>
-	<el-checkbox clearable size="large" v-if="isDomestic" class="filter-item" v-model="isSwitchDeliveryType">转直邮</el-checkbox>
-	<el-checkbox clearable size="large" v-if="! isDomestic" class="filter-item" v-model="isSwitchDeliveryType">转拼邮</el-checkbox>
+        <el-checkbox clearable size="large" v-if="isDomestic" class="filter-item" v-model="isSwitchDeliveryType">转直邮</el-checkbox>
+        <el-checkbox clearable size="large" v-if="! isDomestic" class="filter-item" v-model="isSwitchDeliveryType">转拼邮</el-checkbox>
       </div>
 
       <el-table :data="stockData" border fit highlight-current-row style="width: 100%">
@@ -195,10 +195,10 @@
           </el-select>
         </el-form-item>
         <el-form-item label="发货方式:">
-	  <el-select clearable class="filter-item" v-model="temp.shipping" placeholder="发货方式">
-	    <el-option v-for="item in  shippingOptions" :key="item.name" :label="item.name" :value="item.id">
-	    </el-option>
-	  </el-select>
+          <el-select clearable class="filter-item" v-model="temp.shipping" placeholder="发货方式">
+            <el-option v-for="item in  shippingOptions" :key="item.name" :label="item.name" :value="item.id">
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="商品条码:">
           <el-input v-model.trim="temp.jancode" style='width: 225px' ></el-input>
@@ -224,19 +224,19 @@
       return {
         list: null,
         total: null,
-	submitting: false,
-	isDomestic: false,
-	isSwitchDeliveryType: false,
+        submitting: false,
+        isDomestic: false,
+        isSwitchDeliveryType: false,
         listLoading: true,
         listQuery: {
           page: 1,
           limit: 10,
-	  orderid: undefined,
+          orderid: undefined,
           channel_name: undefined,
           receiver_name: undefined,
-	  jancode: undefined,
+          jancode: undefined,
           status: '待处理',
-	  delivery_type_exclude: '第三方保税',
+          delivery_type_exclude: '第三方保税',
           sort: '+id'
         },
         temp: {
@@ -245,22 +245,22 @@
           shipping: undefined,
           jancode: undefined,
           status: undefined,
-	  brand: undefined,
-	  channel_name: undefined,
-	  payment: undefined,
-	  price: undefined,
-	  quantity: undefined,
-	  category: undefined,
-	  sku_properties_name: undefined,
-	  delivery_type: undefined,
+          brand: undefined,
+          channel_name: undefined,
+          payment: undefined,
+          price: undefined,
+          quantity: undefined,
+          category: undefined,
+          sku_properties_name: undefined,
+          delivery_type: undefined
         },
-	tempProduct: {
-	  name: undefined,
-	  jancode: undefined,
-	  category: undefined,
-	  brand: undefined,
-	  specification: undefined
-	},
+        tempProduct: {
+          name: undefined,
+          jancode: undefined,
+          category: undefined,
+          brand: undefined,
+          specification: undefined
+        },
         listStockQuery: {
           jancode: ''
         },
@@ -270,10 +270,10 @@
         channelnameOptions: ['洋码头', '京东'],
         inventoryOptions: [],
         shippingOptions: [],
-	categoryOptions: [],
+        categoryOptions: [],
         sortOptions: [{ label: '按ID升序列', key: '+id' }, { label: '按ID降序', key: '-id' }],
         dialogFormVisible: false,
-	dialogProductVisible: false,
+        dialogProductVisible: false,
         dialogBatchAllocateVisible: false,
         dialogStatus: '',
         textMap: {
@@ -301,8 +301,8 @@
       },
       getCategory() {
         fetchCategory().then(response => {
-	  this.categoryOptions = response.data.results;
-	})
+          this.categoryOptions = response.data.results;
+        })
       },
       getInventory() {
         fetchInventory().then(response => {
@@ -318,11 +318,11 @@
         this.listShippingQuery.inventory = this.temp.inventory;
         fetchShipping(this.listShippingQuery).then(response => {
           this.shippingOptions = response.data.results;
-	  this.temp.shipping = response.data.results[0].id
+          this.temp.shipping = response.data.results[0].id
         })
       },
       handleFilter() {
-        this.listQuery.page=1;
+        this.listQuery.page = 1;
         this.getList();
       },
       handleSizeChange(val) {
@@ -355,25 +355,24 @@
       },
       createProduct() {
         this.tempProduct.name = this.temp.product_title,
-	this.tempProduct.jancode = this.temp.jancode.trim(),
-	this.tempProduct.brand = this.temp.brand,
-	this.tempProduct.category = this.temp.category[1],
-	this.tempProduct.specification = this.temp.sku_properties_name,
-	productcreate(this.tempProduct).then(response => {
-	  this.dialogProductVisible = false;
-	  this.$notify({
-	    title: '成功',
-	    message: '创建成功',
-	    type: 'success',
-	    duration: 2000
-	  });
+        this.tempProduct.jancode = this.temp.jancode.trim(),
+        this.tempProduct.brand = this.temp.brand,
+        this.tempProduct.category = this.temp.category[1],
+        this.tempProduct.specification = this.temp.sku_properties_name,
+        productcreate(this.tempProduct).then(response => {
+          this.dialogProductVisible = false;
+          this.$notify({
+            title: '成功',
+            message: '创建成功',
+            type: 'success',
+            duration: 2000
+          });
         })
-
       },
       handleBatchAllocate() {
         this.temp.id = 'batchallocate'  // 特殊标记
-	this.temp.orderid = 'batchallocate'
-	this.temp.jancode = undefined
+        this.temp.orderid = 'batchallocate'
+        this.temp.jancode = undefined
         this.dialogBatchAllocateVisible = true
       },
       handleUpdate(row) {
@@ -392,19 +391,19 @@
         this.list.splice(index, 1);
       },
       update() {
-	this.temp.jancode=this.temp.jancode.trim()
-	if ( this.temp.payment && this.temp.quantity ) {
-	  this.temp.price = this.temp.payment/this.temp.quantity
-	}
+        this.temp.jancode = this.temp.jancode.trim()
+        if (this.temp.payment && this.temp.quantity) {
+          this.temp.price = this.temp.payment / this.temp.quantity
+        }
         orderAllocateUpdate(this.temp).then(response => {
           this.dialogFormVisible = false;
-	  for (const v of this.list) {
-	    if (v.id === this.temp.id) {
-	      const index = this.list.indexOf(v);
-	      this.list.splice(index, 1, this.temp);
-	      break;
-	    }
-	  }
+          for (const v of this.list) {
+            if (v.id === this.temp.id) {
+              const index = this.list.indexOf(v);
+              this.list.splice(index, 1, this.temp);
+              break;
+            }
+          }
           this.$notify({
             title: '成功',
             message: '更新成功',
@@ -414,37 +413,37 @@
         });
       },
       allocate() {
-        if ( ! this.isSwitchDeliveryType ) {
-	  if ( (["拼邮"].includes(this.temp.delivery_type) && this.temp.inventory !== 3) || (! ["拼邮", "第三方"].includes(this.temp.delivery_type) && this.temp.inventory === 3)) {
-	    this.$notify({
-	      title: '警告',
-	      message: '请选择正确的仓库发货!',
-	      type: 'warning',
-	      duration: 2000
-	    });
-	    return
-	  }
-	};
+        if (!this.isSwitchDeliveryType) {
+          if ((['拼邮'].includes(this.temp.delivery_type) && this.temp.inventory !== 3) || (!['拼邮', '第三方'].includes(this.temp.delivery_type) && this.temp.inventory === 3)) {
+            this.$notify({
+              title: '警告',
+              message: '请选择正确的仓库发货!',
+              type: 'warning',
+              duration: 2000
+            });
+            return
+          }
+        }
         this.submitting = true;
         orderAllocate(this.temp).then(response => {
           // 刷新列表数据
-	  const orderid = this.temp.orderid.split('-')[0]
-	  const inds = []
+          const orderid = this.temp.orderid.split('-')[0]
+          const inds = []
           for (const v of this.list) {
             if (v.orderid.includes(orderid)) {
               const index = this.list.indexOf(v);
-	      inds.push(index);
+              inds.push(index);
               // this.list.splice(index, 1);
             }
-          };
-	  for (var i=inds.length-1; i>=0; i--) {
-	    this.list.splice(inds[i],1);
-	  };
-	  this.submitting = false;
+          }
+          for (let i = inds.length - 1; i >= 0; i--) {
+            this.list.splice(inds[i], 1);
+          }
+          this.submitting = false;
           this.dialogAllocationVisible = false;
-	  if ( this.temp.id === 'batchallocate' ) {
-	   this.dialogBatchAllocateVisible = false;
-	  }
+          if (this.temp.id === 'batchallocate') {
+            this.dialogBatchAllocateVisible = false;
+          }
           this.$notify({
             title: '成功',
             message: '派单成功',
@@ -452,8 +451,8 @@
             duration: 2000
           });
         }).catch(error => {
-	  this.submitting = false;
-	})
+          this.submitting = false;
+        })
       },
       resetTemp() {
         this.temp = {
@@ -468,17 +467,17 @@
       handleFetchStock(row) {
         this.temp = Object.assign({}, row);
         this.listStockQuery.jancode = this.temp.jancode;
-	this.isSwitchDeliveryType = false;
-	this.temp.delivery_type=row.delivery_type
-	if ( row.delivery_type.includes('拼邮') ) {
-	  this.isDomestic = true
-	  this.temp.inventory=3
-  	  this.getShipping()
-	} else {
-	  this.isDomestic=false
-	  this.temp.inventory=4
-  	  this.getShipping()
-	}
+        this.isSwitchDeliveryType = false;
+        this.temp.delivery_type = row.delivery_type
+        if (row.delivery_type.includes('拼邮')) {
+          this.isDomestic = true
+          this.temp.inventory = 3
+          this.getShipping()
+        } else {
+          this.isDomestic = false
+          this.temp.inventory = 4
+          this.getShipping()
+        }
         fetchStock(this.listStockQuery).then(response => {
           this.stockData = response.data.results;
           // this.inventoryOptions = response.data.results;  // 需要优化, 构造{id,name}结构
