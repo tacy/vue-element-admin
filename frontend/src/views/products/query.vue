@@ -15,44 +15,44 @@
     <el-table :data="list" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
 
       <el-table-column align="center" label="条码" width="150px">
-	<template scope="scope">
-	  <span>{{scope.row.jancode}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.jancode}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="名称" width="300px" show-overflow-tooltip>
-	<template scope="scope">
-	  <span>{{scope.row.name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.name}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" width="150px" label="类目" show-overflow-tooltip>
-	<template scope="scope">
-	  <span>{{scope.row.category_name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.category_name}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="品牌" width="100px">
-	<template scope="scope">
-	  <span>{{scope.row.brand}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.brand}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="规格" show-overflow-tooltip>
-	<template scope="scope">
-	  <span>{{scope.row.specification}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.specification}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="重量" width="100px">
-	<template scope="scope">
-	  <span>{{scope.row.weight}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.weight}}</span>
+        </template>
       </el-table-column>
 
       <el-table-column align="center" label="操作" width="80">
         <template scope="scope">
           <el-button size="small" type="success" @click="handleUpdate(scope.row)">编辑
-	  </el-button>
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -65,82 +65,82 @@
 
     <el-dialog :title="textMap[dialogStatus]" size="small" :visible.sync="dialogFormVisible">
       <el-form :rules="rules" ref="form" class="small-space" :model="temp" label-position="left" label-width="80px">
-	<el-form-item label="名称:" label-width="60px" prop="name">
-	  <el-input style="width: 500px" v-model.trim="temp.name"></el-input>
-	</el-form-item>
-	<el-row>
+        <el-form-item label="名称:" label-width="60px" prop="name">
+          <el-input style="width: 500px" v-model.trim="temp.name"></el-input>
+        </el-form-item>
+        <el-row>
           <el-col :span="12">
-	    <el-form-item label="条码:" label-width="60px" prop="jancode">
-	      <el-input style="width: 200px" v-model.trim="temp.jancode"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="条码:" label-width="60px" prop="jancode">
+              <el-input style="width: 200px" v-model.trim="temp.jancode"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
-	    <el-form-item label="类目:" label-width="60px">
-	      <el-cascader :options="categoryOptions" v-model="selectCategory" style='width: 200px;' filterable show-all-levels placeholder="类目">
+            <el-form-item label="类目:" label-width="60px">
+              <el-cascader :options="categoryOptions" v-model="selectCategory" style='width: 200px;' filterable show-all-levels placeholder="类目">
               </el-cascader>
-	    </el-form-item>
-	  </el-col>
-	</el-row>
-	<el-row>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
           <el-col :span="12">
-	    <el-form-item label="品牌:" label-width="60px" prop="brand">
-	      <el-input style="width: 200px" v-model.trim="temp.brand"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="品牌:" label-width="60px" prop="brand">
+              <el-input style="width: 200px" v-model.trim="temp.brand"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
-	    <el-form-item label="规格:" label-width="60px" prop="specification">
-	      <el-input style="width: 200px" v-model.trim="temp.specification"></el-input>
-	    </el-form-item>
-	  </el-col>
-	</el-row>
-	<el-row>
+            <el-form-item label="规格:" label-width="60px" prop="specification">
+              <el-input style="width: 200px" v-model.trim="temp.specification"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
           <el-col :span="12">
-	    <el-form-item label="产地:" label-width="60px">
-	      <el-input style="width: 200px" v-model.trim="temp.origin"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="产地:" label-width="60px">
+              <el-input style="width: 200px" v-model.trim="temp.origin"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
-	    <el-form-item label="颜色:" label-width="60px">
-	      <el-input style="width: 200px" v-model.trim="temp.model"></el-input>
-	    </el-form-item>
-	  </el-col>
-	</el-row>
-	<el-row>
+            <el-form-item label="颜色:" label-width="60px">
+              <el-input style="width: 200px" v-model.trim="temp.model"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
           <el-col :span="12">
-	    <el-form-item label="材质:" label-width="60px">
-	      <el-input style="width: 200px" v-model.trim="temp.size"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="材质:" label-width="60px">
+              <el-input style="width: 200px" v-model.trim="temp.size"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
-	    <el-form-item label="单位:" label-width="60px">
-	      <el-input style="width: 200px" v-model.trim="temp.unit"></el-input>
-	    </el-form-item>
-	  </el-col>
-	</el-row>
-	<el-row>
+            <el-form-item label="单位:" label-width="60px">
+              <el-input style="width: 200px" v-model.trim="temp.unit"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
           <el-col :span="12">
-	    <el-form-item label="重量(g):" label-width="60px">
-	      <el-input style="width: 200px" v-model.number="temp.weight" type="number"></el-input>
-	    </el-form-item>
-	  </el-col>
+            <el-form-item label="重量(g):" label-width="60px">
+              <el-input style="width: 200px" v-model.number="temp.weight" type="number"></el-input>
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
-	    <el-form-item label="保质期:" label-width="60px">
-	      <el-input style="width: 200px" v-model.trim="temp.expired"></el-input>
-	    </el-form-item>
-	  </el-col>
-	</el-row>
+            <el-form-item label="保质期:" label-width="60px">
+              <el-input style="width: 200px" v-model.trim="temp.expired"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="描述:" label-width="60px">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" style="width: 500px" v-model.trim="temp.proddesc"></el-input>
         </el-form-item>
-	<el-form-item label="采购1:" label-width="60px" prop="purchase_link1">
-	  <el-input style="width: 500px" v-model.trim="temp.purchase_link1"></el-input>
-	</el-form-item>
-	<el-form-item label="采购2:" label-width="60px" prop="purchase_link2">
-	  <el-input style="width: 500px" v-model.trim="temp.purchase_link2"></el-input>
-	</el-form-item>
-	<el-form-item label="采购3:" label-width="60px" prop="purchase_link3">
-	  <el-input style="width: 500px" v-model.trim="temp.purchase_link3"></el-input>
-	</el-form-item>
+        <el-form-item label="采购1:" label-width="60px" prop="purchase_link1">
+          <el-input style="width: 500px" v-model.trim="temp.purchase_link1"></el-input>
+        </el-form-item>
+        <el-form-item label="采购2:" label-width="60px" prop="purchase_link2">
+          <el-input style="width: 500px" v-model.trim="temp.purchase_link2"></el-input>
+        </el-form-item>
+        <el-form-item label="采购3:" label-width="60px" prop="purchase_link3">
+          <el-input style="width: 500px" v-model.trim="temp.purchase_link3"></el-input>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible=false">取消</el-button>
@@ -163,9 +163,9 @@
         list: [],
         listLoading: true,
         total: null,
-	categoryOptions: [],
-	dialogFormVisible: false,
-	dialogStatus: '',
+        categoryOptions: [],
+        dialogFormVisible: false,
+        dialogStatus: '',
         textMap: {
           update: '编辑',
           create: '创建'
@@ -173,11 +173,11 @@
         listQuery: {
           page: 1,
           limit: 10,
-	  name: undefined,
-	  jancode: undefined,
-	  brand: undefined
+          name: undefined,
+          jancode: undefined,
+          brand: undefined
         },
-	selectCategory: [],
+        selectCategory: [],
         temp: {
           id: undefined,
           jancode: undefined,
@@ -185,31 +185,31 @@
           category: undefined,
           brand: undefined,
           specification: undefined,
-	  origin: undefined,
-	  model: undefined,
-	  size: undefined,
-	  proddesc: undefined,
-	  unit: undefined,
-	  expired: undefined,
+          origin: undefined,
+          model: undefined,
+          size: undefined,
+          proddesc: undefined,
+          unit: undefined,
+          expired: undefined,
           weight: undefined,
-	  purchase_link1: undefined,
-	  purchase_link2: undefined,
-	  purchase_link3: undefined
+          purchase_link1: undefined,
+          purchase_link2: undefined,
+          purchase_link3: undefined
         },
         rules: {
-	  name: [
-	    {required: true, message: '请输入产品名', trigger: 'blur'}
-	  ],
-	  jancode: [
-	      {required: true, message: '请输入产品条码', trigger: 'blur'}
-	  ],
-	  brand: [
-	      {required: true, message: '请输入品牌', trigger: 'blur'}
-	  ],
-	  specification: [
-	      {required: true, message: '请输入产品规格', trigger: 'blur'}
-	  ]
-	}
+          name: [
+            { required: true, message: '请输入产品名', trigger: 'blur' }
+          ],
+          jancode: [
+              { required: true, message: '请输入产品条码', trigger: 'blur' }
+          ],
+          brand: [
+              { required: true, message: '请输入品牌', trigger: 'blur' }
+          ],
+          specification: [
+              { required: true, message: '请输入产品规格', trigger: 'blur' }
+          ]
+        }
       };
     },
     created() {
@@ -227,11 +227,11 @@
       },
       getCategory() {
         fetchCategory().then(response => {
-	  this.categoryOptions = response.data.results;
-	})
+          this.categoryOptions = response.data.results;
+        })
       },
       handleFilter() {
-        this.listQuery.page=1;
+        this.listQuery.page = 1;
         this.getProduct();
       },
       handleSizeChange(val) {
@@ -244,18 +244,18 @@
       },
       handleUpdate(row) {
         this.temp = Object.assign({}, row);
-        if ( this.temp.category ) {  // set selectCategory
-	  for ( const p of this.categoryOptions ) {
-	    for ( const c of p.children ) {
-	      if (c.value === ''+this.temp.category) {
-		this.selectCategory = [p.value, c.value]
-		break;
-	      }
-	    }
-	  }
-	}
+        if (this.temp.category) {  // set selectCategory
+          for (const p of this.categoryOptions) {
+            for (const c of p.children) {
+              if (c.value === '' + this.temp.category) {
+                this.selectCategory = [p.value, c.value]
+                break;
+              }
+            }
+          }
+        }
         this.dialogStatus = 'update';
-	this.dialogFormVisible = true;
+        this.dialogFormVisible = true;
       },
       handleCreate() {
         this.selectCategory = [],
@@ -266,55 +266,55 @@
           category: undefined,
           brand: undefined,
           specification: undefined,
-	  origin: undefined,
-	  model: undefined,
-	  size: undefined,
-	  proddesc: undefined,
-	  unit: undefined,
-	  expired: undefined,
+          origin: undefined,
+          model: undefined,
+          size: undefined,
+          proddesc: undefined,
+          unit: undefined,
+          expired: undefined,
           weight: undefined,
-	  purchase_link1: undefined,
-	  purchase_link2: undefined,
-	  purchase_link3: undefined
-	},
+          purchase_link1: undefined,
+          purchase_link2: undefined,
+          purchase_link3: undefined
+        },
         this.dialogStatus = 'create';
-	this.dialogFormVisible = true;
+        this.dialogFormVisible = true;
       },
       update() {
-        if ( this.selectCategory ) {
+        if (this.selectCategory) {
           this.temp.category = this.selectCategory[1];
-	}
-	this.temp.jancode=this.temp.jancode.trim();
+        }
+        this.temp.jancode = this.temp.jancode.trim();
         updateProductJancode(this.temp).then(response => {
-	  for (const v of this.list) {
-	    if (v.id === this.temp.id) {
-	      const index = this.list.indexOf(v);
-	      this.list.splice(index, 1, this.temp);
-	      break;
-	    }
-	  }
-	  this.$notify({
-	    title: '成功',
-	    message: '更新成功',
-	    type: 'success',
-	    duration: 2000
-	  });
-	  this.dialogFormVisible = false
+          for (const v of this.list) {
+            if (v.id === this.temp.id) {
+              const index = this.list.indexOf(v);
+              this.list.splice(index, 1, this.temp);
+              break;
+            }
+          }
+          this.$notify({
+            title: '成功',
+            message: '更新成功',
+            type: 'success',
+            duration: 2000
+          });
+          this.dialogFormVisible = false
         })
       },
       create() {
-        if ( this.selectCategory ) {
+        if (this.selectCategory) {
           this.temp.category = this.selectCategory[1];
-	}
-	this.temp.jancode=this.temp.jancode.trim();
+        }
+        this.temp.jancode = this.temp.jancode.trim();
         createProduct(this.temp).then(response => {
-	  this.$notify({
-	    title: '成功',
-	    message: '创建成功',
-	    type: 'success',
-	    duration: 2000
-	  });
-	  this.dialogFormVisible = false
+          this.$notify({
+            title: '成功',
+            message: '创建成功',
+            type: 'success',
+            duration: 2000
+          });
+          this.dialogFormVisible = false
         })
       }
     }

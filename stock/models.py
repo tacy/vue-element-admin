@@ -179,6 +179,17 @@ class PurchaseOrderItem(models.Model):
             self.product.specification, self.quantity, self.price, self.status)
 
 
+class PurchaseDivergence(models.Model):
+    purchaseorder = models.ForeignKey(
+        PurchaseOrder, related_name='purchasedivergence')
+    purchaseorderitem = models.ForeignObject(
+        PurchaseOrderItem, related_name='purchasedivergence')
+    quantity = models.IntegerField(null=False)
+    actually_quantity = models.IntegerField(null=False)
+    inventory = models.ForeignObject(
+        Inventory, related_name='purchasedivergence')
+
+
 class StockInRecord(models.Model):
     inventory = models.ForeignKey(Inventory, related_name='stockinrecord')
     product = models.ForeignKey(Product, related_name='stockinrecord')

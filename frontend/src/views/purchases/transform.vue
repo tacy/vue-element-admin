@@ -2,11 +2,11 @@
   <div class="app-container calendar-list-container">
     <div class="filter-container">
       <el-select v-model="listQuery.labelVal" style="width: 120px;" class="filter-item" placeholder="请选择">
-	<el-option
-	    v-for="item in selectedOptions"
-	    :label="item.label"
-	    :value="item.value">
-	</el-option>
+        <el-option
+            v-for="item in selectedOptions"
+            :label="item.label"
+            :value="item.value">
+        </el-option>
       </el-select>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入注文编号" v-model="listQuery.orderid" v-show="listQuery.labelVal == '1'">
       </el-input>
@@ -33,44 +33,44 @@
       <el-table-column type="selection" width="45" :selectable="checkSelectable">
       </el-table-column>
       <el-table-column align="center" label="注文编号" width="120px">
-	<template scope="scope">
-	  <span>{{scope.row.orderid}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.orderid}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="商品名称" width="200px">
-	<template scope="scope">
-	  <span>{{scope.row.product_name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.product_name}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="规格" width='150px'>
-	<template scope="scope">
-	  <span>{{scope.row.product_specification}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.product_specification}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="条码" width="150px">
-	<template scope="scope">
-	  <span>{{scope.row.jancode}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.jancode}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="数量" width="80px">
-	<template scope="scope">
-	  <span>{{scope.row.quantity}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.quantity}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="状态" width="80px">
-	<template scope="scope">
-	  <span>{{scope.row.status}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.status}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="采购时间" width="130px">
-	<template scope="scope">
-	  <span>{{scope.row.purchaseorder_createtime|fmDate}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.purchaseorder_createtime|fmDate}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="运单号">
-	<template scope="scope">
-	  <span>{{scope.row.delivery_no}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.delivery_no}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="操作" width="100">
         <template scope="scope">
@@ -130,45 +130,45 @@
         dialogStockInVisible: false,
         selectedOptions: [{
           value: '1',
-	  label: '注文编号'
-	}, {
-	  value: '2',
-	  label: '商品名称'
-	}, {
-	  value: '3',
-	  label: '商品规格'
-	}, {
-	  value: '4',
-	  label: '转运单号'
-	}],
+          label: '注文编号'
+        }, {
+          value: '2',
+          label: '商品名称'
+        }, {
+          value: '3',
+          label: '商品规格'
+        }, {
+          value: '4',
+          label: '转运单号'
+        }],
         listQuery: {
           page: 1,
           limit: 50,
-	  labelVal: '1',
-	  inventory: 3,
-	  status: undefined,
-	  product_name: undefined,
-	  product_specification: undefined,
-	  orderid: undefined,
-	  jancode: undefined,
-	  delivery_no: undefined,
+          labelVal: '1',
+          inventory: 3,
+          status: undefined,
+          product_name: undefined,
+          product_specification: undefined,
+          orderid: undefined,
+          jancode: undefined,
+          delivery_no: undefined
         },
-	transformData: {
-	  purchaseorderitems: undefined,
-	  delivery_no: undefined
-	},
-	stockInData: {
-	  id: undefined,
-	  quantity: undefined,
-	  qty: undefined,
-	},
+        transformData: {
+          purchaseorderitems: undefined,
+          delivery_no: undefined
+        },
+        stockInData: {
+          id: undefined,
+          quantity: undefined,
+          qty: undefined
+        }
       }
     },
     filters: {
       fmDate(value) {
-	if (!value) return ''
-	value = value.substr(2, 8) + ' ' + value.substr(11, 5)
-	return value
+        if (!value) return ''
+        value = value.substr(2, 8) + ' ' + value.substr(11, 5)
+        return value
       }
     },
     created() {
@@ -177,26 +177,26 @@
     methods: {
       getPurchaseOrderItem() {
         this.listLoading = true;
-	if ( this.listQuery.labelVal !== '1' ) {
-	  this.listQuery.orderid=undefined
-	}
-	if ( this.listQuery.labelVal !== '2' ) {
-	  this.listQuery.product_title=undefined
-	}
-	if ( this.listQuery.labelVal !== '3' ) {
-	  this.listQuery.product_specification=undefined
-	}
-	if ( this.listQuery.labelVal !== '4' ) {
-	  this.listQuery.delivery_no=undefined
-	}
+        if (this.listQuery.labelVal !== '1') {
+          this.listQuery.orderid = undefined
+        }
+        if (this.listQuery.labelVal !== '2') {
+          this.listQuery.product_title = undefined
+        }
+        if (this.listQuery.labelVal !== '3') {
+          this.listQuery.product_specification = undefined
+        }
+        if (this.listQuery.labelVal !== '4') {
+          this.listQuery.delivery_no = undefined
+        }
         fetchPurchaseOrderItem(this.listQuery).then(response => {
-	  this.list = response.data.results;
+          this.list = response.data.results;
           this.total = response.data.count;
           this.listLoading = false;
         })
       },
       handleFilter() {
-        this.listQuery.page=1;
+        this.listQuery.page = 1;
         this.getPurchaseOrderItem();
       },
       checkSelectable(row) {
@@ -214,63 +214,63 @@
         this.getPurchaseOrderItem();
       },
       handleTransform() {
-        if (this.selectRow.length===0) {
+        if (this.selectRow.length === 0) {
           this.$message({
             type: 'error',
             message: '请选择转运商品',
             duration: 2000
           });
           return;
-        };
-	this.transformData.delivery_no = null;
+        }
+        this.transformData.delivery_no = null;
         this.dialogTransformVisible = true;
       },
       transform() {
-	this.transformData.purchaseorderitems = this.selectRow
+        this.transformData.purchaseorderitems = this.selectRow
         purchaseOrderTransform(this.transformData).then(response => {
-	  this.$notify({
-	    title: '成功',
-	    message: '转运完成',
-	    type: 'success',
-	    duration: 2000
-	  });
+          this.$notify({
+            title: '成功',
+            message: '转运完成',
+            type: 'success',
+            duration: 2000
+          });
           for (const o of this.list) {
-	    for (const s of this.selectRow ) {
-	      if (o.id===s.id) {
-	        const index = this.list.indexOf(o);
-	        // this.list[index].status = '转运中';
-		// this.list[index].delivery_no = this.transformData.delivery_no;
-	        this.list.splice(index, 1);
-		break;
-	      }
-	    }
-	  }
+            for (const s of this.selectRow) {
+              if (o.id === s.id) {
+                const index = this.list.indexOf(o);
+                // this.list[index].status = '转运中';
+                // this.list[index].delivery_no = this.transformData.delivery_no;
+                this.list.splice(index, 1);
+                break;
+              }
+            }
+          }
           this.selectRow = [];
-	  this.dialogTransformVisible=false;
-	});
+          this.dialogTransformVisible = false;
+        });
       },
       handleStockIn(row) {
-	this.stockInData = row;
+        this.stockInData = row;
         this.dialogStockInVisible = true;
       },
       stockIn() {
         domesticStockIn(this.stockInData).then(response => {
-	  this.dialogStockInVisible = false;
-	  this.$notify({
-	    title: '成功',
-	    message: '入库完成',
-	    type: 'success',
-	    duration: 2000
-	  });
+          this.dialogStockInVisible = false;
+          this.$notify({
+            title: '成功',
+            message: '入库完成',
+            type: 'success',
+            duration: 2000
+          });
           for (const o of this.list) {
-	    if (o.id===row.id) {
-	      const index = this.list.indexOf(o);
-	      this.list[index].status = '已入库';
-	      break;
-	    }
-	  }
-	});
-      },
+            if (o.id === row.id) {
+              const index = this.list.indexOf(o);
+              this.list[index].status = '已入库';
+              break;
+            }
+          }
+        });
+      }
     }
   }
 </script>

@@ -35,81 +35,81 @@
       <el-table-column type="selection" width="45" :selectable="checkSelectable">
       </el-table-column>
       <el-table-column align="center" label="订单号" width="100px">
-	<template scope="scope">
-	  <span>{{scope.row.orderid}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.orderid}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="状态" width="100px">
-	<template scope="scope">
-	  <!--span>{{scope.row.status}}</span-->
-	  <el-tag :type="scope.row.status | statusFilter">{{scope.row.status}}</el-tag>
-	</template>
+        <template scope="scope">
+          <!--span>{{scope.row.status}}</span-->
+          <el-tag :type="scope.row.status | statusFilter">{{scope.row.status}}</el-tag>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="导出状态" width="100px">
-	<template scope="scope">
-	  <span>{{scope.row.export_status}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.export_status}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="发货方式" width="100px">
-	<template scope="scope">
-	  <span>{{scope.row.shipping_name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.shipping_name}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="运输方式" width="100px">
-	<template scope="scope">
-	  <span>{{scope.row.delivery_type}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.delivery_type}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="支付时间" width="120px">
-	<template scope="scope">
-	  <span>{{scope.row.piad_time}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.piad_time}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="采购单" width="120px">
-	<template scope="scope">
-	  <span>{{scope.row.purchaseorder_orderid}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.purchaseorder_orderid}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="收件人" width="95px">
-	<template scope="scope">
-	  <span>{{scope.row.receiver_name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.receiver_name}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="电话" width="115px" show-overflow-tooltip>
-	<template scope="scope">
-	  <span>{{scope.row.receiver_mobile}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.receiver_mobile}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="地址" width="200px">
-	<template scope="scope">
-	  <span>{{scope.row.receiver_address}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.receiver_address}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="商品编码" width="100px">
-	<template scope="scope">
-	  <span>{{scope.row.jancode}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.jancode}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="数量" width="80px">
-	<template scope="scope">
-	  <span>{{scope.row.quantity}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.quantity}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="商品名" width="200px">
-	<template scope="scope">
-	  <span>{{scope.row.product_title}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.product_title}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="规格" width="180px">
-	<template scope="scope">
-	  <span>{{scope.row.sku_properties_name}}</span>
-	</template>
+        <template scope="scope">
+          <span>{{scope.row.sku_properties_name}}</span>
+        </template>
       </el-table-column>
       <el-table-column align="center" label="操作" width="80">
-	<template scope="scope">
+        <template scope="scope">
           <el-button size="small" :disabled="scope.row.status==='待发货'?false:true" type="primary" @click="handleStockOut(scope.row)">出库
-	  </el-button>
-	</template>
+          </el-button>
+        </template>
       </el-table-column>
     </el-table>
 
@@ -122,10 +122,10 @@
     <el-dialog title="订单出库" size="tiny" :visible.sync="dialogStockOutVisible">
       <el-form class="small-space" :model="stockOutData" label-position="left" label-width="70px" style='width: 500px; margin-left:50px;'>
         <el-form-item label="快递公司:" label-width="80px">
-	  <el-select allow-create filterable style="width: 120px" v-model.trim="stockOutData.domestic_delivery_company" placeholder="快递公司">
-	    <el-option v-for="item in expressOptions" :key="item" :label="item" :value="item">
-	    </el-option>
-	  </el-select>
+          <el-select allow-create filterable style="width: 120px" v-model.trim="stockOutData.domestic_delivery_company" placeholder="快递公司">
+            <el-option v-for="item in expressOptions" :key="item" :label="item" :value="item">
+            </el-option>
+          </el-select>
           <!--el-input style="width: 120px" v-model.trim="stockOutData.domestic_delivery_company"></el-input-->
         </el-form-item>
         <el-form-item label="运单号:" label-width="80px">
@@ -152,30 +152,30 @@
         listLoading: true,
         total: null,
         dialogStockOutVisible: false,
-	channelOptions: ['洋码头', '京东'],
-	statusOptions: ['待发货', '待采购', '已采购', '需介入'],
-	orderTypeOptions: ['拼邮', '保税'],
-	exportstatusOptions: ['未导出', '已导出'],
-	expressOptions: ['圆通', '顺丰', '中通', '中国邮政', '申通', '韵达'],
-	selectRow: [],
-	orderType: '拼邮',
-	stockOutData: {
-	  id: undefined,
-	  domestic_delivery_no: undefined,
-	  domestic_delivery_company: undefined,
-	},
+        channelOptions: ['洋码头', '京东'],
+        statusOptions: ['待发货', '待采购', '已采购', '需介入'],
+        orderTypeOptions: ['拼邮', '保税'],
+        exportstatusOptions: ['未导出', '已导出'],
+        expressOptions: ['圆通', '顺丰', '中通', '中国邮政', '申通', '韵达'],
+        selectRow: [],
+        orderType: '拼邮',
+        stockOutData: {
+          id: undefined,
+          domestic_delivery_no: undefined,
+          domestic_delivery_company: undefined
+        },
         listQuery: {
           page: 1,
           limit: 10,
-	  status: "待发货,待采购,已采购,需介入",
-	  unshippingdb:3,
+          status: '待发货,待采购,已采购,需介入',
+          unshippingdb: 3,
           inventory: undefined,
-	  shipping: undefined,
-	  channel_name: undefined,
-	  receiver_name: undefined,
-	  orderid: undefined,
-	  export_status: undefined,
-	  delivery_type: undefined
+          shipping: undefined,
+          channel_name: undefined,
+          receiver_name: undefined,
+          orderid: undefined,
+          export_status: undefined,
+          delivery_type: undefined
         }
       }
     },
@@ -185,7 +185,7 @@
           待发货: 'success',
           已采购: 'primary',
           需介入: 'danger',
-	  待采购: 'warning',
+          待采购: 'warning'
         };
         return statusMap[status]
       }
@@ -196,19 +196,19 @@
     methods: {
       getOrder() {
         this.listLoading = true;
-	if ( this.orderType==='拼邮' ) {
-	  this.listQuery.shipping_name='拼邮'
-	  this.listQuery.delivery_type = undefined;
-	  this.listQuery.unshippingdb = 3;
-	  if ( ! this.listQuery.status || this.listQuery.status==='待处理') {
-	    this.listQuery.status="待发货,待采购,已采购,需介入"
-	  };
-	} else {
-	  this.listQuery.shipping_name=undefined;
-	  this.listQuery.status='待处理';
-	  this.listQuery.unshippingdb = 2;
-	  this.listQuery.delivery_type = '第三方保税';
-	};
+        if (this.orderType === '拼邮') {
+          this.listQuery.shipping_name = '拼邮'
+          this.listQuery.delivery_type = undefined;
+          this.listQuery.unshippingdb = 3;
+          if (!this.listQuery.status || this.listQuery.status === '待处理') {
+            this.listQuery.status = '待发货,待采购,已采购,需介入'
+          }
+        } else {
+          this.listQuery.shipping_name = undefined;
+          this.listQuery.status = '待处理';
+          this.listQuery.unshippingdb = 2;
+          this.listQuery.delivery_type = '第三方保税';
+        }
         fetchOrder(this.listQuery).then(response => {
           this.list = response.data.results;
           this.total = response.data.count;
@@ -216,7 +216,7 @@
         })
       },
       handleFilter() {
-        this.listQuery.page=1;
+        this.listQuery.page = 1;
         this.getOrder();
       },
       handleSizeChange(val) {
@@ -235,22 +235,22 @@
       },
       handleStockOut(row) {
         this.dialogStockOutVisible = true;
-	this.stockOutData.id = row.id;
-	this.stockOutData.domestic_delivery_no = undefined
-	this.stockOutData.domestic_delivery_company = '圆通'
+        this.stockOutData.id = row.id;
+        this.stockOutData.domestic_delivery_no = undefined
+        this.stockOutData.domestic_delivery_company = '圆通'
       },
       stockOut() {
         outOrder(this.stockOutData).then(response => {
           this.dialogStockOutVisible = false;
-	  for (const v of this.list) {
-	    if (v.id === this.stockOutData.id) {
-	      const index = this.list.indexOf(v);
-	      this.list[index].status='已发货';
-	      this.list[index].domestic_delivery_no = this.stockOutData.domestic_delivery_no
-	      this.list[index].domestic_delivery_company = this.stockOutData.domestic_delivery_company
-	      break;
-	    }
-	  };
+          for (const v of this.list) {
+            if (v.id === this.stockOutData.id) {
+              const index = this.list.indexOf(v);
+              this.list[index].status = '已发货';
+              this.list[index].domestic_delivery_no = this.stockOutData.domestic_delivery_no
+              this.list[index].domestic_delivery_company = this.stockOutData.domestic_delivery_company
+              break;
+            }
+          }
           this.$notify({
             title: '成功',
             message: '出库成功',
@@ -260,66 +260,66 @@
         });
       },
       bondedOrder() {
-	const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
-	  const byteCharacters = atob(b64Data);
-	  const byteArrays = [];
-	  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-	    const slice = byteCharacters.slice(offset, offset + sliceSize);
-	    const byteNumbers = new Array(slice.length);
-	    for (let i = 0; i < slice.length; i++) {
-	      byteNumbers[i] = slice.charCodeAt(i);
-	    }
-	    const byteArray = new Uint8Array(byteNumbers);
-	    byteArrays.push(byteArray);
-	  }
-	  const blob = new Blob(byteArrays, {type: contentType});
-	  return blob;
-	};
+        const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
+          const byteCharacters = atob(b64Data);
+          const byteArrays = [];
+          for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+              byteNumbers[i] = slice.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+          }
+          const blob = new Blob(byteArrays, { type: contentType });
+          return blob;
+        };
         exportBondedOrder().then(response => {
-          const blob = b64toBlob(response.data.tableData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-	  const link = document.createElement('a')
-	  link.href = window.URL.createObjectURL(blob)
-	  link.target = "_blank";
-	  link.download = "zhengzhou_bonded_order.xlsx"
-	  link.click()
-	  // window.open(link);
+          const blob = b64toBlob(response.data.tableData, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          const link = document.createElement('a')
+          link.href = window.URL.createObjectURL(blob)
+          link.target = '_blank';
+          link.download = 'zhengzhou_bonded_order.xlsx'
+          link.click()
+          // window.open(link);
           this.getOrder();
-	});
+        });
       },
       domesticOrder() {
-        if (this.selectRow.length===0) {
+        if (this.selectRow.length === 0) {
           this.$message({
             type: 'error',
             message: '请选择面单对应订单',
             duration: 2000
           });
           return
+        }
+        const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
+          const byteCharacters = atob(b64Data);
+          const byteArrays = [];
+          for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+              byteNumbers[i] = slice.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+          }
+          const blob = new Blob(byteArrays, { type: contentType });
+          return blob;
         };
-	const b64toBlob = (b64Data, contentType='', sliceSize=512) => {
-	  const byteCharacters = atob(b64Data);
-	  const byteArrays = [];
-	  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-	    const slice = byteCharacters.slice(offset, offset + sliceSize);
-	    const byteNumbers = new Array(slice.length);
-	    for (let i = 0; i < slice.length; i++) {
-	      byteNumbers[i] = slice.charCodeAt(i);
-	    }
-	    const byteArray = new Uint8Array(byteNumbers);
-	    byteArrays.push(byteArray);
-	  }
-	  const blob = new Blob(byteArrays, {type: contentType});
-	  return blob;
-	};
         exportDomesticOrder(this.selectRow).then(response => {
-          const blob = b64toBlob(response.data.tableData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-	  const link = document.createElement('a')
-	  link.href = window.URL.createObjectURL(blob)
-	  link.target = "_blank";
-	  link.download = "domestic_order.xlsx"
-	  link.click()
-	  // window.open(link);
+          const blob = b64toBlob(response.data.tableData, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          const link = document.createElement('a')
+          link.href = window.URL.createObjectURL(blob)
+          link.target = '_blank';
+          link.download = 'domestic_order.xlsx'
+          link.click()
+          // window.open(link);
           this.getOrder();
-	});
+        });
       }
     }
   }

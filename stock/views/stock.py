@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from stock.exceptions import InputError
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
                           PurchaseOrderItem, Shipping, ShippingDB, Stock,
-                          StockInRecord, StockOutRecord)
+                          StockInRecord, StockOutRecord, PurchaseDivergence)
 from ymatou import uex, utils
 
 uex_user = '2830020@qq.com'
@@ -381,6 +381,12 @@ def inStock(poObj, poiObj, qty):
         stockORObj.save()
 
     if poiObj.quantity != qty:  # 修正采购项采购数量为实际值
+        PurchaseDivergence(
+            inventory=poObj.inventory,
+            purchaseorder=poObj,
+            purchaseorderitem=poiObj,
+            quantity=poiObj.quantity,
+            actually_quantity=qty).save()
         logger.warning(
             'PurchaseOrderClear: 采购单[%s], 商品[%s]的采购数量[%d]和实际到库数量[%d]不符',
             poObj.orderid, poiObj.product.jancode, poiObj.quantity, qty)
@@ -528,6 +534,12 @@ class PurchaseOrderClear(views.APIView):
 
                     # 如果采购数量和到库数量不符合, 修正数据
                     if poiObj.quantity != poi['qty']:
+                        PurchaseDivergence(
+                            inventory=Inventory.objects.get(name='东京'),
+                            purchaseorder=poObj,
+                            purchaseorderitem=poiObj,
+                            quantity=poiObj.quantity,
+                            actually_quantity=poi['qty']).save()
                         logger.warning(
                             'PurchaseOrderClear: 采购单[%s], 商品[%s]的采购数量[%d]和实际到库数量[%d]不符',
                             poObj.orderid, poi['jancode'], poiObj.quantity,
