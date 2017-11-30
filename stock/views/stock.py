@@ -443,7 +443,8 @@ class PurchaseOrderClear(views.APIView):
                     product__jancode=poi['jancode'])
                 if not poi['qty'] or '已入库' == poiObj.status:
                     continue
-                if poi['qty'] <= 0:
+                qty = int(poi['qty'])
+                if qty <= 0:
                     raise InputError(None, None)
 
                 # 如果是广州仓库:
@@ -469,15 +470,15 @@ class PurchaseOrderClear(views.APIView):
                                 inventory=Inventory.objects.get(name='东京'),
                                 product=poiObj.product,
                             )
-                            stockTokyoObj.quantity = F('quantity') + poi['qty']
+                            stockTokyoObj.quantity = F('quantity') + qty
                             stockTokyoObj.preallocation = F(
-                                'preallocation') + poi['qty']
+                                'preallocation') + qty
                         except Stock.DoesNotExist:
                             stockTokyoObj = Stock(
                                 product=poiObj.product,
-                                quantity=poi['qty'],
+                                quantity=qty,
                                 inventory=Inventory.objects.get(name='东京'),
-                                preallocation=poi['qty'],
+                                preallocation=qty,
                                 inflight=0,
                             )
                         stockTokyoObj.save()
@@ -485,7 +486,7 @@ class PurchaseOrderClear(views.APIView):
                         stockIRObj = StockInRecord(
                             orderid=poObj.orderid,
                             inventory=Inventory.objects.get(name='东京'),
-                            quantity=poi['qty'],
+                            quantity=qty,
                             in_date=arrow.now().format('YYYY-MM-DD HH:mm:ss'),
                             product=poiObj.product,
                         )
@@ -496,12 +497,12 @@ class PurchaseOrderClear(views.APIView):
                     # 2. 多采了, 需要看看是多采的部分, 是否能满足其他待采购订单, 将其置为已采购
                     # 另外, 记住, 这里不是最终入库, 所以不能把订单状态置为需面单/待发货, 需要等国内
                     # 入库的时候, 采购单才是真正完成, 订单才能置位
-                    if poiObj.quantity > poi['qty']:  # 少采了
+                    if poiObj.quantity > qty:  # 少采了
                         ords = poObj.order.filter(
                             status='已采购',
                             jancode=poiObj.product.jancode,
                         ).order_by('id')
-                        incr = poi['qty']
+                        incr = qty
                         for o in ords:
                             if o.need_purchase > incr:  # 需要把一些订单打回到待采购
                                 o.status = '待采购'
@@ -514,7 +515,7 @@ class PurchaseOrderClear(views.APIView):
                             else:
                                 incr -= o.need_purchase
                     else:  # 正好或者多采
-                        incr = poi['qty'] - poiObj.quantity
+                        incr = qty - poiObj.quantity
                         if incr == 0:
                             continue
                         ords = Order.objects.filter(
@@ -533,29 +534,29 @@ class PurchaseOrderClear(views.APIView):
                                 break
 
                     # 如果采购数量和到库数量不符合, 修正数据
-                    if poiObj.quantity != poi['qty']:
+                    if poiObj.quantity != qty:
                         PurchaseDivergence(
                             inventory=Inventory.objects.get(name='东京'),
                             purchaseorder=poObj,
                             product=poiObj.product,
                             quantity=poiObj.quantity,
-                            actually_quantity=poi['qty']).save()
+                            actually_quantity=qty).save()
                         logger.warning(
                             'PurchaseOrderClear: 采购单[%s], 商品[%s]的采购数量[%d]和实际到库数量[%d]不符',
                             poObj.orderid, poi['jancode'], poiObj.quantity,
-                            poi['qty'])
+                            qty)
                         stockObj = Stock.objects.get(
                             inventory=poObj.inventory,
                             product=poiObj.product,
                         )
                         stockObj.inflight = F(
-                            'inflight') - poiObj.quantity + poi['qty']
+                            'inflight') - poiObj.quantity + qty
                         stockObj.save()
-                        poiObj.quantity = poi['qty']
+                        poiObj.quantity = qty
                         poiObj.save()
 
                 else:
-                    inStock(poObj, poiObj, poi['qty'])
+                    inStock(poObj, poiObj, qty)
 
             count = poObj.purchaseorderitem.filter(
                 status__in=['已入库', '东京仓', '转运中']).count()
