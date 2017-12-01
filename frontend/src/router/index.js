@@ -30,6 +30,7 @@ const ordersUexTrack = _import('orders/uextrack');
 const purchasesorder = _import('purchases/order');
 const purchasescreate = _import('purchases/create');
 const purchasestransform = _import('purchases/transform');
+const purchasesstockin = _import('purchases/orderstockin');
 
 /* product */
 const productsquery = _import('products/query');
@@ -51,19 +52,19 @@ const Err401 = _import('error/401');
 
 Vue.use(Router);
 
- /**
-  * icon : the icon show in the sidebar
-  * hidden : if hidden:true will not show in the sidebar
-  * redirect : if redirect:noredirect will not redirct in the levelbar
-  * noDropdown : if noDropdown:true will not has submenu
-  * meta : { role: ['admin'] }  will control the page role
-  **/
+/**
+ * icon : the icon show in the sidebar
+ * hidden : if hidden:true will not show in the sidebar
+ * redirect : if redirect:noredirect will not redirct in the levelbar
+ * noDropdown : if noDropdown:true will not has submenu
+ * meta : { role: ['admin'] }  will control the page role
+ **/
 
 export const constantRouterMap = [
-    { path: '/login', component: Login, hidden: true },
-    { path: '/authredirect', component: authRedirect, hidden: true },
-    { path: '/404', component: Err404, hidden: true },
-    { path: '/401', component: Err401, hidden: true },
+  { path: '/login', component: Login, hidden: true },
+  { path: '/authredirect', component: authRedirect, hidden: true },
+  { path: '/404', component: Err404, hidden: true },
+  { path: '/401', component: Err401, hidden: true },
   {
     path: '/',
     component: Layout,
@@ -80,7 +81,7 @@ export const constantRouterMap = [
     noDropdown: true,
     children: [{ path: 'index', component: dashboard, name: '仪表盘' }]
   }
-]
+];
 
 export default new Router({
   // mode: 'history', //后端支持可开
@@ -107,13 +108,48 @@ export const asyncRouterMap = [
     icon: 'zujian',
     children: [
       { path: 'query', component: ordersQuery, name: '查订单' },
-      { path: 'allocate', component: ordersAllocate, name: '预处理', meta: { role: ['admin'] } },
-      { path: 'purchase', component: ordersPurchase, name: '待采购', meta: { role: ['admin'] } },
-      { path: 'conflict', component: ordersConflict, name: '需介入', meta: { role: ['admin', 'normal'] } },
-      { path: 'createdb', component: ordersCreateDB, name: '出面单', meta: { role: ['admin', 'tokyo'] } },
-      { path: 'shipping', component: ordersShipping, name: '待发货', meta: { role: ['admin', 'tokyo'] } },
-      { path: 'needexport', component: ordersNeedExport, name: '拼邮&保税', meta: { role: ['admin', 'normal'] } },
-      { path: 'uextrack', component: ordersUexTrack, name: '轨迹单', meta: { role: ['admin', 'normal'] } }
+      {
+        path: 'allocate',
+        component: ordersAllocate,
+        name: '预处理',
+        meta: { role: ['admin'] }
+      },
+      {
+        path: 'purchase',
+        component: ordersPurchase,
+        name: '待采购',
+        meta: { role: ['admin'] }
+      },
+      {
+        path: 'conflict',
+        component: ordersConflict,
+        name: '需介入',
+        meta: { role: ['admin', 'normal'] }
+      },
+      {
+        path: 'createdb',
+        component: ordersCreateDB,
+        name: '出面单',
+        meta: { role: ['admin', 'tokyo'] }
+      },
+      {
+        path: 'shipping',
+        component: ordersShipping,
+        name: '待发货',
+        meta: { role: ['admin', 'tokyo'] }
+      },
+      {
+        path: 'needexport',
+        component: ordersNeedExport,
+        name: '拼邮&保税',
+        meta: { role: ['admin', 'normal'] }
+      },
+      {
+        path: 'uextrack',
+        component: ordersUexTrack,
+        name: '轨迹单',
+        meta: { role: ['admin', 'normal'] }
+      }
     ]
   },
   {
@@ -123,9 +159,30 @@ export const asyncRouterMap = [
     name: '采购',
     icon: 'zujian',
     children: [
-      { path: 'order', component: purchasesorder, name: '采购单', meta: { role: ['admin', 'tokyo'] } },
-      { path: 'transform', component: purchasestransform, name: '转运国内', meta: { role: ['admin', 'tokyo'] } },
-      { path: 'create', component: purchasescreate, name: '新采购', meta: { role: ['admin', 'tokyo'] } }
+      {
+        path: 'order',
+        component: purchasesorder,
+        name: '采购单',
+        meta: { role: ['admin', 'tokyo'] }
+      },
+      {
+        path: 'stockin',
+        component: purchasesstockin,
+        name: '采购入库',
+        meta: { role: ['admin', 'tokyo'] }
+      },
+      {
+        path: 'transform',
+        component: purchasestransform,
+        name: '转运国内',
+        meta: { role: ['admin', 'tokyo'] }
+      },
+      {
+        path: 'create',
+        component: purchasescreate,
+        name: '新采购',
+        meta: { role: ['admin', 'tokyo'] }
+      }
     ]
   },
   {
@@ -147,7 +204,12 @@ export const asyncRouterMap = [
     icon: 'zujian',
     children: [
       { path: 'query', component: stocksquery, name: '查库存' },
-      { path: 'move', component: stocksmove, name: '移库单', meta: { role: ['admin'] } }
+      {
+        path: 'move',
+        component: stocksmove,
+        name: '移库单',
+        meta: { role: ['admin'] }
+      }
     ]
   },
   { path: '*', redirect: '/404', hidden: true }

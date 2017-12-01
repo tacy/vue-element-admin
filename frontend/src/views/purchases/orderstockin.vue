@@ -20,13 +20,8 @@
       <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item"  placeholder="商品条码" v-model="listQuery.jancode">
       </el-input>
 
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="状态">
-        <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
-        </el-option>
-      </el-select>
-
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleTransform">转运</el-button>
+      <!-- el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleTransform">转运</el-button-->
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
@@ -35,6 +30,11 @@
       <el-table-column align="center" label="注文编号" width="120px">
         <template scope="scope">
           <span>{{scope.row.orderid}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" label="仓库" width="65px">
+        <template scope="scope">
+          <span>{{scope.row.inventory_name}}</span>
         </template>
       </el-table-column>
       <el-table-column align="center" label="商品名称" width="200px">
@@ -52,9 +52,14 @@
           <span>{{scope.row.jancode}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="数量" width="80px">
+      <el-table-column align="center" label="数量" width="65px">
         <template scope="scope">
           <span>{{scope.row.quantity}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" label="采购渠道" width="100px">
+        <template scope="scope">
+          <span>{{scope.row.supplier_name}}</span>
         </template>
       </el-table-column>
       <el-table-column align="center" label="状态" width="80px">
@@ -62,19 +67,14 @@
           <span>{{scope.row.status}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="采购时间" width="130px">
+      <el-table-column align="center" label="采购时间" width="125px">
         <template scope="scope">
           <span>{{scope.row.purchaseorder_createtime|fmDate}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="运单号">
+      <el-table-column align="center" label="操作" width="85">
         <template scope="scope">
-          <span>{{scope.row.delivery_no}}</span>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="操作" width="100">
-        <template scope="scope">
-          <el-button size="small" :disabled="scope.row.status==='转运中'?false:true" type="primary" @click="handleStockIn(scope.row)">入库
+          <el-button size="small" :disabled="scope.row.status==='在途中'?false:true" type="primary" @click="handleStockIn(scope.row)">入库
           </el-button>
         </template>
       </el-table-column>
@@ -85,18 +85,6 @@
         :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper" :total="total">
       </el-pagination>
     </div>
-
-    <el-dialog title="转运国内" size="small" :visible.sync="dialogTransformVisible">
-      <el-form class="small-space" :model="transformData" label-position="left" label-width="80px">
-        <el-form-item label="运单号">
-          <el-input v-model.trim="transformData.delivery_no"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogTransformVisible=false">取 消</el-button>
-        <el-button type="primary" @click="transform()">确 定</el-button>
-      </div>
-    </el-dialog>
 
     <el-dialog title="入库" size="tiny" :visible.sync="dialogStockInVisible">
       <el-form class="small-space" :model="stockInData" label-position="left" label-width="80px">
@@ -124,7 +112,6 @@
         list: [],
         listLoading: true,
         total: null,
-        statusOptions: ['东京仓', '转运中', '已入库'],
         selectRow: [],
         dialogTransformVisible: false,
         dialogStockInVisible: false,
@@ -145,8 +132,7 @@
           page: 1,
           limit: 50,
           labelVal: '1',
-          inventory: 3,
-          status: undefined,
+          status: '在途中',
           product_name: undefined,
           product_specification: undefined,
           orderid: undefined,

@@ -105,6 +105,7 @@ def createPO(orderid, inventory, supplier, items, createtime):
             product=productObj,
             quantity=i['quantity'],
             purchaseorder=poObj,
+            status='在途中',
             price=i['price'])
         poitemObj.save()
 
