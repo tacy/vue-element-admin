@@ -159,7 +159,6 @@
 </template>
 
 <script>
-  import { parseTime } from 'utils';
   import { fetchInventory, fetchSupplier } from 'api/orders';
   import { fetchPurchaseOrder, fetchPurchaseOrderItem, purchaseOrderDelete, purchaseOrderClear, updateOrder } from 'api/purchases';
 
@@ -221,9 +220,9 @@
             const tmp = [];
             for (const o of t.purchaseorderitem) {
               const poi = o.split('@')
-              const qty = null
-              const disabledStatus = false
-              if (poi[5] !== 'None') {
+              let qty = null
+              let disabledStatus = false
+              if (poi[5] !== '在途中') {
                 qty = poi[3]
                 disabledStatus = true
               }
@@ -268,7 +267,7 @@
       },
       getItem(row) {
         this.dialogItemVisible = true;
-        this.listItem.purchaseorder = row.id,
+        this.listItem.purchaseorder = row.id;
         fetchPurchaseOrderItem(this.listItem).then(response => {
           this.itemData = response.data.results;
         })
@@ -284,7 +283,7 @@
       },
       clearPurchaseOrder() {
         this.disableSubmit = true
-        purchaseOrderClear(this.poitemp).then(response => {
+        purchaseOrderClear(this.poitemp).then(() => {
           this.$notify({
             title: '成功',
             message: '入库成功',
@@ -297,7 +296,7 @@
       },
       updatePurchaseOrder(row) {
         const data = { orderid: row.orderid }
-        updateOrder(data, '/purchase/' + row.id + '/').then(response => {
+        updateOrder(data, '/purchase/' + row.id + '/').then(() => {
           this.$notify({
             title: '成功',
             message: '更新成功',
@@ -308,7 +307,7 @@
         })
       },
       deletePurchaseOrder() {
-        purchaseOrderDelete(this.temp).then(response => {
+        purchaseOrderDelete(this.temp).then(() => {
           this.temp.status = '已删除';
           for (const v of this.list) {
             if (v.id === this.temp.id) {

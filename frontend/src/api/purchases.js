@@ -32,9 +32,9 @@ export function purchaseOrderTransform(data) {
   });
 }
 
-export function domesticStockIn(data) {
+export function PurchaseOrderItemStockIn(data) {
   return fetch({
-    url: '/purchase/domesticstockin/',
+    url: '/purchase/itemstockin/',
     method: 'post',
     data
   });
