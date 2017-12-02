@@ -124,11 +124,20 @@ def createPO(orderid, inventory, supplier, items, createtime):
 
         # preallocation stock if supplier is tokyo
         if '东京仓' in supplierObj.name:
-            stockTokyo = Stock.objects.get(
-                inventory=Inventory.objects.get(name='东京'),
-                product__jancode=i['jancode'],
-            )
-            stockTokyo.preallocation = F('preallocation') + int(i['quantity'])
+            try:
+                stockTokyo = Stock.objects.get(
+                    inventory=Inventory.objects.get(name='东京'),
+                    product__jancode=i['jancode'],
+                )
+                stockTokyo.preallocation = F('preallocation') + int(
+                    i['quantity'])
+            except Stock.DoesNotExist:
+                stockTokyo = Stock(
+                    product=productObj,
+                    inventory=Inventory.objects.get(name='东京'),
+                    quantity=i['quantity'],
+                    inflight=0,
+                    preallocation=i['quantity'])
             stockTokyo.save()
 
         orders = Order.objects.filter(
