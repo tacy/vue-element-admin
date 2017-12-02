@@ -292,6 +292,8 @@
           });
           this.dialogPOItemVisible = false;
           this.handleCurrentChange(this.listQuery.page);
+        }).catch(() => {
+          this.disableSubmit = false;
         });
       },
       updatePurchaseOrder(row) {
