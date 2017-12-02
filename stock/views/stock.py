@@ -562,7 +562,7 @@ class PurchaseOrderClear(views.APIView):
                 poiObj = poObj.purchaseorderitem.get(
                     product__jancode=poi['jancode'])
                 if not poi['qty'] or poiObj.status not in ['在途中', '转运中']:
-                    return Response(status=status.HTTP_400_BAD_REQUEST)
+                    continue
                 qty = int(poi['qty'])
                 if qty <= 0:
                     raise InputError(None, None)
@@ -589,6 +589,7 @@ class PurchaseOrderClear(views.APIView):
                 poObj.save(update_fields=[
                     'status',
                 ])
+
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
