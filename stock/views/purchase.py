@@ -258,7 +258,7 @@ class NoOrderPurchase(views.APIView):
                     createtime,
                 )
                 if results:
-                    raise InputError
+                    raise InputError(None, None)
         except (IntegrityError, InputError) as e:
             if e.args and e.args[0] == 1062:
                 return Response(
