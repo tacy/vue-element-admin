@@ -59,7 +59,8 @@ class GmailScraper():
                 if part.get_content_type() in ['text/plain',
                                                'text/html']:  # text/html
                     part_charset = part.get_content_charset()
-                    html = part.get_payload(decode=True).decode(part_charset)
+                    html = part.get_payload(decode=True).decode(
+                        part_charset, 'replace')
                     match = None
                     if supplier == 'Amazon':
                         match = re.search(r'伝票番号は([0-9\-].*)です', html)
