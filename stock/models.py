@@ -144,7 +144,7 @@ class PurchaseOrder(models.Model):
     orderid = models.CharField(max_length=64, blank=False)
     supplier = models.ForeignKey(Supplier, related_name='purchaseorder')
     inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
-    delivery_id = models.CharField(max_length=255, blank=True)
+    delivery_no = models.CharField(max_length=255, blank=True)
     status = models.CharField(
         max_length=255, default='create')  # 在途中/已入库/入库中/转运中/已删除
     create_time = models.DateTimeField(auto_now_add=True)
