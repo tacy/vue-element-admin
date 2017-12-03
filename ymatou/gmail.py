@@ -101,9 +101,8 @@ if __name__ == '__main__':
         cursor.execute(query_sql)
         result = cursor.fetchall()
         for r in result:
-            print(r)
             delivery_no = ','.join(gsApi.processMailbox(r))
-
+            print(r, delivery_no)
             if delivery_no != r['delivery_no']:
                 cursor.execute(update_sql, (delivery_no, r['id']))
                 connection.commit()
