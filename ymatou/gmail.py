@@ -92,7 +92,7 @@ if __name__ == '__main__':
     connection = pymysql.connect(
         host='127.0.0.1',
         user='root',
-        password='12345678',
+        password='asd12288',
         db='ymatou',
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor)
