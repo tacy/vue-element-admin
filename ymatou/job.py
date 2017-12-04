@@ -21,6 +21,7 @@ client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn
 client_id = '8417db83-360c-4275-974f-cf9a2734d8f8'
 db_password = '12345678'
 
+logger = logging.getLogger(__name__)
 # debug
 # access_token = 'ACiYUZ6aKC48faYFD6MpvbOf73BdE9OV5g15q1A6Ghs+i/XIawq/9RHJCzc6Y3UNxA=='
 # client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
@@ -99,8 +100,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                     try:
                         receiver_idcard = o['id_cards'][0]['receiver_id_no']
                     except TypeError as e:
-                        logging.exception('emergy msg orderid %s, %s' %
-                                          (o['order_id'], jancode))
+                        logger.exception('emergy msg orderid %s, %s',
+                                         o['order_id'], jancode)
 
                 it = (o['seller_id'], '洋码头', o['order_id'], o['receiver_name'],
                       o['receiver_address'], o['receiver_zip'],
@@ -265,7 +266,7 @@ async def syncYmtOrdToXlobo(session):
             async with session.post(url, json=payload, headers=h) as response:
                 r = await response.text()
     except asyncio.TimeoutError as e:
-        logging.exception("syncYMTOrderToXlobo")
+        logger.exception("syncYMTOrderToXlobo")
 
 
 # 扫描订单表, 同步第三方订单到贝海.
@@ -320,7 +321,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                         'ProductList': productList
                     }
                 except IndexError:
-                    logging.exception(
+                    logger.exception(
                         '导入天狗订单入贝海失败: data error, orderData is {}'.format(r))
                     continue
 
@@ -333,7 +334,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                         (r[0], ))
                     await conn.commit()
                 else:
-                    logging.error(
+                    logger.error(
                         "导入天狗订单入贝海失败: xlobo api result: {}, orderData is: {}".
                         format(result, r))
 
@@ -359,7 +360,7 @@ async def deliveryYmtOrder(ymtapi, pool):
                             (i[0] + '%', ))
                         await conn.commit()
                     else:
-                        logging.error(
+                        logger.error(
                             'deliveryYmtOrder: %s failed, db: %s, ErrMsg:%s' %
                             (i[0], i[1], info[0]['msg']))
 
@@ -378,7 +379,7 @@ async def pushUbayBondedOrder(ubayapi, pool):
 
             for i in nrs:
                 r = await ubayapi.pushOrder(i)
-                logging.debug('pushUbayBondedOrder Result: %s', r)
+                logger.debug('pushUbayBondedOrder Result: %s', r)
                 if not r:
                     continue
                 if 'T' in r['Message']['Result'] or '订单号已存在' in r['Message']['ResultMsg']:
@@ -387,9 +388,9 @@ async def pushUbayBondedOrder(ubayapi, pool):
                         (i[0]['orderid'], ))
                     await conn.commit()
                 else:
-                    logging.error('pushUbayBondedOrder: %s failed, ErrMsg:%s' %
-                                  (i[0]['orderid'],
-                                   r['Message']['ResultMsg']), )
+                    logger.error('pushUbayBondedOrder: %s failed, ErrMsg:%s' %
+                                 (i[0]['orderid'],
+                                  r['Message']['ResultMsg']), )
 
 
 # 获取宁波保税订单运单号
@@ -422,7 +423,7 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
 
             for i in rs:
                 r = await ubayapi.getDeliveryNo(i)
-                logging.debug('getBondedOrderDeliveryNo Result: %s', r)
+                logger.debug('getBondedOrderDeliveryNo Result: %s', r)
                 if not r:
                     continue
                 msg = r['Message']
@@ -443,7 +444,7 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
                         ))
                     await conn.commit()
                 else:
-                    logging.error(
+                    logger.error(
                         'Ubay getDeliveryNo: orderid=%s failed, ErrMsg:%s' %
                         (i, r['Message']['ResultMsg']), )
 
@@ -468,7 +469,7 @@ async def deliveryYmtBondedOrder(ymtapi, pool):
                             (i[0], ))
                         await conn.commit()
                     else:
-                        logging.error(
+                        logger.error(
                             'deliveryYmtBondedOrder: %s failed, ErrMsg:%s' %
                             (i[0], info[0]['msg']))
 
@@ -504,8 +505,8 @@ async def deliveryTgOrder(tgapi, pool):
                         (i[0], ))
                     await conn.commit()
                 else:
-                    logging.error('deliveryTgOrder:%s failed, ErrMsg: %s' %
-                                  (i[0], r['message']))
+                    logger.error('deliveryTgOrder:%s failed, ErrMsg: %s' %
+                                 (i[0], r['message']))
 
 
 # https://stackoverflow.com/questions/37512182/how-can-i-periodically-execute-a-function-with-asyncio

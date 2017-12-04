@@ -1,10 +1,9 @@
 import email
-import email.header
 import imaplib
 import logging
+import os.path
 import re
 import sys
-
 import pymysql
 
 logger = logging.getLogger(__name__)
@@ -40,15 +39,15 @@ class GmailScraper():
         }
         rv, data = self.mailbox.search(None, *searchKey[supplier])
         if rv != 'OK':
-            logger.warning("No purchase:[%s] found!" % (orderid))
+            logger.warning("No purchase:[%s] found!", orderid)
             return []
-        logger.info('purchaseorder', orderid, 'search result:', data[0])
+        logger.info('purchaseorder: %s, search result: %s', orderid, data[0])
 
         for num in data[0].split():
             rv, data = self.mailbox.fetch(num, '(RFC822)')
             if rv != 'OK':
-                logger.warning("ERROR getting message, purchase: %s" %
-                               (orderid))
+                logger.warning("ERROR getting message, purchase: %s, mail: %s",
+                               orderid, num)
                 continue
             msg = email.message_from_bytes(data[0][1])
 
@@ -69,9 +68,23 @@ class GmailScraper():
                     if match:
                         deliveryNos.append(match.group(1))
                         break
-        return list(set(deliveryNos))
+        dedup_deliveyNos = list(set(deliveryNos))
+        if dedup_deliveyNos:
+            logger.info('purchaseorder: %s, delivery_nos: %s', orderid,
+                        str(deliveryNos))
+        return dedup_deliveyNos
 
 
+logpre = os.path.abspath(__file__)
+logging.basicConfig(
+    filename='%s.log' % logpre,
+    format='%(asctime)s %(levelname)s:%(message)s',
+    level=logging.DEBUG)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
+console.setFormatter(formatter)
+logging.getLogger('').addHandler(console)
 if __name__ == '__main__':
     gsApi = GmailScraper('rainbowtokyorainbowtokyo@gmail.com', 'rainbow123')
     gsApi.login()
@@ -102,8 +115,8 @@ if __name__ == '__main__':
         cursor.execute(query_sql)
         result = cursor.fetchall()
         for r in result:
+            logger.info('purchaseorder: %s', str(r))
             delivery_no = ','.join(gsApi.processMailbox(r))
-            print(r, delivery_no)
             if delivery_no != r['delivery_no']:
                 cursor.execute(update_sql, (delivery_no, r['id']))
                 connection.commit()
