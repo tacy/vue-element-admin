@@ -106,6 +106,7 @@ class ShippingDBFilter(FilterSet):
 
 class PurchaseOrderFilter(FilterSet):
     orderid = CharFilter(lookup_expr='icontains')
+    delivery_no = CharFilter(lookup_expr='icontains')
     jancode = CharFilter(
         name='purchaseorderitem__product__jancode', distinct=True)
     product_name = CharFilter(

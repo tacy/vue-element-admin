@@ -7,6 +7,9 @@
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品条码" v-model="listQuery.jancode">
       </el-input>
 
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="运单号" v-model="listQuery.delivery_no">
+      </el-input>
+
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="商品名称" v-model="listQuery.product_name">
       </el-input>
 
@@ -20,7 +23,7 @@
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 200px" class="filter-item" v-model="listQuery.status" placeholder="状态">
+      <el-select clearable style="width: 100px" class="filter-item" v-model="listQuery.status" placeholder="状态">
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
@@ -37,15 +40,20 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="仓库" width="150px" show-overflow-tooltip>
+      <el-table-column align="center" label="仓库" width="100px" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.inventory_name}}</span>
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="采购渠道" show-overflow-tooltip>
+      <el-table-column align="center" label="采购渠道" width="120px" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.supplier_name}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" label="运单号" width="200px" show-overflow-tooltip>
+        <template scope="scope">
+          <span>{{scope.row.delivery_no}}</span>
         </template>
       </el-table-column>
 
@@ -55,9 +63,9 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="采购时间" width="220px">
+      <el-table-column align="center" label="采购时间" width="125px">
         <template scope="scope">
-          <span>{{scope.row.create_time}}</span>
+          <span>{{scope.row.create_time|fmDate}}</span>
         </template>
       </el-table-column>
       <el-table-column align="center" label="操作" width="240px">
@@ -183,6 +191,7 @@
           supplier: undefined,
           orderid: undefined,
           jancode: undefined,
+	  delivery_no: undefined,
           product_name: undefined
         },
         temp: {
@@ -199,6 +208,13 @@
           purchaseorder: undefined
         },
         itemData: []
+      }
+    },
+    filters: {
+      fmDate(value) {
+        if (!value) return ''
+        value = value.substr(2, 8) + ' ' + value.substr(11, 5)
+        return value
       }
     },
     created() {
