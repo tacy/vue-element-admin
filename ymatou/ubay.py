@@ -37,7 +37,6 @@ class UbayAPI():
 
     async def pushOrder(self, orders):
         url = 'http://open.nxubay.com/API/OrderInfo/createOrder.html'
-        rate = decimal.Decimal('0.8')
 
         address = orders[0]['receiver_address'].split(',')
         msg = {
@@ -57,9 +56,9 @@ class UbayAPI():
                     'ZipCode': orders[0]['receiver_zip'],
                     'BuyerName': orders[0]['receiver_name'],
                     'IdCard': orders[0]['receiver_idcard'],
-                    'OrderPayment': (orders[0]['payment']) * rate,
+                    'OrderPayment': (orders[0]['payment']),
                     'PostFee': 0,
-                    'BuyerPayment': (orders[0]['payment']) * rate,
+                    'BuyerPayment': (orders[0]['payment']),
                     'InsuranceFee': 0,
                     'TaxAmount': 0,
                     'TariffAmount': 0,
@@ -79,9 +78,9 @@ class UbayAPI():
             item = {
                 'ProductNumberCode': o['filing_no'],
                 'SaleGoodsName': o['product_title'],
-                'SaleGoodsPrice': (o['price']) * rate,
+                'SaleGoodsPrice': (o['price']),
                 'SaleNumber': o['quantity'],
-                'SaleSubTotal': (o['price']) * rate * o['quantity'],
+                'SaleSubTotal': (o['price']) * o['quantity'],
             }
             items.append(item)
 
