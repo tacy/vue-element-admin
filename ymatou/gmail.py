@@ -32,11 +32,14 @@ class GmailScraper():
         supplier = purchaseorder['name']
         deliveryNos = purchaseorder['delivery_no'].split(',') if purchaseorder[
             'delivery_no'] else []
+
+        # http://www.4d.com/docs/CMU/CMU88864.HTM
         searchKey = {
             'Amazon': ('BODY', orderid, 'FROM',
                        'shipment-tracking@amazon.co.jp'),
             'Rakuten': ('BODY', orderid),
         }
+        if supplier != 'Amazon': supplier = 'Rakuten'
         rv, data = self.mailbox.search(None, *searchKey[supplier])
         if rv != 'OK':
             logger.warning("No purchase:[%s] found!", orderid)
@@ -50,29 +53,49 @@ class GmailScraper():
                                orderid, num)
                 continue
             msg = email.message_from_bytes(data[0][1])
+            if supplier == 'Amazon':
+                deliveryNos.extend(self.amazon(msg))
+            else:
+                deliveryNos.extend(self.rakuten(msg))
 
             # https://stackoverflow.com/questions/1463074/how-can-i-get-an-email-messages-text-content-using-python
             # https://stackoverflow.com/questions/38970760/how-to-decode-a-mime-part-of-a-message-and-get-a-unicode-string-in-python-2
-            for part in msg.walk():
-                # multipart are just containers, so we skip them
-                if part.get_content_type() in ['text/plain',
-                                               'text/html']:  # text/html
-                    part_charset = part.get_content_charset()
-                    html = part.get_payload(decode=True).decode(
-                        part_charset, 'replace')
-                    match = None
-                    if supplier == 'Amazon':
-                        match = re.search(r'伝票番号は([0-9\-].*)です', html)
-                    else:
-                        match = re.search(r'伝票番号.+?([0-9-]+)', html)
-                    if match:
-                        deliveryNos.append(match.group(1))
-                        break
-        dedup_deliveyNos = list(set(deliveryNos))
-        if dedup_deliveyNos:
+
+        dedup_deliveryNos = list(set(deliveryNos))
+        if dedup_deliveryNos:
             logger.info('purchaseorder: %s, delivery_nos: %s', orderid,
-                        str(deliveryNos))
-        return dedup_deliveyNos
+                        str(dedup_deliveryNos))
+        return dedup_deliveryNos
+
+    def amazon(self, msg):
+        result = []
+        for part in msg.walk():
+            # multipart are just containers, so we skip them
+            if part.get_content_type() == 'text/html':
+                part_charset = part.get_content_charset()
+                html = part.get_payload(decode=True).decode(
+                    part_charset, 'replace')
+                match = re.search(r'伝票番号は([0-9\-].*?)です', html)
+                if match:
+                    result.append(match.group(1))
+                    break
+        return result
+
+    def rakuten(self, msg):
+        result = []
+        for part in msg.walk():
+            # multipart are just containers, so we skip them
+            if part.get_content_type() == 'text/plain':
+                part_charset = part.get_content_charset()
+                html = part.get_payload(decode=True).decode(
+                    part_charset, 'replace')
+                match = re.search(
+                    r'(?:(?:配送会社お)?問い?合わ?せ番号|伝票番号\r?\n?|送り状No|reqCodeNo1).*?(\d{5,})',
+                    html)
+                if match:
+                    result.append(match.group(1))
+                    break
+        return result
 
 
 logpre = os.path.abspath(__file__)
@@ -88,19 +111,48 @@ logging.getLogger('').addHandler(console)
 if __name__ == '__main__':
     gsApi = GmailScraper('rainbowtokyorainbowtokyo@gmail.com', 'rainbow123')
     gsApi.login()
-    # po = {
-    #     'orderid': '244562-20171128-00516718',
-    #     'supplier': 'rakuten',
-    #     'delivery_no': None
-    # }
-    # po = {
-    #     'orderid': '503-8437358-7411017',
-    #     'supplier': 'amazon',
-    #     'delivery_no': None
-    # }
-    # deliveryNos = gsApi.processMailbox(po)
-    # print(deliveryNos)
-    query_sql = 'select po.orderid, s.name, po.delivery_no, po.id from stock_purchaseorder po inner join stock_supplier s on po.supplier_id=s.id where po.status in ("在途中", "入库中") and s.name in ("Amazon", "Rakuten")'
+    # pos = [
+    #     {
+    #         'orderid': '244562-20171128-00516718',
+    #         'name': 'rakuten',
+    #         'delivery_no': None
+    #     },
+    #     {
+    #         'orderid': '265611-20171120-00937802',
+    #         'name': 'rakuten',
+    #         'delivery_no': None
+    #     },
+    #     {
+    #         'orderid': '206504-20171120-01448812',
+    #         'name': 'rakuten',
+    #         'delivery_no': None
+    #     },
+    #     {
+    #         'orderid': '253260-20171120-00061801',
+    #         'name': 'rakuten',
+    #         'delivery_no': None
+    #     },
+    #     {
+    #         'orderid': '203677-20171129-013958715',
+    #         'name': 'rakuten',
+    #         'delivery_no': None
+    #     },
+    #     {
+    #         'orderid': '20171118-00203822',
+    #         'name': 'rakuten',
+    #         'delivery_no': None
+    #     },
+    #     {
+    #         'orderid': 'Y000000033193640',
+    #         'name': 'rakuten',
+    #         'delivery_no': None
+    #     },
+    # ]
+    # for po in pos:
+    #     deliveryNos = gsApi.processMailbox(po)
+    #     print(deliveryNos)
+
+    query_sql = 'select po.orderid, s.name, po.delivery_no, po.id from stock_purchaseorder po inner join stock_supplier s on po.supplier_id=s.id where po.status in ("在途中", "入库中") and s.name in ("Amazon", "Rakuten", "产品官网", "Lohaco")'
     update_sql = 'update stock_purchaseorder set delivery_no=%s where id=%s'
 
     connection = pymysql.connect(
