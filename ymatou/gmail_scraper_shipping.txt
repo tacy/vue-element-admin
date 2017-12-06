@@ -19,3 +19,6 @@
 
 265611-20171203-00450722
 http://tracking.post.japanpost.jp/service/singleSearch.do?org.apache.struts.taglib.html.TOKEN=&searchKind=S002&locale=ja&SVID=&reqCodeNo1=145971533886
+
+
+(?:(問(い)?合(わ)?せ番号)|伝票番号|送り状No).+?(\d+{5,})
