@@ -1,4 +1,5 @@
 import asyncio
+import csv
 import json
 
 import aiohttp
@@ -413,6 +414,34 @@ def getYMTOrderInfo(id):
 
 
 @click.command()
+@click.argument('csvfile')
+def updateYMTStock(csvfile):
+    loop = asyncio.get_event_loop()
+    sessYmt = aiohttp.ClientSession(
+        loop=loop, headers={
+            'Content-Type': 'application/json'
+        })
+    v = {
+        'appid': 'llzlHWWDTkEsUUjwKf',
+        'appsecret': 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox',
+        'authcode': 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk',
+    }
+    ymtapi = YmatouAPI(sessYmt, v['appid'], v['appsecret'], v['authcode'])
+    with open(csvfile) as f:
+        reader = csv.reader(f)
+        for row in reader:
+            # Create a new record
+            msg = [{
+                'outer_sku_id': row[0],
+                # 'sku_id': sku['sku_id'],
+                'stock_num': row[1]
+            }]
+            result = loop.run_until_complete(ymtapi.syncProductStock(msg))
+            if result['content']['results'][0]['msg'] == '无效的SKUID':
+                print(row[0], '       , 不存在')
+
+
+@click.command()
 def importCategory():
     access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
     client_secret = 'APvYM8Mt5Xg1QYvker67VplTPQRx28Qt/XPdY9D7TUhaO3vgFWQ71CRZ/sLZYrn97w=='.lower(
@@ -549,6 +578,7 @@ cli.add_command(exportStock)
 cli.add_command(importLogisticCompany)
 cli.add_command(exportYMTOrder)
 cli.add_command(getYMTOrderInfo)
+cli.add_command(updateYMTStock)
 
 if __name__ == '__main__':
     cli()

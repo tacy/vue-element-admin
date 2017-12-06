@@ -105,6 +105,11 @@ class XloboCreateNoVerification(views.APIView):
         data = request.data
         ords = data['orders']
         disable_check = data['disable_check']
+        totalAmount = sum(
+            [float(i['price']) * float(i['quantity']) for i in ords])
+        if totalAmount > 2000:
+            errmsg = {'errmsg': '订单金额超2000不能发贝海.'}
+            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -224,6 +229,12 @@ class XloboCreateFBXBill(views.APIView):
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
+
+        totalAmount = sum(
+            [float(i['price']) * float(i['quantity']) for i in ords])
+        if totalAmount > 2000:
+            errmsg = {'errmsg': '订单金额超2000不能发贝海.'}
+            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
         checkResult = checkInputOrder(ords)
         if checkResult:
