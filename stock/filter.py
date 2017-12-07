@@ -81,6 +81,7 @@ class ShippingDBFilter(FilterSet):
         name='order__sku_properties_name',
         lookup_expr='icontains',
         distinct=True)
+    xlobo_sign = BooleanFilter(name='xlobo_sign', lookup_expr='isnull')
     receiver_name = CharFilter(name='order__receiver_name', distinct=True)
     print_status__ne = CharFilter(name='print_status', method='filter_ne')
 

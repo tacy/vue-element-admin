@@ -354,7 +354,7 @@ async def deliveryYmtOrder(ymtapi, pool):
                     continue
                 if '0000' in r.get('code') and r.get('content'):
                     info = r['content']['results']
-                    if info[0]['exec_success']:
+                    if info[0]['exec_succenss']:
                         await cur.execute(
                             "update stock_order set channel_delivery_status='已发货' where orderid like %s",
                             (i[0] + '%', ))
@@ -509,6 +509,33 @@ async def deliveryTgOrder(tgapi, pool):
                                  (i[0], r['message']))
 
 
+async def getXloboDeliveryStatus(xloboapi, pool):
+    sql = 'select id,db_number from stock_shippingdb where status="已出库" and xlobo_sign is null and db_number like "DB%"'
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(sql)
+            rs = await cur.fetchall()
+            for r in rs:
+                msg_param = {'BillCodes': [r[1]]}
+                result = await xloboapi.getStatus(msg_param)
+                if not result:
+                    return
+                if result['ErrorCount'] == 0:
+                    info = result['Result'][0]
+                    if len(
+                            info['BillStatusList']
+                    ) >= 2 and info['BillStatusList'][1]['Status'] == '分拨中心签收':
+                        await cur.execute(
+                            "update stock_shippingdb set xlobo_sign='已签收' where id=%s",
+                            (r[0], ))
+                        await conn.commit()
+                        logger.info('面单签收成功, 面单号:%s', r[1])
+                else:
+                    logger.error(
+                        "查询面单状态失败: xlobo api result: {}, 面单号 is: {}".format(
+                            result, r[1]))
+
+
 # https://stackoverflow.com/questions/37512182/how-can-i-periodically-execute-a-function-with-asyncio
 class Periodic:
     def __init__(self):
@@ -559,71 +586,75 @@ async def main(loop):
     task = []
 
     # sync TG order
-    username = 'llw-rb'
-    password = '1q2w3e4r5t'
-    sessTG = aiohttp.ClientSession(loop=loop)
-    tgapi = tiangouAPI.TiangouAPI(sessTG, username, password)
-    task.append(
-        asyncio.ensure_future(
-            periodic.start(syncTGOrder, interval['syncorder'], tgapi, '天狗',
-                           pool)))
-    task.append(
-        asyncio.ensure_future(
-            periodic.start(deliveryTgOrder, interval['deliveryymtorder'],
-                           tgapi, pool)))
+    # username = 'llw-rb'
+    # password = '1q2w3e4r5t'
+    # sessTG = aiohttp.ClientSession(loop=loop)
+    # tgapi = tiangouAPI.TiangouAPI(sessTG, username, password)
+    # task.append(
+    #     asyncio.ensure_future(
+    #         periodic.start(syncTGOrder, interval['syncorder'], tgapi, '天狗',
+    #                        pool)))
+    # task.append(
+    #     asyncio.ensure_future(
+    #         periodic.start(deliveryTgOrder, interval['deliveryymtorder'],
+    #                        tgapi, pool)))
 
-    # sync YMT order & delivery ymatou order
-    sessYmt = aiohttp.ClientSession(
-        loop=loop, headers={
-            'Content-Type': 'application/json'
-        })
-    for k, v in YMTKEY.items():
-        ymtapi = ymatouapi.YmatouAPI(sessYmt, v['appid'], v['appsecret'],
-                                     v['authcode'])
-        task.append(
-            asyncio.ensure_future(
-                periodic.start(syncYMTOrder, interval['syncorder'], ymtapi, k,
-                               pool)))
-        task.append(
-            asyncio.ensure_future(
-                periodic.start(deliveryYmtOrder, interval['deliveryymtorder'],
-                               ymtapi, pool)))
-        # 宁波保税仓发货
-        task.append(
-            asyncio.ensure_future(
-                periodic.start(deliveryYmtBondedOrder,
-                               interval['deliveryymtorder'], ymtapi, pool)))
+    # # sync YMT order & delivery ymatou order
+    # sessYmt = aiohttp.ClientSession(
+    #     loop=loop, headers={
+    #         'Content-Type': 'application/json'
+    #     })
+    # for k, v in YMTKEY.items():
+    #     ymtapi = ymatouapi.YmatouAPI(sessYmt, v['appid'], v['appsecret'],
+    #                                  v['authcode'])
+    #     task.append(
+    #         asyncio.ensure_future(
+    #             periodic.start(syncYMTOrder, interval['syncorder'], ymtapi, k,
+    #                            pool)))
+    #     task.append(
+    #         asyncio.ensure_future(
+    #             periodic.start(deliveryYmtOrder, interval['deliveryymtorder'],
+    #                            ymtapi, pool)))
+    #     # 宁波保税仓发货
+    #     task.append(
+    #         asyncio.ensure_future(
+    #             periodic.start(deliveryYmtBondedOrder,
+    #                            interval['deliveryymtorder'], ymtapi, pool)))
 
-    # sync ymtorder to xlobo
-    sessXlobo = aiohttp.ClientSession(loop=loop)
-    task.append(
-        asyncio.ensure_future(
-            periodic.start(syncYmtOrdToXlobo, interval['impordtoxlobo'],
-                           sessXlobo)))
+    # # sync ymtorder to xlobo
+    # sessXlobo = aiohttp.ClientSession(loop=loop)
+    # task.append(
+    #     asyncio.ensure_future(
+    #         periodic.start(syncYmtOrdToXlobo, interval['impordtoxlobo'],
+    #                        sessXlobo)))
 
     # sync third party to xlobo
     sessTpo = aiohttp.ClientSession(loop=loop)
     xloboapi = ymatouapi.XloboAPI(sessTpo, access_token, client_secret,
                                   client_id)
+    # task.append(
+    #     asyncio.ensure_future(
+    #         periodic.start(syncTpoOrdToXlobo, interval['impordtoxlobo'],
+    #                        xloboapi, pool)))
     task.append(
         asyncio.ensure_future(
-            periodic.start(syncTpoOrdToXlobo, interval['impordtoxlobo'],
+            periodic.start(getXloboDeliveryStatus, interval['pushorder'],
                            xloboapi, pool)))
 
-    # push bondedOrder to Ubay
-    sessUbay = aiohttp.ClientSession(loop=loop)
-    user_code = 'jingdongcaihongqiao'
-    password = 'chq123456'
-    key = '1013'
-    ubayapi = ubay.UbayAPI(sessUbay, user_code, password, key)
-    task.append(
-        asyncio.ensure_future(
-            periodic.start(pushUbayBondedOrder, interval['pushorder'], ubayapi,
-                           pool)))
-    task.append(
-        asyncio.ensure_future(
-            periodic.start(getUbayBondedOrderStatus, interval['getdeliveryno'],
-                           ubayapi, pool)))
+    # # push bondedOrder to Ubay
+    # sessUbay = aiohttp.ClientSession(loop=loop)
+    # user_code = 'jingdongcaihongqiao'
+    # password = 'chq123456'
+    # key = '1013'
+    # ubayapi = ubay.UbayAPI(sessUbay, user_code, password, key)
+    # task.append(
+    #     asyncio.ensure_future(
+    #         periodic.start(pushUbayBondedOrder, interval['pushorder'], ubayapi,
+    #                        pool)))
+    # task.append(
+    #     asyncio.ensure_future(
+    #         periodic.start(getUbayBondedOrderStatus, interval['getdeliveryno'],
+    #                        ubayapi, pool)))
 
     task.append(
         asyncio.ensure_future(

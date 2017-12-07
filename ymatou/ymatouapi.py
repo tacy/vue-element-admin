@@ -230,3 +230,11 @@ class XloboAPI():
         msg_param = json.dumps(msg)
         result = await self.callAPI(method, msg_param)
         return result
+
+    async def getStatus(self, msg):
+        method = 'xlobo.status.get'
+        BusinessNo = str(random.randint(10000000, 99999999))
+        msg['BusinessNo'] = BusinessNo
+        msg_param = json.dumps(msg)
+        result = await self.callAPI(method, msg_param)
+        return result
