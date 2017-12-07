@@ -8,11 +8,11 @@
             :value="item.value">
         </el-option>
       </el-select>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入订单号" v-model="listQuery.orderid" v-show="listQuery.labelVal == '1'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '1'">
       </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入商品名称" v-model="listQuery.product_title" v-show="listQuery.labelVal == '2'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入商品条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '3'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入订单号" v-model="listQuery.orderid" v-show="listQuery.labelVal == '3'">
       </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '4'">
       </el-input>
@@ -334,8 +334,7 @@
 </style>
 
 <script>
-  import { parseTime } from 'utils';
-  import { fetchInventory, fetchSupplier, fetchOrder, orderDelete, updateOrder, orderTPRCreate } from 'api/orders';
+  import { fetchInventory, fetchOrder, orderDelete, updateOrder, orderTPRCreate } from 'api/orders';
 
   export default {
     data() {
@@ -353,13 +352,13 @@
         deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
         selectedOptions: [{
           value: '1',
-          label: '订单号'
+          label: '商品条码'
         }, {
           value: '2',
           label: '商品名称'
         }, {
           value: '3',
-          label: '商品条码'
+          label: '订单号'
         }, {
           value: '4',
           label: '收件人'
@@ -459,13 +458,13 @@
       getOrder() {
         this.listLoading = true;
         if (this.listQuery.labelVal !== '1') {
-          this.listQuery.orderid = undefined
+          this.listQuery.jancode = undefined
         }
         if (this.listQuery.labelVal !== '2') {
           this.listQuery.product_title = undefined
         }
         if (this.listQuery.labelVal !== '3') {
-          this.listQuery.jancode = undefined
+          this.listQuery.orderid = undefined
         }
         if (this.listQuery.labelVal !== '4') {
           this.listQuery.receiver_name = undefined
