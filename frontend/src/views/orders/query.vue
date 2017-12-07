@@ -352,13 +352,13 @@
         deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
         selectedOptions: [{
           value: '1',
-          label: '商品条码'
+          label: '订单号'
         }, {
           value: '2',
-          label: '商品名称'
+          label: '商品条码'
         }, {
           value: '3',
-          label: '订单号'
+          label: '商品名称'
         }, {
           value: '4',
           label: '收件人'
