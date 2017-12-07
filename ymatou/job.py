@@ -522,9 +522,7 @@ async def getXloboDeliveryStatus(xloboapi, pool):
                     return
                 if result['ErrorCount'] == 0:
                     info = result['Result'][0]
-                    if len(
-                            info['BillStatusList']
-                    ) >= 2 and info['BillStatusList'][1]['Status'] == '分拨中心签收':
+                    if len(info['BillStatusList']) >= 2:
                         await cur.execute(
                             "update stock_shippingdb set xlobo_sign='已签收' where id=%s",
                             (r[0], ))
