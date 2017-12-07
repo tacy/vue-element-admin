@@ -8,11 +8,11 @@
             :value="item.value">
         </el-option>
       </el-select>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '1'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入订单号" v-model="listQuery.orderid" v-show="listQuery.labelVal == '1'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入商品名称" v-model="listQuery.product_title" v-show="listQuery.labelVal == '2'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item" placeholder="输入条码" v-model="listQuery.jancode" v-show="listQuery.labelVal == '2'">
       </el-input>
-      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入订单号" v-model="listQuery.orderid" v-show="listQuery.labelVal == '3'">
+      <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入产品名" v-model="listQuery.product_title" v-show="listQuery.labelVal == '3'">
       </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 150px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '4'">
       </el-input>
@@ -458,13 +458,13 @@
       getOrder() {
         this.listLoading = true;
         if (this.listQuery.labelVal !== '1') {
-          this.listQuery.jancode = undefined
+          this.listQuery.orderid = undefined
         }
         if (this.listQuery.labelVal !== '2') {
-          this.listQuery.product_title = undefined
+          this.listQuery.jancode = undefined
         }
         if (this.listQuery.labelVal !== '3') {
-          this.listQuery.orderid = undefined
+          this.listQuery.product_title = undefined
         }
         if (this.listQuery.labelVal !== '4') {
           this.listQuery.receiver_name = undefined
