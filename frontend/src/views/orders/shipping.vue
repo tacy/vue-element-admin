@@ -26,22 +26,23 @@
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 100px" class="filter-item" v-model="listQuery.status" placeholder="状态">
+      <el-select clearable style="width: 90px" class="filter-item" v-model="listQuery.status" placeholder="状态">
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 105px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
+      <el-select clearable style="width: 75px" class="filter-item" v-model="listQuery.inventory" placeholder="仓库">
         <el-option v-for="item in inventoryOptions" :key="item.id" :label="item.name" :value="item.id">
         </el-option>
       </el-select>
 
-      <el-checkbox clearable class="filter-item" size="large" v-model="listQuery.isWaitingPrint">待打印</el-checkbox>
-      <el-checkbox clearable class="filter-item" style="width: 80px" size="large" v-model="listQuery.isTaxIncluded">包税单</el-checkbox>
+      <el-checkbox clearable class="filter-item" v-model="listQuery.isWaitingPrint">待打印</el-checkbox>
+      <el-checkbox clearable class="filter-item" v-model="listQuery.isTaxIncluded">包税单</el-checkbox>
+      <el-checkbox clearable class="filter-item" v-model="listQuery.isXloboSign">未签收</el-checkbox>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
       <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleStockOut">出库</el-button>
-      <el-button class="filter-item" type="success" style="float:right" :disabled="disableSubmit2" v-waves icon="edit" @click="handleDBPrint">打印面单</el-button>
+      <el-button class="filter-item" type="success" style="float:right" :disabled="disableSubmit2" v-waves icon="edit" @click="handleDBPrint">打印</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
@@ -141,6 +142,11 @@
       <el-table-column align="center" label="运单号">
         <template scope="scope">
           <span>{{scope.row.delivery_no}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" label="签收" width="80px">
+        <template scope="scope">
+          <span>{{scope.row.xlobo_sign}}</span>
         </template>
       </el-table-column>
       <!--el-table-column align="center" label="打印" width="140">
@@ -262,355 +268,361 @@
 </style>
 
 <script>
-  import { parseTime } from 'utils';
-  import { fetchInventory, fetchShipping, fetchShippingDB, fetchPDF, fetchEMSPDF, fetchOrderItems, stockOut, deleteDBNumber } from 'api/orders';
-  import pdf from 'vue-pdf';
+ import { fetchInventory, fetchShipping, fetchShippingDB, fetchPDF, fetchEMSPDF, fetchOrderItems, stockOut, deleteDBNumber } from 'api/orders';
+ import pdf from 'vue-pdf';
 
-  export default {
-    components: {
-      pdf
-    },
-    data() {
-      return {
-        list: [],
-        itemData: [],
-        listLoading: true,
-        total: null,
-        pdfsrc: undefined,
-        dialogItemVisible: false,
-        dialogStockOutVisible: false,
-        dialogFormVisible: false,
-        inventoryOptions: [],
-        disableSubmit: false,
-        disableSubmit2: false,
-        selectRow: [],
-        channelOptions: ['洋码头', '京东'],
-        shippingOptions: [],
-        statusOptions: ['待处理', '已出库', '已删除'],
-        selectedOptions: [{
-          value: '1',
-          label: '面单号'
-        }, {
-          value: '2',
-          label: '商品名称'
-        }, {
-          value: '3',
-          label: '商品条码'
-  }, {
-    value: '4',
-    label: '运单号'
-}, {
-    value: '5',
-    label: '收件人'
-}],
-        listQuery: {
-          page: 1,
-          limit: 50,
-          labelVal: '1',
-          status: '待处理',
-          inventory: undefined,
-          shipping: undefined,
-          channel_name: undefined,
-          receiver_name: undefined,
-          db_number: undefined,
-          delivery_no: undefined,
-          product_title: undefined,
-          sku_properties_name: undefined,
-          jancode: undefined,
-          isTaxIncluded: false,
-          isWaitingPrint: false,
-          tax_included_channel: undefined,
-          print_status__ne: undefined
-        },
-        queryOrderItems: {
-          shippingdb_id: undefined
-        },
-        stockOutData: {
-          delivery_no: undefined,
-          db_numbers: undefined
-        },
-        xloboData: {
-          BillCodes: []
-        }
-      }
-    },
-    filters: {
-      stockStatusFilter(stockStatus) {
-        const stockStatusMap = {
-          在库: 'primary',
-          出库: 'success',
-          在途: 'danger'
-        };
-        return stockStatusMap[stockStatus]
-      },
-      fmDate(value) {
-        if (!value) return ''
-        value = value.substr(2, 8) + ' ' + value.substr(11, 5)
-        return value
-      }
-    },
-    created() {
-      this.getInventory();
-      this.getShipping()
-      this.getShippingDB();
-    },
-    methods: {
-      getShippingDB() {
-        this.listLoading = true;
-        if (this.listQuery.labelVal !== '1') {
-          this.listQuery.db_number = undefined
-        }
-        if (this.listQuery.labelVal !== '2') {
-          this.listQuery.product_title = undefined
-        }
-        if (this.listQuery.labelVal !== '3') {
-          this.listQuery.jancode = undefined
-        }
-        if (this.listQuery.labelVal !== '4') {
-          this.listQuery.delivery_no = undefined
-        }
-        if (this.listQuery.labelVal !== '5') {
-          this.listQuery.receiver_name = undefined
-        }
-        if (this.listQuery.isTaxIncluded) {
-          this.listQuery.tax_included_channel = '是'
-        } else {
-          this.listQuery.tax_included_channel = undefined
-        }
-        if (this.listQuery.isWaitingPrint) {
-          this.listQuery.print_status__ne = '已打印'
-        } else {
-          this.listQuery.print_status__ne = undefined
-        }
-        fetchShippingDB(this.listQuery).then(response => {
-          this.list = response.data.results;
-          for (const t of this.list) {
-            const index = this.list.indexOf(t);
-            this.list[index].stockStatus = '在库';
-            const tmp = [];
-            for (const o of t.order) {
-              const ordinfo = o.split('@');
-              const product_id = 'http://m.ymatou.com/item/page/index/' + ordinfo[10]
-              if (ordinfo[10].length < 10) {
-                product_id = 'https://m.51tiangou.com/product/listing.html?id=' + ordinfo[10]
-              }
-              tmp.push({
-                id: ordinfo[0],
-                orderid: ordinfo[1],
-                status: ordinfo[2],
-                purchaseorder: ordinfo[3],
-                product_title: ordinfo[4],
-                sku_properties_name: ordinfo[5],
-                receiver_name: ordinfo[6],
-                receiver_address: ordinfo[7],
-                receiver_mobile: ordinfo[8],
-                receiver_zip: ordinfo[9],
-                product_id,
-                jancode: ordinfo[11],
-                quantity: ordinfo[12]
-              });
-              if (ordinfo[2] === '已采购' || ordinfo[2] === '待采购') {
-                this.list[index].stockStatus = '在途';
-              }
-              if (ordinfo[2] === '已发货') {
-                this.list[index].stockStatus = '出库';
-              }
-            }
-            this.list[index].info = tmp;
-          }
-          this.total = response.data.count;
-          this.listLoading = false;
-        })
-      },
-      getInventory() {
-        fetchInventory().then(response => {
-          this.inventoryOptions = response.data.results;
-        })
-      },
-      getShipping() {
-        fetchShipping().then(response => {
-          this.shippingOptions = response.data.results;
-        })
-      },
-      handleFilter() {
-        this.listQuery.page = 1;
-        this.getShippingDB();
-      },
-      checkSelectable(row) {
-        return row.stockStatus !== '在途' && row.status === '待处理'
-      },
-      handleSelect(val) {
-        this.selectRow = val;
-      },
-      handleSizeChange(val) {
-        this.listQuery.limit = val;
-        this.getShippingDB();
-      },
-      handleCurrentChange(val) {
-        this.listQuery.page = val;
-        this.getShippingDB();
-      },
-      handleOrderItems(row) {
-        this.queryOrderItems.shippingdb_id = row.id
-        fetchOrderItems(this.queryOrderItems).then(response => {
-          this.itemData = response.data.results;
-          this.dialogItemVisible = true;
-        });
-      },
-      handleStockOut() {
-        this.stockOutData = {
-          delivery_no: undefined,
-          db_numbers: undefined
-        }
-        this.disableSubmit = false
-        this.dialogStockOutVisible = true;
-      },
-      stockOut() {
-        this.disableSubmit = true;
-        stockOut(this.stockOutData).then(response => {
-          const dbs = this.stockOutData.db_numbers.split('\n')
-          for (const d of dbs) {
-            for (const v of this.list) {
-              if (v.db_number === d) {
-                const index = this.list.indexOf(v);
-                // this.list.splice(index, 1);
-                this.list[index].status = '出库'
-                this.list[index].delivery_no = this.stockOutData.delivery_no
-                break;
-              }
-            }
-          }
-          this.$notify({
-            title: '成功',
-            message: '出库完成',
-            type: 'success',
-            duration: 2000
-          });
-          this.dialogStockOutVisible = false;
-        }).catch(error => {
-          this.disableSubmit = false;
-        })
-      },
-      handleDelete(row) {
-        deleteDBNumber(row).then(response => {
-          for (const v of this.list) {
-            if (v.id === row.id) {
-              const index = this.list.indexOf(v);
-              this.list.splice(index, 1);
-              break;
-            }
-          }
-          this.$notify({
-            title: '成功',
-            message: '删除面单成功',
-            type: 'success',
-            duration: 2000
-          });
-        });
-      },
-      handleDBPrint() {
-        if (this.selectRow.length === 0) {
-          this.$message({
-            type: 'error',
-            message: '请选择面单',
-            duration: 2000
-          });
-          return
-        }
-        if (this.selectRow[0].shipping_name.includes('UEX')) {
-          this.isUEX = true;
-          this.dialogUEXVisible = true;
-          return
-        }
-        this.pdfsrc = '';
-        this.xloboData.BillCodes = []
-        for (const o in this.selectRow) {
-          this.xloboData.BillCodes.push(this.selectRow[o].db_number)
-        }
+ export default {
+   components: {
+     pdf
+   },
+   data() {
+     return {
+       list: [],
+       itemData: [],
+       listLoading: true,
+       total: null,
+       pdfsrc: undefined,
+       dialogItemVisible: false,
+       dialogStockOutVisible: false,
+       dialogFormVisible: false,
+       inventoryOptions: [],
+       disableSubmit: false,
+       disableSubmit2: false,
+       selectRow: [],
+       channelOptions: ['洋码头', '京东'],
+       shippingOptions: [],
+       statusOptions: ['待处理', '已出库', '已删除'],
+       selectedOptions: [{
+         value: '1',
+         label: '面单号'
+       }, {
+         value: '2',
+         label: '商品名称'
+       }, {
+         value: '3',
+         label: '商品条码'
+       }, {
+         value: '4',
+         label: '运单号'
+       }, {
+         value: '5',
+         label: '收件人'
+       }],
+       listQuery: {
+         page: 1,
+         limit: 50,
+         labelVal: '1',
+         status: '待处理',
+         inventory: undefined,
+         shipping: undefined,
+         channel_name: undefined,
+         receiver_name: undefined,
+         db_number: undefined,
+         delivery_no: undefined,
+         product_title: undefined,
+         sku_properties_name: undefined,
+         jancode: undefined,
+         isTaxIncluded: false,
+         isWaitingPrint: false,
+         isXloboSign: false,
+         xlobo_sign: undefined,
+         tax_included_channel: undefined,
+         print_status__ne: undefined
+       },
+       queryOrderItems: {
+         shippingdb_id: undefined
+       },
+       stockOutData: {
+         delivery_no: undefined,
+         db_numbers: undefined
+       },
+       xloboData: {
+         BillCodes: []
+       }
+     }
+   },
+   filters: {
+     stockStatusFilter(stockStatus) {
+       const stockStatusMap = {
+         在库: 'primary',
+         出库: 'success',
+         在途: 'danger'
+       };
+       return stockStatusMap[stockStatus]
+     },
+     fmDate(value) {
+       if (!value) return ''
+       value = value.substr(2, 8) + ' ' + value.substr(11, 5)
+       return value
+     }
+   },
+   created() {
+     this.getInventory();
+     this.getShipping()
+     this.getShippingDB();
+   },
+   methods: {
+     getShippingDB() {
+       this.listLoading = true;
+       if (this.listQuery.labelVal !== '1') {
+         this.listQuery.db_number = undefined
+       }
+       if (this.listQuery.labelVal !== '2') {
+         this.listQuery.product_title = undefined
+       }
+       if (this.listQuery.labelVal !== '3') {
+         this.listQuery.jancode = undefined
+       }
+       if (this.listQuery.labelVal !== '4') {
+         this.listQuery.delivery_no = undefined
+       }
+       if (this.listQuery.labelVal !== '5') {
+         this.listQuery.receiver_name = undefined
+       }
+       if (this.listQuery.isTaxIncluded) {
+         this.listQuery.tax_included_channel = '是'
+       } else {
+         this.listQuery.tax_included_channel = undefined
+       }
+       if (this.listQuery.isWaitingPrint) {
+         this.listQuery.print_status__ne = '已打印'
+       } else {
+         this.listQuery.print_status__ne = undefined
+       }
+       if (this.listQuery.isXloboSign) {
+         this.listQuery.xlobo_sign = 2
+       } else {
+         this.listQuery.xlobo_sign = 1
+       }
+       fetchShippingDB(this.listQuery).then(response => {
+         this.list = response.data.results;
+         for (const t of this.list) {
+           const index = this.list.indexOf(t);
+           this.list[index].stockStatus = '在库';
+           const tmp = [];
+           for (const o of t.order) {
+             const ordinfo = o.split('@');
+             let product_id = 'http://m.ymatou.com/item/page/index/' + ordinfo[10]
+             if (ordinfo[10].length < 10) {
+               product_id = 'https://m.51tiangou.com/product/listing.html?id=' + ordinfo[10]
+             }
+             tmp.push({
+               id: ordinfo[0],
+               orderid: ordinfo[1],
+               status: ordinfo[2],
+               purchaseorder: ordinfo[3],
+               product_title: ordinfo[4],
+               sku_properties_name: ordinfo[5],
+               receiver_name: ordinfo[6],
+               receiver_address: ordinfo[7],
+               receiver_mobile: ordinfo[8],
+               receiver_zip: ordinfo[9],
+               product_id,
+               jancode: ordinfo[11],
+               quantity: ordinfo[12]
+             });
+             if (ordinfo[2] === '已采购' || ordinfo[2] === '待采购') {
+               this.list[index].stockStatus = '在途';
+             }
+             if (ordinfo[2] === '已发货') {
+               this.list[index].stockStatus = '出库';
+             }
+           }
+           this.list[index].info = tmp;
+         }
+         this.total = response.data.count;
+         this.listLoading = false;
+       })
+     },
+     getInventory() {
+       fetchInventory().then(response => {
+         this.inventoryOptions = response.data.results;
+       })
+     },
+     getShipping() {
+       fetchShipping().then(response => {
+         this.shippingOptions = response.data.results;
+       })
+     },
+     handleFilter() {
+       this.listQuery.page = 1;
+       this.getShippingDB();
+     },
+     checkSelectable(row) {
+       return row.stockStatus !== '在途' && row.status === '待处理'
+     },
+     handleSelect(val) {
+       this.selectRow = val;
+     },
+     handleSizeChange(val) {
+       this.listQuery.limit = val;
+       this.getShippingDB();
+     },
+     handleCurrentChange(val) {
+       this.listQuery.page = val;
+       this.getShippingDB();
+     },
+     handleOrderItems(row) {
+       this.queryOrderItems.shippingdb_id = row.id
+       fetchOrderItems(this.queryOrderItems).then(response => {
+         this.itemData = response.data.results;
+         this.dialogItemVisible = true;
+       });
+     },
+     handleStockOut() {
+       this.stockOutData = {
+         delivery_no: undefined,
+         db_numbers: undefined
+       }
+       this.disableSubmit = false
+       this.dialogStockOutVisible = true;
+     },
+     stockOut() {
+       this.disableSubmit = true;
+       stockOut(this.stockOutData).then(response => {
+         const dbs = this.stockOutData.db_numbers.split('\n')
+         for (const d of dbs) {
+           for (const v of this.list) {
+             if (v.db_number === d) {
+               const index = this.list.indexOf(v);
+               // this.list.splice(index, 1);
+               this.list[index].status = '出库'
+               this.list[index].delivery_no = this.stockOutData.delivery_no
+               break;
+             }
+           }
+         }
+         this.$notify({
+           title: '成功',
+           message: '出库完成',
+           type: 'success',
+           duration: 2000
+         });
+         this.dialogStockOutVisible = false;
+       }).catch(error => {
+         this.disableSubmit = false;
+       })
+     },
+     handleDelete(row) {
+       deleteDBNumber(row).then(response => {
+         for (const v of this.list) {
+           if (v.id === row.id) {
+             const index = this.list.indexOf(v);
+             this.list.splice(index, 1);
+             break;
+           }
+         }
+         this.$notify({
+           title: '成功',
+           message: '删除面单成功',
+           type: 'success',
+           duration: 2000
+         });
+       });
+     },
+     handleDBPrint() {
+       if (this.selectRow.length === 0) {
+         this.$message({
+           type: 'error',
+           message: '请选择面单',
+           duration: 2000
+         });
+         return
+       }
+       if (this.selectRow[0].shipping_name.includes('UEX')) {
+         this.isUEX = true;
+         this.dialogUEXVisible = true;
+         return
+       }
+       this.pdfsrc = '';
+       this.xloboData.BillCodes = []
+       for (const o in this.selectRow) {
+         this.xloboData.BillCodes.push(this.selectRow[o].db_number)
+       }
 
-        const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
-          const byteCharacters = atob(b64Data);
-          const byteArrays = [];
-          for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-            const slice = byteCharacters.slice(offset, offset + sliceSize);
-            const byteNumbers = new Array(slice.length);
-            for (let i = 0; i < slice.length; i++) {
-              byteNumbers[i] = slice.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            byteArrays.push(byteArray);
-          }
-          const blob = new Blob(byteArrays, { type: contentType });
-          return blob;
-        };
+       const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
+         const byteCharacters = atob(b64Data);
+         const byteArrays = [];
+         for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+           const slice = byteCharacters.slice(offset, offset + sliceSize);
+           const byteNumbers = new Array(slice.length);
+           for (let i = 0; i < slice.length; i++) {
+             byteNumbers[i] = slice.charCodeAt(i);
+           }
+           const byteArray = new Uint8Array(byteNumbers);
+           byteArrays.push(byteArray);
+         }
+         const blob = new Blob(byteArrays, { type: contentType });
+         return blob;
+       };
 
-        this.disableSubmit2 = true
-        if ('EMS_SAL_EPACK_SURFACE'.includes(this.selectRow[0].shipping_name)) {
-          fetchEMSPDF(this.xloboData).then(response => {
-            const blob = b64toBlob(response.data.Result[0].BillPdfLabel, 'application/pdf');
-            const link = document.createElement('a')
-            link.href = window.URL.createObjectURL(blob)
-            link.target = '_blank';
-            window.open(link);
-            for (const o of this.list) {
-              for (const s of this.selectRow) {
-                if (o.id === s.id) {
-                  const index = this.list.indexOf(o);
-                  this.list[index].print_status = '已打印';
-                  this.disableSubmit2 = false;
-                  break;
-                }
-              }
-            }
-          }).catch(error => {
-            this.disableSubmit2 = false;
-          })
-        } else {
-          fetchPDF(this.xloboData).then(response => {
-            // this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
-            // this.dialogFormVisible = true;
+       this.disableSubmit2 = true
+       if ('EMS_SAL_EPACK_SURFACE'.includes(this.selectRow[0].shipping_name)) {
+         fetchEMSPDF(this.xloboData).then(response => {
+           const blob = b64toBlob(response.data.Result[0].BillPdfLabel, 'application/pdf');
+           const link = document.createElement('a')
+           link.href = window.URL.createObjectURL(blob)
+           link.target = '_blank';
+           window.open(link);
+           for (const o of this.list) {
+             for (const s of this.selectRow) {
+               if (o.id === s.id) {
+                 const index = this.list.indexOf(o);
+                 this.list[index].print_status = '已打印';
+                 this.disableSubmit2 = false;
+                 break;
+               }
+             }
+           }
+         }).catch(error => {
+           this.disableSubmit2 = false;
+         })
+       } else {
+         fetchPDF(this.xloboData).then(response => {
+           // this.pdfsrc = "data:application/pdf;base64," + response.data.Result[0].BillPdfLabel
+           // this.dialogFormVisible = true;
 
-            const blob = b64toBlob(response.data.Result[0].BillPdfLabel, 'application/pdf');
+           const blob = b64toBlob(response.data.Result[0].BillPdfLabel, 'application/pdf');
 
-            // let blob = new Blob([response.data.Result[0].BillPdfLabel], { type: "application/pdf" } )
-            const link = document.createElement('a')
-            link.href = window.URL.createObjectURL(blob)
-            link.target = '_blank';
-            // link.download = "report.pdf"
-            // link.click()
-            window.open(link);
-            for (const o of this.list) {
-              for (const s of this.selectRow) {
-                if (o.id === s.id) {
-                  const index = this.list.indexOf(o);
-                  this.list[index].print_status = '已打印';
-                  this.disableSubmit2 = false;
-                  break;
-                }
-              }
-            }
-          }).catch(error => {
-            for (const i of error.response.data.idmis) {
-              for (const o of this.list) {
-                if (i === o.db_number) {
-                  const index = this.list.indexOf(o);
-                  this.list[index].print_status = '身份证异常';
-                  break;
-                }
-              }
-            }
-            this.disableSubmit2 = false;
-          })
-        }
-      },
-      handlePDF(row) {
-        this.xloboData.BillCodes = row.db_number;
-        this.pdfsrc = '';
-        fetchPDF(this.xloboData).then(response => {
-          this.pdfsrc = 'data:application/pdf;base64,' + response.data.Result[0].BillPdfLabel
-          this.dialogFormVisible = true;
-        });
-      }
-    }
-  }
+           // let blob = new Blob([response.data.Result[0].BillPdfLabel], { type: "application/pdf" } )
+           const link = document.createElement('a')
+           link.href = window.URL.createObjectURL(blob)
+           link.target = '_blank';
+           // link.download = "report.pdf"
+           // link.click()
+           window.open(link);
+           for (const o of this.list) {
+             for (const s of this.selectRow) {
+               if (o.id === s.id) {
+                 const index = this.list.indexOf(o);
+                 this.list[index].print_status = '已打印';
+                 this.disableSubmit2 = false;
+                 break;
+               }
+             }
+           }
+         }).catch(error => {
+           for (const i of error.response.data.idmis) {
+             for (const o of this.list) {
+               if (i === o.db_number) {
+                 const index = this.list.indexOf(o);
+                 this.list[index].print_status = '身份证异常';
+                 break;
+               }
+             }
+           }
+           this.disableSubmit2 = false;
+         })
+       }
+     },
+     handlePDF(row) {
+       this.xloboData.BillCodes = row.db_number;
+       this.pdfsrc = '';
+       fetchPDF(this.xloboData).then(response => {
+         this.pdfsrc = 'data:application/pdf;base64,' + response.data.Result[0].BillPdfLabel
+         this.dialogFormVisible = true;
+       });
+     }
+   }
+ }
 </script>
