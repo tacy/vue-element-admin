@@ -340,12 +340,12 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
 
 
 # automatic process ymatou order delivery
-async def deliveryYmtOrder(ymtapi, pool):
+async def deliveryYmtOrder(ymtapi, pool, seller):
     # 订单渠道是洋码头, 并且db单中的ymatou字段为空
-    sql = "select orderid, db_number, delivery_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='洋码头' and o.channel_delivery_status<>'已发货') as t on s.id=t.shipping_id"
+    sql = "select orderid, db_number, delivery_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='洋码头' and o.channel_delivery_status<>'已发货' and seller_name=%s) as t on s.id=t.shipping_id"
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
-            await cur.execute(sql)
+            await cur.execute(sql, (seller, ))
             rs = await cur.fetchall()
             dudepOrds = set([(i[0].split('-')[0], i[1], i[2]) for i in rs])
             for i in dudepOrds:
@@ -612,7 +612,7 @@ async def main(loop):
         task.append(
             asyncio.ensure_future(
                 periodic.start(deliveryYmtOrder, interval['deliveryymtorder'],
-                               ymtapi, pool)))
+                               ymtapi, pool, k)))
         # 宁波保税仓发货
         task.append(
             asyncio.ensure_future(
