@@ -140,6 +140,10 @@ class XloboCreateNoVerification(views.APIView):
             'Address': '中央区新富1-3-15　京橋プリズムビル　４階',
             'Phone': '11',
         }
+        if data['set_sender']:
+            billSenderInfo['Name'] = data['sender_name']
+            billSenderInfo['Phone'] = data['sender_mobile']
+
         billReceiverInfo = {
             'Name': ords[0]['receiver_name'],
             'Province': address[0],
@@ -256,9 +260,13 @@ class XloboCreateFBXBill(views.APIView):
         order_piad_time = ords[0]['piad_time']
         billSenderInfo = {
             'Name': ords[0]['seller_name'],
-            'Address': '中央区新富1-3-15　京橋プリズムビル　４階',
-            'Phone': '11',
+            'Address': '埼玉県朝霞市泉水3-7-9-115',
+            'Phone': '08030097238',
         }
+        if data['set_sender']:
+            billSenderInfo['Name'] = data['sender_name']
+            billSenderInfo['Phone'] = data['sender_mobile']
+
         billReceiverInfo = {
             'Name': ords[0]['receiver_name'],
             'Province': address[0],

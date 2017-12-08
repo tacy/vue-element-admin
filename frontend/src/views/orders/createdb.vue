@@ -178,6 +178,15 @@
         <el-form-item label="订单遗漏">
           <el-checkbox v-model="xloboData.disable_check">无需校验</el-checkbox>
         </el-form-item>
+        <el-form-item label="发件人">
+          <el-checkbox v-model="xloboData.set_sender">填写</el-checkbox>
+        </el-form-item>
+        <el-form-item v-show="xloboData.set_sender" label="发件人">
+          <el-input v-model="xloboData.sender_name"></el-input>
+        </el-form-item>
+        <el-form-item v-show="xloboData.set_sender" label="电话">
+          <el-input v-model="xloboData.sender_mobile"></el-input>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible=false">取 消</el-button>
@@ -289,9 +298,7 @@
 </template>
 
 <script>
-  import { parseTime } from 'utils';
   import { fetchInventory, fetchShipping, fetchOrder, updateOrder, fetchLogistic, orderRollback, createNoVerification, createfbxbill, manualallocatedb, createUexDB, createJapanEMS } from 'api/orders';
-  import { fetchPurchaseOrderItem, purchaseOrderDelete } from 'api/purchases';
 
   export default {
     data() {
@@ -328,13 +335,13 @@
         }, {
           value: '3',
           label: '商品条码'
-  }, {
-    value: '4',
-    label: '收件人'
-}, {
-    value: '5',
-    label: '注文编号'
-}],
+        }, {
+          value: '4',
+          label: '收件人'
+        }, {
+          value: '5',
+          label: '注文编号'
+        }],
         selectRow: [],
         isUEX: false,
         logisticOptions: [],
@@ -384,6 +391,9 @@
           LineTypeId: 3,
           IsContainTax: 1,
           disable_check: false,
+          set_sender: false,
+          sender_name: undefined,
+          sender_mobile: undefined,
           disable_checkOrderDelivery: false,
           disable_channel_delivery: false,
           tax_included_channel: false,
@@ -515,6 +525,9 @@
       },
       resetXloboData() {
         this.xloboData.disable_check = false
+        this.xloboData.set_sender = false
+        this.xloboData.sender_name = undefined
+        this.xloboData.sender_mobile = undefined
         this.xloboData.disable_checkOrderDelivery = false
         this.xloboData.disable_channel_delivery = false
         this.xloboData.tax_includec_channel = false
@@ -532,7 +545,7 @@
             break;
           }
         }
-        updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
+        updateOrder(this.temp, '/order/' + this.temp.id + '/').then(() => {
           this.dialogUpdateVisible = false;
           this.$notify({
             title: '成功',
@@ -583,7 +596,7 @@
 
         if (this.selectRow[0].shipping_name === '虚仓电商') {
           this.xloboData.IsRePacking = 1;
-  }
+        }
         this.xloboData.Comment = '';
         for (const i of this.selectRow) {
           this.xloboData.Comment += i.product_title + ', '
@@ -615,7 +628,7 @@
       createEMSShippingDB() {
         this.disableSubmit = true;
         this.xloboData.orders = this.selectRow;
-        createJapanEMS(this.xloboData).then(response => {
+        createJapanEMS(this.xloboData).then(() => {
           this.$notify({
             title: '成功',
             message: 'EMS面单创建成功',
@@ -624,7 +637,7 @@
           });
           this.getOrder();
           this.dialogCreateEMSVisible = false;
-        }).catch(error => {
+        }).catch(() => {
           this.disableSubmit = false;
         })
       },
@@ -633,24 +646,24 @@
         this.xloboData.orders = this.selectRow;
         const shipping_type = this.selectRow[0].shipping_name;
         if (shipping_type === '直邮电商' || shipping_type === '贝海直邮电商') {
-          createNoVerification(this.xloboData).then(response => {
+          createNoVerification(this.xloboData).then(() => {
             this.dialogFormVisible = false
             this.getOrder();
-          }).catch(error => {
+          }).catch(() => {
             this.disableSubmit = false;
           })
         } else {
-          createfbxbill(this.xloboData).then(response => {
+          createfbxbill(this.xloboData).then(() => {
             this.dialogFormVisible = false
             this.getOrder();
-          }).catch(error => {
+          }).catch(() => {
             this.disableSubmit = false;
           })
         }
       },
       createUexShippingDB() {
         this.uexData.orders = this.selectRow;
-        createUexDB(this.uexData).then(response => {
+        createUexDB(this.uexData).then(() => {
           this.dialogUEXVisible = false;
           this.getOrder();
         })
@@ -658,10 +671,10 @@
       manualShippingDB() {
         this.disableSubmit = true;
         this.xloboData.orders = this.selectRow;
-        manualallocatedb(this.xloboData).then(response => {
+        manualallocatedb(this.xloboData).then(() => {
           this.dialogDBInputVisible = false
           this.getOrder();
-        }).catch(error => {
+        }).catch(() => {
           this.disableSubmit = false;
         })
       },
@@ -672,7 +685,7 @@
       },
       rollbackToPreprocess() {
         this.disableSubmit = true;
-        orderRollback(this.rollbackOrderData).then(response => {
+        orderRollback(this.rollbackOrderData).then(() => {
           const process_orderid = this.rollbackOrderData.orderid.split('-')[0]
           const inds = []
           for (const v of this.list) {
@@ -691,7 +704,7 @@
             type: 'success',
             duration: 2000
           });
-        }).catch(error => {
+        }).catch(() => {
           this.disableSubmit = false;
         })
       }
