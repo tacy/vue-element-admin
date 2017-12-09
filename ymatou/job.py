@@ -109,6 +109,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                       o['buyer_remark'], jancode, num, price, payment, dt,
                       o['paid_time'], oi['product_title'], sku_properties_name,
                       '待处理', '', oi['product_id'])
+                if not oi['product_id']:
+                    logger.warning('导入订单丢失product_id: %s', oi)
                 ords.append(it)
     insertOrderSQL = (
         'INSERT INTO stock_order '
