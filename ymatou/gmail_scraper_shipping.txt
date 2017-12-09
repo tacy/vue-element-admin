@@ -22,4 +22,7 @@ http://tracking.post.japanpost.jp/service/singleSearch.do?org.apache.struts.tagl
 
 【宅配伝票No】567469013042 / 20171207000000741
 
+068-g000335448-i01 / 【お問い合わせ伝票番号】
+425988799375
+
 (?:(問(い)?合(わ)?せ番号)|伝票番号|送り状No).+?(\d+{5,})
