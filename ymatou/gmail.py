@@ -90,7 +90,7 @@ class GmailScraper():
                 html = part.get_payload(decode=True).decode(
                     part_charset, 'replace')
                 match = re.search(
-                    r'(?:(?:配送会社お)?問い?合わ?せ番号|伝票番号\r?\n?|送り状No|reqCodeNo1).*?(\d{5,})',
+                    r'(?:(?:配送会社お)?問い?合わ?せ番号|伝票番号\r?\n?|宅配伝票No|送り状No|reqCodeNo1).*?(\d{5,})',
                     html)
                 if match:
                     result.append(match.group(1))
