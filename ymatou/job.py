@@ -355,7 +355,7 @@ async def deliveryYmtOrder(ymtapi, pool, seller):
                 if '0000' in r.get('code') and r.get(
                         'content') and r['content']['results']:
                     info = r['content']['results']
-                    if info[0]['exec_success']:
+                    if not info or info[0]['exec_success']:
                         await cur.execute(
                             "update stock_order set channel_delivery_status='已发货' where orderid like %s",
                             (i[0] + '%', ))
