@@ -426,7 +426,7 @@ def updateYMTOrderInfo():
         'authcode': 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk',
     }
     ymtapi = YmatouAPI(sessYmt, v['appid'], v['appsecret'], v['authcode'])
-    sql = 'select orderid,product_title from stock_order where product_id="" and channel_name="洋码头"'
+    sql = 'select orderid,product_title from stock_order where product_id="" and channel_name="洋码头" and seller_name="东京彩虹桥"'
     conn = pymysql.connect(
         user='root',
         host='127.0.0.1',
@@ -440,7 +440,8 @@ def updateYMTOrderInfo():
         ords = cursor.fetchall()
         for o in ords:
             result = loop.run_until_complete(ymtapi.getOrderInfo(o['orderid']))
-            if not result or not result['content']['order_info']:
+            if not result or not result.get(
+                    'content') or not result['content']['order_info']:
                 print(result, 'orderid:', o)
                 continue
             for info in result['content']['order_info']['order_items_info']:
