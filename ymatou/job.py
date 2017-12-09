@@ -352,8 +352,7 @@ async def deliveryYmtOrder(ymtapi, pool, seller):
                 r = await ymtapi.deliver(i[0], i[1], i[2])
                 if not r:
                     continue
-                if '0000' in r.get('code') and r.get(
-                        'content') and r['content']['results']:
+                if '0000' in r.get('code') and r.get('content'):
                     info = r['content']['results']
                     if not info or info[0]['exec_success']:
                         await cur.execute(
