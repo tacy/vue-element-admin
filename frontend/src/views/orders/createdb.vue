@@ -84,9 +84,9 @@
           <span class="link-type" @click="handleUpdate(scope.row)">{{scope.row.receiver_name}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="电话" width="115px" show-overflow-tooltip>
+      <el-table-column align="center" label="备注" width="120px">
         <template scope="scope">
-          <span>{{scope.row.receiver_mobile}}</span>
+          <span>卖:{{scope.row.seller_memo}}|买:{{scope.row.buyer_remark}}</span>
         </template>
       </el-table-column>
       <el-table-column align="center" label="地址" width="150px" show-overflow-tooltip>
