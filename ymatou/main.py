@@ -414,6 +414,49 @@ def getYMTOrderInfo(id):
 
 
 @click.command()
+def updateYMTOrderInfo():
+    loop = asyncio.get_event_loop()
+    sessYmt = aiohttp.ClientSession(
+        loop=loop, headers={
+            'Content-Type': 'application/json'
+        })
+    v = {
+        'appid': 'llzlHWWDTkEsUUjwKf',
+        'appsecret': 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox',
+        'authcode': 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk',
+    }
+    ymtapi = YmatouAPI(sessYmt, v['appid'], v['appsecret'], v['authcode'])
+    sql = 'select orderid,product_title from stock_order where product_id="" and channel_name="洋码头"'
+    conn = pymysql.connect(
+        user='root',
+        host='127.0.0.1',
+        passwd=db_password,
+        db='ymatou',
+        # http://stackoverflow.com/questions/2108824/mysql-incorrect-string-value-error-when-save-unicode-string-in-django
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor)
+    with conn.cursor() as cursor:
+        cursor.execute(sql)
+        ords = cursor.fetchall()
+        for o in ords:
+            result = loop.run_until_complete(ymtapi.getOrderInfo(o['orderid']))
+            if not result or not result['content']['order_info']:
+                print(result, 'orderid:', o)
+                continue
+            for info in result['content']['order_info']['order_items_info']:
+                if info['product_title'] == o['product_title']:
+                    if info['product_id']:
+                        cursor.execute(
+                            'update stock_order set product_id=%s where orderid=%s and product_title=%s',
+                            (info['product_id'], o['orderid'],
+                             o['product_title']))
+                        conn.commit()
+                        print('update orderid success: %s' % (o['orderid']))
+                    else:
+                        print(info)
+
+
+@click.command()
 @click.argument('csvfile')
 def updateYMTStock(csvfile):
     loop = asyncio.get_event_loop()
@@ -579,6 +622,7 @@ cli.add_command(importLogisticCompany)
 cli.add_command(exportYMTOrder)
 cli.add_command(getYMTOrderInfo)
 cli.add_command(updateYMTStock)
+cli.add_command(updateYMTOrderInfo)
 
 if __name__ == '__main__':
     cli()
