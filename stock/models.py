@@ -214,6 +214,7 @@ class Order(models.Model):
     need_purchase = models.IntegerField(null=True, default=0)
     allocate_time = models.DateTimeField(null=True)  # 需要根据派单时间, 判断采购单是否能关联该订单
     price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    real_price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
     payment = models.DecimalField(max_digits=7, null=True, decimal_places=2)
     delivery_type = models.CharField(max_length=32, null=False)
     piad_time = models.DateTimeField()
