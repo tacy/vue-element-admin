@@ -435,6 +435,9 @@ class ManualAllocateDBNumber(views.APIView):
                     data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
 
         db_number = request.data['Comment']
+        if not db_number:
+            errmsg = {'errmsg': '面单号不能为空.'}
+            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
         channel_name = ords[0]['channel_name']
         order_piad_time = ords[0]['piad_time']
         # delivery_type = ords[0]['delivery_type']
@@ -444,11 +447,8 @@ class ManualAllocateDBNumber(views.APIView):
             try:
                 shippingdbObj = ShippingDB.objects.get(db_number=db_number)
                 for o in ords:
-                    if '拼邮' not in o['shipping_name'] and shippingdbObj.status != '已出库':
-                        errmsg = {
-                            'errmsg':
-                            '非拼邮订单, 面单号被重复使用; 或使用直邮面单, 但面单尚未出库, 请仔细检查确认'
-                        }
+                    if '拼邮' not in o['shipping_name']:
+                        errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
                     elif '拼邮' in o['shipping_name'] and '洋码头' in o['channel_name'] and '拼邮' not in o['delivery_type']:
@@ -456,6 +456,11 @@ class ManualAllocateDBNumber(views.APIView):
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
                     else:
+                        if shippingdbObj.status != '已出库':
+                            errmsg = {'errmsg': '使用了直邮面单, 但面单尚未出库, 请仔细检查确认'}
+                            return Response(
+                                data=errmsg,
+                                status=status.HTTP_400_BAD_REQUEST)
                         c = shippingdbObj.order.count()
                         if c > 50:
                             errmsg = {'errmsg': '该国际单号被重复使用次数过多, 请换新单号发货'}
