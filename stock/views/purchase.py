@@ -254,6 +254,24 @@ class NoOrderPurchase(views.APIView):
         inventory = data['inventory']
         supplier = data['supplier']
         results = {}
+        if Supplier.objects.get(id=supplier).name == '东京仓':
+            for i in data['items']:
+                try:
+                    stockObj = Stock.objects.get(
+                        product__jancode=i['jancode'],
+                        inventory=Inventory.objects.get(name='东京'))
+                    realstock = stockObj.quantity + stockObj.inflight - stockObj.preallocation
+                    if i['quantity'] > realstock:
+                        return Response(
+                            data={
+                                'errmsg':
+                                '产品[%s]采购数量超出东京仓库存数量' % (i['jancode'])
+                            },
+                            status=status.HTTP_400_BAD_REQUEST)
+                except Stock.DoesNotExist:
+                    return Response(
+                        data={'errmsg': '产品[%s]在东京仓没有入库记录' % (i['jancode'])},
+                        status=status.HTTP_400_BAD_REQUEST)
         try:
             with transaction.atomic():
                 createtime = arrow.now()
