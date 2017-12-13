@@ -365,6 +365,7 @@ class PurchaseOrderDelete(views.APIView):
                     o.save()
 
             # mark purchaseorder status as '删除'
+            poitemObjs.update(status='已删除')
             poObj.status = '已删除'
             poObj.save(update_fields=['status'])
             return Response(status=status.HTTP_200_OK)
