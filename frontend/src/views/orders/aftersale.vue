@@ -44,7 +44,7 @@
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
-      <el-table-column type="expand" width="45px">
+      <el-table-column type="expand" width="50px">
         <template scope="scope">
           <el-form label-position="left" inline class="table-expand">
             <!--el-form-item label="商品:" label-width="50px">
@@ -120,7 +120,7 @@
           <span>{{scope.row.channel_name}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="状态" width="95px">
+      <el-table-column align="center" label="状态" width="100px">
         <template scope="scope">
           <!--span>{{scope.row.status}}</span-->
           <el-tag :type="scope.row.status | statusFilter">{{scope.row.status}}</el-tag>
@@ -151,17 +151,17 @@
           <span>{{scope.row.delivery_type}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="条码" width="120px">
+      <el-table-column align="center" label="条码" width="140px" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.jancode}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="商品名" width="245px">
+      <el-table-column align="center" label="商品名" width="250px">
         <template scope="scope">
           <span>{{scope.row.product_title}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="规格" show-overflow-tooltip width="120px">
+      <el-table-column align="center" label="规格" show-overflow-tooltip width="150px">
         <template scope="scope">
           <span>{{scope.row.sku_properties_name}}</span>
         </template>
@@ -171,14 +171,12 @@
           <span>{{scope.row.quantity}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="操作" width="140">
+      <el-table-column align="center" label="操作" width="150">
         <template scope="scope">
-          <el-button size="small" :disabled="scope.row.status === '已删除'?true:false" type="primary" @click="handleMark(scope.row)">标记
+          <el-button size="small" :disabled="scope.row.status === '已删除'?true:false" type="primary" @click="handleMark(scope.row)">标 记
           </el-button>
-          <el-button size="small" v-if="scope.row.status !== '已删除'&scope.row.status !=='已发货'" type="danger" @click="handleDelete(scope.row)">删除
+          <el-button size="small" :disabled="scope.row.status === '已删除'?true:false" type="danger" @click="handleDelete(scope.row)">删 除
           </el-button>
-	  <el-button size="small" v-if="scope.row.status==='已发货'" type="warning" @click="handleAfterSale(scope.row)">售后
-	  </el-button>
         </template>
       </el-table-column>
     </el-table>

@@ -25,6 +25,7 @@ const ordersCreateDB = _import('orders/createdb');
 const ordersShipping = _import('orders/shipping');
 const ordersNeedExport = _import('orders/needexport');
 const ordersUexTrack = _import('orders/uextrack');
+const afterSale = _import('orders/aftersale');
 
 /* purchase */
 const purchasesorder = _import('purchases/order');
@@ -68,7 +69,7 @@ export const constantRouterMap = [
   {
     path: '/',
     component: Layout,
-    redirect: '/dashboard',
+    redirect: '/orders/query',
     name: '首页',
     hidden: true,
     children: [{ path: 'dashboard', component: dashboard }]
@@ -149,7 +150,8 @@ export const asyncRouterMap = [
         component: ordersUexTrack,
         name: '轨迹单',
         meta: { role: ['admin', 'normal'] }
-      }
+      },
+      { path: 'aftersale', component: afterSale, name: '售后单' }
     ]
   },
   {

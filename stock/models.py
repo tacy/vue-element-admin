@@ -280,6 +280,27 @@ class Order(models.Model):
     #          进程自动退出, 然后systemd会自动把后台任务重新启动, 完成配置刷新工作.
 
 
+class AfterSaleCase(models.Model):
+    order = models.ForeignKey(Order, related_name='aftersalecase')
+    case_type = models.CharField(max_length=16, null=False)
+    status = models.CharField(max_length=8, null=True)  # 待处理/完成/退回中
+    process_method = models.CharField(max_length=16, null=True)
+    add_price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    sub_price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    case_order = models.IntegerField(null=True)
+    pass
+
+
+class AfterSaleMeta(models.Model):
+    name = models.CharField(max_length=16, null=False)
+    meta_id = models.CharField(max_length=2, null=False)
+    parent_id = models.CharField(max_length=2, null=True, blank=True)
+
+    def __str__(self):
+        return 'name: {} / parent_id:{} / id: {}'.format(
+            self.name, self.parent_id, self.meta_id)
+
+
 class Task(models.Model):
     name = models.CharField(max_length=16, null=False)
     interval = models.IntegerField(null=False)
