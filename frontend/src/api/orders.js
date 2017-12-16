@@ -272,3 +272,59 @@ export function exportPrint(data) {
     data
   });
 }
+
+export function fetchAfterSaleMeta(query) {
+  return fetch({
+    url: '/aftersale/meta',
+    method: 'get',
+    params: query
+  });
+}
+
+export function fetchAfterSaleCase(query) {
+  return fetch({
+    url: '/aftersale/case',
+    method: 'get',
+    params: query
+  });
+}
+
+export function createAfterSaleCase(data) {
+  return fetch({
+    url: '/aftersale/case/',
+    method: 'post',
+    data
+  });
+}
+
+export function afterSaleProcess(data) {
+  return fetch({
+    url: '/aftersale/process/',
+    method: 'post',
+    data
+  });
+}
+
+export function afterSaleArrive(data) {
+  return fetch({
+    url: '/aftersale/arrive/',
+    method: 'post',
+    data
+  });
+}
+
+export function afterSaleBalance(data) {
+  return fetch({
+    url: '/aftersale/balance/',
+    method: 'post',
+    data
+  });
+}
+
+export function afterSaleUpdate(asc, url) {
+  return fetch({
+    url,
+    method: 'put',
+    data: asc
+  });
+}

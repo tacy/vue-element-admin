@@ -280,6 +280,34 @@ class Order(models.Model):
     #          进程自动退出, 然后systemd会自动把后台任务重新启动, 完成配置刷新工作.
 
 
+class AfterSaleMeta(models.Model):
+    name = models.CharField(max_length=16, null=False)
+    meta_id = models.CharField(max_length=2, null=False)
+    parent_id = models.CharField(max_length=2, null=True, blank=True)
+
+    def __str__(self):
+        return 'name: {} / parent_id:{} / id: {}'.format(
+            self.name, self.parent_id, self.meta_id)
+
+
+class AfterSaleCase(models.Model):
+    order = models.ForeignKey(Order, related_name='aftersalecase')
+    case_type = models.ForeignKey(AfterSaleMeta, related_name='aftersalecase')
+    status = models.CharField(max_length=8, null=True)  # 待处理/处理中/已完成/已删除
+    process_method = models.ForeignKey(
+        AfterSaleMeta, related_name='aftersalecase2', blank=True, null=True)
+    balance_price = models.DecimalField(
+        max_digits=7, null=True, decimal_places=2)
+    return_product = models.ForeignKey(
+        Product, related_name='aftersalecase', blank=True, null=True)
+    return_quantity = models.IntegerField(null=True, blank=True)
+    case_order = models.ForeignKey(
+        Order, related_name='aftersalecase2', blank=True, null=True)
+    return_status = models.CharField(max_length=8, null=True)  # 处理中/已完成
+    balance_status = models.CharField(max_length=8, null=True)  # 处理中/已完成
+    pass
+
+
 class Task(models.Model):
     name = models.CharField(max_length=16, null=False)
     interval = models.IntegerField(null=False)

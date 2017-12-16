@@ -1,17 +1,18 @@
 import django_filters.rest_framework
 from rest_framework import generics
 
-from stock.filter import (OrderFilter, ProductFilter, PurchaseOrderFilter,
-                          PurchaseOrderItemFilter, ShippingDBFilter,
-                          StockFilter)
-from stock.models import (BondedProduct, Inventory, Order, Product,
-                          PurchaseOrder, PurchaseOrderItem, Shipping,
-                          ShippingDB, Stock, Supplier)
+from stock.filter import (
+    OrderFilter, ProductFilter, PurchaseOrderFilter, PurchaseOrderItemFilter,
+    ShippingDBFilter, StockFilter, AfterSaleMetaFilter, AfterSaleCaseFilter)
+from stock.models import (
+    AfterSaleCase, AfterSaleMeta, BondedProduct, Inventory, Order, Product,
+    PurchaseOrder, PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier)
 from stock.serializers import (
-    BondedProductSerializer, InventorySerializer, OrderSerializer,
-    ProductSerializer, PurchaseOrderItemSerializer, PurchaseOrderSerializer,
-    ShippingDBSerializer, ShippingSerializer, StockSerializer,
-    SupplierSerializer, Token, TokenSerializer)
+    AfterSaleCaseSerializer, BondedProductSerializer, InventorySerializer,
+    OrderSerializer, ProductSerializer, PurchaseOrderItemSerializer,
+    PurchaseOrderSerializer, ShippingDBSerializer, ShippingSerializer,
+    StockSerializer, SupplierSerializer, Token, TokenSerializer,
+    AfterSaleMetaSerializer)
 
 
 class UserInfo(generics.ListAPIView):
@@ -134,3 +135,22 @@ class SupplierList(generics.ListCreateAPIView):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+
+
+class AfterSaleCaseList(generics.ListCreateAPIView):
+    queryset = AfterSaleCase.objects.all()
+    serializer_class = AfterSaleCaseSerializer
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+    filter_class = AfterSaleCaseFilter
+
+
+class AfterSaleCaseDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = AfterSaleCase.objects.all()
+    serializer_class = AfterSaleCaseSerializer
+
+
+class AfterSaleMetaList(generics.ListAPIView):
+    queryset = AfterSaleMeta.objects.all()
+    serializer_class = AfterSaleMetaSerializer
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+    filter_class = AfterSaleMetaFilter
