@@ -6,3 +6,4 @@ from .stock import *
 from .tools import *
 from .xlobo import *
 from .uex import *
+from .aftersale import *

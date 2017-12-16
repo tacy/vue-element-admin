@@ -1,6 +1,10 @@
-from django_filters import FilterSet, BaseInFilter, CharFilter, BooleanFilter, NumberFilter
-from .models import Order, Product, Stock, ShippingDB, PurchaseOrder, PurchaseOrderItem
 from django.db.models import F, Q
+from django_filters import (BaseInFilter, BooleanFilter, CharFilter, FilterSet,
+                            NumberFilter)
+
+from .models import (Order, Product, PurchaseOrder, PurchaseOrderItem,
+                     ShippingDB, Stock)
+from stock.models import AfterSaleCase, AfterSaleMeta
 
 
 class CharInFilter(BaseInFilter, CharFilter):
@@ -148,3 +152,19 @@ class PurchaseOrderItemFilter(FilterSet):
             'purchaseorder',
             'status',
         ]
+
+
+class AfterSaleMetaFilter(FilterSet):
+    noparent = BooleanFilter(name='parent_id', lookup_expr='isnull')
+
+    class Meta:
+        model = AfterSaleMeta
+        fields = ['parent_id']
+
+
+class AfterSaleCaseFilter(FilterSet):
+    orderid = CharFilter(name='order__orderid')
+
+    class Meta:
+        model = AfterSaleCase
+        fields = []

@@ -1,10 +1,11 @@
 from rest_framework import serializers
-# from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-from .models import (PurchaseOrder, Product, Order, Stock, Shipping, Inventory,
-                     PurchaseOrderItem, Supplier, ShippingDB, BondedProduct,
-                     StockInRecord, StockOutRecord, UexTrack,
-                     PurchaseDivergence)
+
+from .models import (BondedProduct, Inventory, Order, Product,
+                     PurchaseDivergence, PurchaseOrder, PurchaseOrderItem,
+                     Shipping, ShippingDB, Stock, StockInRecord,
+                     StockOutRecord, Supplier, UexTrack)
+from stock.models import AfterSaleCase, AfterSaleMeta
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -207,6 +208,37 @@ class StockInSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = StockInRecord
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class AfterSaleCaseSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+    orderid = serializers.ReadOnlyField(source='order.orderid')
+    orderid2 = serializers.ReadOnlyField(source='case_order.orderid')
+    jancode = serializers.ReadOnlyField(source='order.jancode')
+    product_title = serializers.ReadOnlyField(source='order.product_title')
+    quantity = serializers.ReadOnlyField(source='order.quantity')
+    case_type_name = serializers.ReadOnlyField(source='case_type.name')
+    case_type_metaid = serializers.ReadOnlyField(source='case_type.meta_id')
+    process_method_name = serializers.ReadOnlyField(
+        source='process_method.name')
+    db_number = serializers.ReadOnlyField(source='order.shippingdb.db_number')
+    return_jancode = serializers.ReadOnlyField(source='return_product.jancode')
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = AfterSaleCase
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class AfterSaleMetaSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = AfterSaleMeta
         # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
         fields = '__all__'
 

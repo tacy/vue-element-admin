@@ -44,7 +44,7 @@
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
-      <el-table-column type="expand" width="50px">
+      <el-table-column type="expand" width="45px">
         <template scope="scope">
           <el-form label-position="left" inline class="table-expand">
             <!--el-form-item label="商品:" label-width="50px">
@@ -120,7 +120,7 @@
           <span>{{scope.row.channel_name}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="状态" width="100px">
+      <el-table-column align="center" label="状态" width="95px">
         <template scope="scope">
           <!--span>{{scope.row.status}}</span-->
           <el-tag :type="scope.row.status | statusFilter">{{scope.row.status}}</el-tag>
@@ -151,17 +151,17 @@
           <span>{{scope.row.delivery_type}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="条码" width="140px" show-overflow-tooltip>
+      <el-table-column align="center" label="条码" width="120px">
         <template scope="scope">
           <span>{{scope.row.jancode}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="商品名" width="250px">
+      <el-table-column align="center" label="商品名" width="245px">
         <template scope="scope">
           <span>{{scope.row.product_title}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="规格" show-overflow-tooltip width="150px">
+      <el-table-column align="center" label="规格" show-overflow-tooltip width="120px">
         <template scope="scope">
           <span>{{scope.row.sku_properties_name}}</span>
         </template>
@@ -171,12 +171,14 @@
           <span>{{scope.row.quantity}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="操作" width="150">
+      <el-table-column align="center" label="操作" width="140">
         <template scope="scope">
-          <el-button size="small" :disabled="scope.row.status === '已删除'?true:false" type="primary" @click="handleMark(scope.row)">标 记
+          <el-button size="small" :disabled="scope.row.status === '已删除'?true:false" type="primary" @click="handleMark(scope.row)">标记
           </el-button>
-          <el-button size="small" :disabled="scope.row.status === '已删除'?true:false" type="danger" @click="handleDelete(scope.row)">删 除
+          <el-button size="small" v-if="scope.row.status !== '已删除'&scope.row.status !=='已发货'" type="danger" @click="handleDelete(scope.row)">删除
           </el-button>
+	  <el-button size="small" v-if="scope.row.status==='已发货'" type="warning" @click="handleAfterSale(scope.row)">售后
+	  </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -303,15 +305,29 @@
         <el-button type="primary" @click="deleteOrder()">确 定</el-button>
       </div>
     </el-dialog>
-     <el-dialog title="标记订单" :visible.sync="dialogMarkVisible">
+    <el-dialog title="标记订单" :visible.sync="dialogMarkVisible">
+     <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
+       <el-form-item label="卖家备注">
+	 <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.seller_memo"></el-input>
+       </el-form-item>
+     </el-form>
+     <div slot="footer" class="dialog-footer">
+       <el-button @click="dialogMarkVisible=false">取 消</el-button>
+       <el-button type="primary" @click="markOrder()">确 定</el-button>
+     </div>
+    </el-dialog>
+    <el-dialog title="发起售后" size="tiny" :visible.sync="dialogAfterSaleCaseVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
-        <el-form-item label="卖家备注">
-          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model="temp.seller_memo"></el-input>
+        <el-form-item label="售后类型">
+	  <el-select clearable style="width: 120px" class="filter-item" v-model="ascData.case_type" placeholder="请选择">
+	    <el-option v-for="item in afterSaleMetaOptions" :key="item.name" :label="item.name" :value="item.id">
+	    </el-option>
+	  </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogMarkVisible=false">取 消</el-button>
-        <el-button type="primary" @click="markOrder()">确 定</el-button>
+        <el-button @click="dialogAfterSaleCaseVisible=false">取 消</el-button>
+        <el-button type="primary" @click="createAsc()">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -334,7 +350,7 @@
 </style>
 
 <script>
-  import { fetchInventory, fetchOrder, orderDelete, updateOrder, orderTPRCreate } from 'api/orders';
+  import { fetchInventory, fetchOrder, orderDelete, updateOrder, orderTPRCreate, fetchAfterSaleMeta, createAfterSaleCase } from 'api/orders';
 
   export default {
     data() {
@@ -345,8 +361,10 @@
         dialogFormVisible: false,
         dialogCreateVisible: false,
         dialogMarkVisible: false,
+        dialogAfterSaleCaseVisible: false,
         inventoryOptions: [],
         statusOptions: ['待处理', '需面单', '待采购', '待发货', '已采购', '需介入', '已发货', '已删除'],
+        afterSaleMetaOptions: [],
         channelOptions: ['洋码头', '京东', 'AMZN', 'YHOO', 'TOKYOWH'],
         sellerOptions: ['东京彩虹桥', '妈妈宝宝日本馆', '天狗'],
         deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
@@ -402,6 +420,10 @@
             }
           ]
         },
+        ascData: {
+          case_type: undefined,
+          order: undefined
+        },
         temp: {
           id: undefined,
           status: undefined,
@@ -453,6 +475,7 @@
     created() {
       this.getInventory();
       this.getOrder();
+      this.getAfterSaleMeta();
     },
     methods: {
       getOrder() {
@@ -476,6 +499,12 @@
           this.list = response.data.results;
           this.total = response.data.count;
           this.listLoading = false;
+        })
+      },
+      getAfterSaleMeta() {
+        const queryParam = { noparent: 2 }
+        fetchAfterSaleMeta(queryParam).then(response => {
+          this.afterSaleMetaOptions = response.data.results;
         })
       },
       getInventory() {
@@ -561,7 +590,7 @@
         this.dialogMarkVisible = true;
       },
       markOrder() {
-        updateOrder(this.temp, '/order/' + this.temp.id + '/').then(response => {
+        updateOrder(this.temp, '/order/' + this.temp.id + '/').then(() => {
           for (const v of this.list) {
             if (v.id === this.temp.id) {
               const index = this.list.indexOf(v);
@@ -578,12 +607,29 @@
           this.dialogMarkVisible = false
         })
       },
+      handleAfterSale(row) {
+        this.temp = Object.assign({}, row);
+        this.dialogAfterSaleCaseVisible = true;
+      },
+      createAsc() {
+        this.ascData.order = this.temp.id
+        this.ascData.status = '待处理'
+        createAfterSaleCase(this.ascData).then(() => {
+          this.dialogAfterSaleCaseVisible = false
+          this.$notify({
+            title: '成功',
+            message: '售后单创建成功',
+            type: 'success',
+            duration: 2000
+          });
+        })
+      },
       createTPROrder() {
         this.$refs.form.validate(valid => {
           if (!valid) {
             return false;
           } else {
-            orderTPRCreate(this.orderData).then(response => {
+            orderTPRCreate(this.orderData).then(() => {
               this.$notify({
                 title: '成功',
                 message: '订单创建成功',
@@ -596,7 +642,7 @@
         });
       },
       deleteOrder() {
-        orderDelete(this.temp).then(response => {
+        orderDelete(this.temp).then(() => {
           this.temp.status = '已删除';
           for (const v of this.list) {
             if (v.id === this.temp.id) {
