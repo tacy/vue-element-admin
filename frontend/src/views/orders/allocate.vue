@@ -215,275 +215,284 @@
 </template>
 
 <script>
-  import { fetchOrder, fetchInventory, fetchCategory, fetchStock, fetchShipping, orderAllocateUpdate, orderAllocate, productcreate } from 'api/orders';
-  import { parseTime } from 'utils';
+ import { fetchOrder, fetchInventory, fetchCategory, fetchStock, fetchShipping, orderAllocateUpdate, orderAllocate, productcreate } from 'api/orders';
 
-  export default {
-    name: 'table_demo',
-    data() {
-      return {
-        list: null,
-        total: null,
-        submitting: false,
-        isDomestic: false,
-        isSwitchDeliveryType: false,
-        listLoading: true,
-        listQuery: {
-          page: 1,
-          limit: 10,
-          orderid: undefined,
-          channel_name: undefined,
-          receiver_name: undefined,
-          jancode: undefined,
-          status: '待处理',
-          delivery_type_exclude: '第三方保税',
-          sort: '+id'
-        },
-        temp: {
-          id: undefined,
-          inventory: undefined,
-          shipping: undefined,
-          jancode: undefined,
-          status: undefined,
-          brand: undefined,
-          channel_name: undefined,
-          payment: undefined,
-          price: undefined,
-          quantity: undefined,
-          category: undefined,
-          sku_properties_name: undefined,
-          delivery_type: undefined
-        },
-        tempProduct: {
-          name: undefined,
-          jancode: undefined,
-          category: undefined,
-          brand: undefined,
-          specification: undefined
-        },
-        listStockQuery: {
-          jancode: ''
-        },
-        listShippingQuery: {
-          inventory: ''
-        },
-        channelnameOptions: ['洋码头', '京东'],
-        inventoryOptions: [],
-        shippingOptions: [],
-        categoryOptions: [],
-        sortOptions: [{ label: '按ID升序列', key: '+id' }, { label: '按ID降序', key: '-id' }],
-        dialogFormVisible: false,
-        dialogProductVisible: false,
-        dialogBatchAllocateVisible: false,
-        dialogStatus: '',
-        textMap: {
-          update: '编辑',
-          create: '创建'
-        },
-        dialogAllocationVisible: false,
-        stockData: [],
-        tableKey: 0
-      }
-    },
-    created() {
-      this.getList();
-      this.getInventory();
-      this.getCategory();
-    },
-    methods: {
-      getList() {
-        this.listLoading = true;
-        fetchOrder(this.listQuery).then(response => {
-          this.list = response.data.results;
-          this.total = response.data.count;
-          this.listLoading = false;
-        })
-      },
-      getCategory() {
-        fetchCategory().then(response => {
-          this.categoryOptions = response.data.results;
-        })
-      },
-      getInventory() {
-        fetchInventory().then(response => {
-          this.inventoryOptions = response.data.results;
-        })
-      },
-      getShipping() {
-        this.temp.shipping = null;
-        if (this.temp.inventory === null) {
-          this.temp.shipping = null;
-          return
-        }
-        this.listShippingQuery.inventory = this.temp.inventory;
-        fetchShipping(this.listShippingQuery).then(response => {
-          this.shippingOptions = response.data.results;
-          this.temp.shipping = response.data.results[0].id
-        })
-      },
-      handleFilter() {
-        this.listQuery.page = 1;
-        this.getList();
-      },
-      handleSizeChange(val) {
-        this.listQuery.limit = val;
-        this.getList();
-      },
-      handleCurrentChange(val) {
-        this.listQuery.page = val;
-        this.getList();
-      },
-      timeFilter(time) {
-        if (!time[0]) {
-          this.listQuery.start = undefined;
-          this.listQuery.end = undefined;
-          return;
-        }
-        this.listQuery.start = parseInt(+time[0] / 1000);
-        this.listQuery.end = parseInt((+time[1] + 3600 * 1000 * 24) / 1000);
-      },
-      handleModifyStatus(row, status) {
-        this.$message({
-          message: '操作成功',
-          type: 'success'
-        });
-        row.status = status;
-      },
-      handleProduct(row) {
-        this.temp = Object.assign({}, row);
-        this.dialogProductVisible = true
-      },
-      createProduct() {
-        this.tempProduct.name = this.temp.product_title,
-        this.tempProduct.jancode = this.temp.jancode.trim(),
-        this.tempProduct.brand = this.temp.brand,
-        this.tempProduct.category = this.temp.category[1],
-        this.tempProduct.specification = this.temp.sku_properties_name,
-        productcreate(this.tempProduct).then(response => {
-          this.dialogProductVisible = false;
-          this.$notify({
-            title: '成功',
-            message: '创建成功',
-            type: 'success',
-            duration: 2000
-          });
-        })
-      },
-      handleBatchAllocate() {
-        this.temp.id = 'batchallocate'  // 特殊标记
-        this.temp.orderid = 'batchallocate'
-        this.temp.jancode = undefined
-        this.dialogBatchAllocateVisible = true
-      },
-      handleUpdate(row) {
-        this.temp = Object.assign({}, row);
-        this.dialogStatus = 'update';
-        this.dialogFormVisible = true;
-      },
-      handleDelete(row) {
-        this.$notify({
-          title: '成功',
-          message: '删除成功',
-          type: 'success',
-          duration: 2000
-        });
-        const index = this.list.indexOf(row);
-        this.list.splice(index, 1);
-      },
-      update() {
-        this.temp.jancode = this.temp.jancode.trim()
-        if (this.temp.payment && this.temp.quantity) {
-          this.temp.price = this.temp.payment / this.temp.quantity
-        }
-        orderAllocateUpdate(this.temp).then(response => {
-          this.dialogFormVisible = false;
-          for (const v of this.list) {
-            if (v.id === this.temp.id) {
-              const index = this.list.indexOf(v);
-              this.list.splice(index, 1, this.temp);
-              break;
-            }
-          }
-          this.$notify({
-            title: '成功',
-            message: '更新成功',
-            type: 'success',
-            duration: 2000
-          });
-        });
-      },
-      allocate() {
-        if (!this.isSwitchDeliveryType) {
-          if ((['拼邮'].includes(this.temp.delivery_type) && this.temp.inventory !== 3) || (!['拼邮', '第三方'].includes(this.temp.delivery_type) && this.temp.inventory === 3)) {
-            this.$notify({
-              title: '警告',
-              message: '请选择正确的仓库发货!',
-              type: 'warning',
-              duration: 2000
-            });
-            return
-          }
-        }
-        this.submitting = true;
-        orderAllocate(this.temp).then(response => {
-          // 刷新列表数据
-          const orderid = this.temp.orderid.split('-')[0]
-          const inds = []
-          for (const v of this.list) {
-            if (v.orderid.includes(orderid)) {
-              const index = this.list.indexOf(v);
-              inds.push(index);
-              // this.list.splice(index, 1);
-            }
-          }
-          for (let i = inds.length - 1; i >= 0; i--) {
-            this.list.splice(inds[i], 1);
-          }
-          this.submitting = false;
-          this.dialogAllocationVisible = false;
-          if (this.temp.id === 'batchallocate') {
-            this.dialogBatchAllocateVisible = false;
-          }
-          this.$notify({
-            title: '成功',
-            message: '派单成功',
-            type: 'success',
-            duration: 2000
-          });
-        }).catch(error => {
-          this.submitting = false;
-        })
-      },
-      resetTemp() {
-        this.temp = {
-          id: undefined,
-          channel_name: 0,
-          remark: '',
-          title: '',
-          status: 'published',
-          type: ''
-        };
-      },
-      handleFetchStock(row) {
-        this.temp = Object.assign({}, row);
-        this.listStockQuery.jancode = this.temp.jancode;
-        this.isSwitchDeliveryType = false;
-        this.temp.delivery_type = row.delivery_type
-        if (row.delivery_type.includes('拼邮')) {
-          this.isDomestic = true
-          this.temp.inventory = 3
-          this.getShipping()
-        } else {
-          this.isDomestic = false
-          this.temp.inventory = 4
-          this.getShipping()
-        }
-        fetchStock(this.listStockQuery).then(response => {
-          this.stockData = response.data.results;
-          // this.inventoryOptions = response.data.results;  // 需要优化, 构造{id,name}结构
-          this.dialogAllocationVisible = true;
-        })
-      }
-    }
-  }
+ export default {
+   name: 'table_demo',
+   data() {
+     return {
+       list: null,
+       total: null,
+       submitting: false,
+       isDomestic: false,
+       isSwitchDeliveryType: false,
+       listLoading: true,
+       listQuery: {
+         page: 1,
+         limit: 10,
+         orderid: undefined,
+         channel_name: undefined,
+         receiver_name: undefined,
+         jancode: undefined,
+         status: '待处理',
+         delivery_type_exclude: '第三方保税',
+         sort: '+id'
+       },
+       temp: {
+         id: undefined,
+         inventory: undefined,
+         shipping: undefined,
+         jancode: undefined,
+         status: undefined,
+         brand: undefined,
+         channel_name: undefined,
+         payment: undefined,
+         price: undefined,
+         quantity: undefined,
+         category: undefined,
+         sku_properties_name: undefined,
+         delivery_type: undefined,
+         real_price: undefined
+       },
+       tempProduct: {
+         name: undefined,
+         jancode: undefined,
+         category: undefined,
+         brand: undefined,
+         specification: undefined
+       },
+       listStockQuery: {
+         jancode: ''
+       },
+       listShippingQuery: {
+         inventory: ''
+       },
+       channelnameOptions: ['洋码头', '京东'],
+       inventoryOptions: [],
+       shippingOptions: [],
+       categoryOptions: [],
+       sortOptions: [{ label: '按ID升序列', key: '+id' }, { label: '按ID降序', key: '-id' }],
+       dialogFormVisible: false,
+       dialogProductVisible: false,
+       dialogBatchAllocateVisible: false,
+       dialogStatus: '',
+       textMap: {
+         update: '编辑',
+         create: '创建'
+       },
+       dialogAllocationVisible: false,
+       stockData: [],
+       tableKey: 0
+     }
+   },
+   created() {
+     this.getList();
+     this.getInventory();
+     this.getCategory();
+   },
+   methods: {
+     getList() {
+       this.listLoading = true;
+       fetchOrder(this.listQuery).then(response => {
+         this.list = response.data.results;
+         this.total = response.data.count;
+         this.listLoading = false;
+       })
+     },
+     getCategory() {
+       fetchCategory().then(response => {
+         this.categoryOptions = response.data.results;
+       })
+     },
+     getInventory() {
+       fetchInventory().then(response => {
+         this.inventoryOptions = response.data.results;
+       })
+     },
+     getShipping() {
+       this.temp.shipping = null;
+       if (this.temp.inventory === null) {
+         this.temp.shipping = null;
+         return
+       }
+       this.listShippingQuery.inventory = this.temp.inventory;
+       fetchShipping(this.listShippingQuery).then(response => {
+         this.shippingOptions = response.data.results;
+         this.temp.shipping = response.data.results[0].id
+       })
+     },
+     handleFilter() {
+       this.listQuery.page = 1;
+       this.getList();
+     },
+     handleSizeChange(val) {
+       this.listQuery.limit = val;
+       this.getList();
+     },
+     handleCurrentChange(val) {
+       this.listQuery.page = val;
+       this.getList();
+     },
+     timeFilter(time) {
+       if (!time[0]) {
+         this.listQuery.start = undefined;
+         this.listQuery.end = undefined;
+         return;
+       }
+       this.listQuery.start = parseInt(+time[0] / 1000);
+       this.listQuery.end = parseInt((+time[1] + 3600 * 1000 * 24) / 1000);
+     },
+     handleModifyStatus(row, status) {
+       this.$message({
+         message: '操作成功',
+         type: 'success'
+       });
+       row.status = status;
+     },
+     handleProduct(row) {
+       this.temp = Object.assign({}, row);
+       this.dialogProductVisible = true
+     },
+     createProduct() {
+       this.tempProduct.name = this.temp.product_title
+       this.tempProduct.jancode = this.temp.jancode.trim()
+       this.tempProduct.brand = this.temp.brand
+       this.tempProduct.category = this.temp.category[1]
+       this.tempProduct.specification = this.temp.sku_properties_name
+       productcreate(this.tempProduct).then(() => {
+         this.dialogProductVisible = false;
+         this.$notify({
+           title: '成功',
+           message: '创建成功',
+           type: 'success',
+           duration: 2000
+         });
+       })
+     },
+     handleBatchAllocate() {
+       this.temp.id = 'batchallocate'  // 特殊标记
+       this.temp.orderid = 'batchallocate'
+       this.temp.jancode = undefined
+       this.dialogBatchAllocateVisible = true
+     },
+     handleUpdate(row) {
+       this.temp = Object.assign({}, row);
+       this.dialogStatus = 'update';
+       this.dialogFormVisible = true;
+     },
+     handleDelete(row) {
+       this.$notify({
+         title: '成功',
+         message: '删除成功',
+         type: 'success',
+         duration: 2000
+       });
+       const index = this.list.indexOf(row);
+       this.list.splice(index, 1);
+     },
+     update() {
+       this.temp.jancode = this.temp.jancode.trim()
+       if (this.temp.payment && this.temp.quantity) {
+         this.temp.price = this.temp.payment / this.temp.quantity
+       }
+       orderAllocateUpdate(this.temp).then(() => {
+         this.dialogFormVisible = false;
+         for (const v of this.list) {
+           if (v.id === this.temp.id) {
+             const index = this.list.indexOf(v);
+             this.list.splice(index, 1, this.temp);
+             break;
+           }
+         }
+         this.$notify({
+           title: '成功',
+           message: '更新成功',
+           type: 'success',
+           duration: 2000
+         });
+       });
+     },
+     allocate() {
+       if (!this.isSwitchDeliveryType) {
+         if ((['拼邮'].includes(this.temp.delivery_type) && this.temp.inventory !== 3) || (!['拼邮', '第三方'].includes(this.temp.delivery_type) && this.temp.inventory === 3)) {
+           this.$notify({
+             title: '警告',
+             message: '请选择正确的仓库发货!',
+             type: 'warning',
+             duration: 2000
+           });
+           return
+         }
+       }
+       if (this.temp.channel_name !== '洋码头' && this.temp.inventory === 4 && this.temp.real_price === this.temp.price) {
+         this.$notify({
+           title: '订单金额异常警告',
+           message: '第三方订单(含售后补发单), 通过东京仓发货, 均需要调整订单金额.',
+           type: 'warning',
+           duration: 3000
+         });
+         return
+       }
+       this.submitting = true;
+       orderAllocate(this.temp).then(() => {
+         // 刷新列表数据
+         const orderid = this.temp.orderid.split('-')[0]
+         const inds = []
+         for (const v of this.list) {
+           if (v.orderid.includes(orderid)) {
+             const index = this.list.indexOf(v);
+             inds.push(index);
+             // this.list.splice(index, 1);
+           }
+         }
+         for (let i = inds.length - 1; i >= 0; i--) {
+           this.list.splice(inds[i], 1);
+         }
+         this.submitting = false;
+         this.dialogAllocationVisible = false;
+         if (this.temp.id === 'batchallocate') {
+           this.dialogBatchAllocateVisible = false;
+         }
+         this.$notify({
+           title: '成功',
+           message: '派单成功',
+           type: 'success',
+           duration: 2000
+         });
+       }).catch(() => {
+         this.submitting = false;
+       })
+     },
+     resetTemp() {
+       this.temp = {
+         id: undefined,
+         channel_name: 0,
+         remark: '',
+         title: '',
+         status: 'published',
+         type: ''
+       };
+     },
+     handleFetchStock(row) {
+       this.temp = Object.assign({}, row);
+       this.listStockQuery.jancode = this.temp.jancode;
+       this.isSwitchDeliveryType = false;
+       this.temp.delivery_type = row.delivery_type
+       if (row.delivery_type.includes('拼邮')) {
+         this.isDomestic = true
+         this.temp.inventory = 3
+         this.getShipping()
+       } else {
+         this.isDomestic = false
+         this.temp.inventory = 4
+         this.getShipping()
+       }
+       fetchStock(this.listStockQuery).then(response => {
+         this.stockData = response.data.results;
+         // this.inventoryOptions = response.data.results;  // 需要优化, 构造{id,name}结构
+         this.dialogAllocationVisible = true;
+       })
+     }
+   }
+ }
 </script>
