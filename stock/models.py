@@ -65,6 +65,8 @@ class Product(models.Model):
     purchase_link1 = models.CharField(max_length=255, null=True)
     purchase_link2 = models.CharField(max_length=255, null=True)
     purchase_link3 = models.CharField(max_length=255, null=True)
+    price = models.DecimalField(
+        max_digits=7, null=True, blank=True, decimal_places=2)
 
 
 class BondedProduct(models.Model):
