@@ -453,6 +453,7 @@ class OrderMarkConflict(views.APIView):
                 i.pop('db_number')
                 i.pop('purchaseorder_orderid')
                 i.pop('shippingdb_delivery_time')
+                i.pop('shippingdb')
                 i['status'] = '需介入'
                 i['shipping'] = shipping
                 i['inventory'] = inventory
