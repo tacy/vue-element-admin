@@ -1,17 +1,16 @@
 import os
 import logging
+from io import BytesIO
+
 import eventlet
 import gspread
-
-from io import BytesIO
-# from oauth2client.client import SignedJwtAssertionCredentials
 from oauth2client.service_account import ServiceAccountCredentials
+from reportlab.graphics.barcode import createBarcodeDrawing
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm, inch
 from reportlab.pdfbase import pdfmetrics, ttfonts
-from reportlab.graphics.barcode import createBarcodeDrawing
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Frame, Paragraph, TableStyle, LongTable, PageTemplate
 
 log = logging.getLogger(__name__)
 
@@ -21,18 +20,28 @@ class PDFTool:
         pdfmetrics.registerFont(
             ttfonts.TTFont(
                 'wqy', '/usr/share/fonts/wenquanyi/wqy-zenhei/wqy-zenhei.ttc'))
+        self.pageType = {
+            'Xlobo': {
+                'size': (10 * cm, 15 * cm),
+                'colWidths': [4.5 * cm, 2.8 * cm, 1.0 * cm, 1.4 * cm],
+            },
+            'EMS': {
+                'size': (21 * cm, 29.7 * cm),
+                'colWidths': [11 * cm, 6 * cm, 1.5 * cm, 2 * cm],
+            }
+        }
 
-    def createShippingPDF(self, db_number, orders):
+    def createShippingPDF(self, db_number, orders, pType='Xlobo'):
         styles = getSampleStyleSheet()
         buf = BytesIO()
 
-        doc = SimpleDocTemplate(
+        doc = BaseDocTemplate(
             buf,
             rightMargin=2,
             leftMargin=2,
             topMargin=2,
             bottomMargin=2,
-            pagesize=(10 * cm, 15 * cm))
+            pagesize=self.pageType[pType]['size'])
         elements = []
         # title = 'DB Number: {}'.format(db_number)
         # elements.append(Paragraph(title, styles['h5']))
@@ -64,14 +73,9 @@ class PDFTool:
                 # o[4],
                 Paragraph(location, styles['Normal'])
             ])
-        t = Table(
+        t = LongTable(
             data,
-            colWidths=[
-                4.5 * cm,
-                2.8 * cm,
-                1.0 * cm,
-                1.4 * cm,
-            ],
+            colWidths=self.pageType[pType]['colWidths'],
         )
         t.setStyle(
             TableStyle([
@@ -81,6 +85,14 @@ class PDFTool:
                 ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
             ]))
         elements.append(t)
+        frameT = Frame(
+            doc.leftMargin,
+            doc.bottomMargin,
+            doc.width,
+            doc.height,
+            id='normal')
+
+        doc.addPageTemplates([PageTemplate(id='OneCol', frames=frameT)])
         doc.build(elements)
         pdf = buf.getvalue()
         buf.close()
