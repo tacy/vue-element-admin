@@ -1,9 +1,11 @@
+import decimal
 import email
 import imaplib
 import logging
 import os.path
 import re
 import sys
+
 import pymysql
 
 logger = logging.getLogger(__name__)
@@ -58,12 +60,12 @@ class GmailScraper():
                 ds, payment2 = self.amazon(msg)
                 # 存在分拆发货的情况, 需要累加payment
                 if (ds and ds[0] not in deliveryNos) or (not ds and payment2):
-                    payment += float(payment2.replace(',', ''))
+                    payment += decimal.Decimal(payment2.replace(',', ''))
                 deliveryNos.extend(ds)
             else:
                 ds, payment2 = self.rakuten(msg, payment)
                 if not payment and payment2:
-                    payment = float(payment2.replace(',', ''))
+                    payment = decimal.Decimal(payment2.replace(',', ''))
                 deliveryNos.extend(ds)
 
             # https://stackoverflow.com/questions/1463074/how-can-i-get-an-email-messages-text-content-using-python
