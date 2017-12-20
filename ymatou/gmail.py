@@ -91,7 +91,7 @@ class GmailScraper():
                     if match:
                         result.append(match.group(1))
                         match = re.search(
-                            r'クレジットカード.*\r?\n?.*?￥\s+([\d,]{3,})', html)
+                            r'(?:クレジットカード|合計).*\r?\n?.*?￥\s+([\d,]{3,})', html)
                         payment = match.group(1)
                         break
         return (result, payment)
@@ -104,7 +104,6 @@ class GmailScraper():
                 part_charset = part.get_content_charset()
                 html = part.get_payload(decode=True).decode(
                     part_charset, 'replace')
-                print(html)
                 if not result:
                     match = re.search(
                         r'(?:(?:配送会社お)?問い?合わ?せ番号|伝票番号(?:.*?\r\n)?|宅配伝票No|送り状No|reqCodeNo1).*?(\d{5,})',
@@ -132,68 +131,74 @@ if __name__ == '__main__':
     gsApi = GmailScraper('rainbowtokyorainbowtokyo@gmail.com', 'rainbow123')
     gsApi.login()
     # pos = [
+    #     # {
+    #     #     'orderid': '244562-20171128-00516718',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None
+    #     # },
+    #     # {
+    #     #     'orderid': '265611-20171120-00937802',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': '206504-20171120-01448812',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': '253260-20171120-00061801',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': '203677-20171129-013958715',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': '20171118-00203822',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': 'Y000000033193640',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': '068-g000335448-i01',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': '20171207000000741',
+    #     #     'name': 'rakuten',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': '503-3006255-9574205',
+    #     #     'name': 'Amazon',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
+    #     # {
+    #     #     'orderid': '503-3100187-7108622',
+    #     #     'name': 'Amazon',
+    #     #     'delivery_no': None,
+    #     #     'payment': None,
+    #     # },
     #     {
-    #         'orderid': '244562-20171128-00516718',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None
-    #     },
-    #     {
-    #         'orderid': '265611-20171120-00937802',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': '206504-20171120-01448812',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': '253260-20171120-00061801',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': '203677-20171129-013958715',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': '20171118-00203822',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': 'Y000000033193640',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': '068-g000335448-i01',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': '20171207000000741',
-    #         'name': 'rakuten',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': '503-3006255-9574205',
-    #         'name': 'Amazon',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    #     {
-    #         'orderid': '503-3100187-7108622',
+    #         'orderid': '503-2349801-1892618',
     #         'name': 'Amazon',
     #         'delivery_no': None,
     #         'payment': None,
