@@ -89,7 +89,7 @@ class GmailScraper():
                 html = part.get_payload(decode=True).decode(
                     part_charset, 'replace')
                 if not result:
-                    match = re.search(r'伝票番号は([0-9\-].*?)です', html)
+                    match = re.search(r'伝票番号は([\d-].*?)です', html)
                     if match:
                         result.append(match.group(1))
                         match = re.search(
@@ -113,7 +113,7 @@ class GmailScraper():
                     part_charset, 'replace')
                 if not result:
                     match = re.search(
-                        r'(?:(?:配送会社お)?問い?合わ?せ(?:番号|No)|伝票番号(?:.*?\r\n)?|宅配伝票No|送り状No|reqCodeNo1).*?(\d{5,})',
+                        r'(?:(?:配送会社お)?問い?合わ?せ(?:番号|No)|伝票番号(?:.*?\r\n)?|宅配伝票No|送り状No|reqCodeNo1).*?([\d-]{5,})',
                         html)
                     if match:
                         result.append(match.group(1))
