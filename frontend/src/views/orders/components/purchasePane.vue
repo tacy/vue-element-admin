@@ -178,6 +178,10 @@
           this.listLoading = false;
         })
       },
+      checkPurchaseOrderid(orderid) {
+        const patten = /^[a-zA-Z\d-]{5,}$/
+        return patten.test(orderid)
+      },
       getSupplier() {
         const query = { limit: 50 }
         fetchSupplier(query).then(response => {
@@ -193,20 +197,28 @@
           this.orderData = response.data.results;
         })
       },
-      tableRowClassName(row, index) {
-        if (row.isTiangou === '是') {
-          return 'tiangou-row';
-        }
-        return '';
-      },
       handlePurchase() {
         this.postData.queryTime = this.queryTime;
-        orderPurchase(this.postData).then(response => {
+        for (const v of this.postData.data) {
+          if (v.purchaseorderid) {
+            const r = this.checkPurchaseOrderid(v.purchaseorderid)
+            if (!r) {
+              this.$notify({
+                title: '警告',
+                message: '注文番号含非法字符! 仅允许字母,数字以及横杠,且长度不少于5',
+                type: 'warning',
+                duration: 2000
+              });
+              return
+            }
+          }
+        }
+        orderPurchase(this.postData).then(() => {
           this.getPurchase();
         })
       },
       handleConflict() {
-        orderMarkConflict(this.orderData).then(response => {
+        orderMarkConflict(this.orderData).then(() => {
           this.dialogConflictVisible = false;
           for (const v of this.postData.data) {
             if (v.jancode === this.orderQuery.jancode) {

@@ -139,11 +139,14 @@
           }
         )
       },
+      checkPurchaseOrderid(orderid) {
+        const patten = /^[a-zA-Z\d-]{5,}$/
+        return patten.test(orderid)
+      },
       handleDeleteItem(index) {
         this.postForm.items.splice(index, 1)
       },
       submitForm() {
-        console.log(this.postForm)
         this.$refs.postForm.validate(valid => {
           if (valid) {
             this.loading = true;
@@ -152,7 +155,18 @@
             return false;
           }
         });
-        noOrderPurchase(this.postForm).then(response => {
+        const r = this.checkPurchaseOrderid(this.postForm.orderid)
+        if (!r) {
+          this.$notify({
+            title: '注文番号非法',
+            message: '仅允许包含字母,数字以及横杠, 且长度不少于5',
+            type: 'warning',
+            duration: 3000
+          });
+          this.loading = false
+          return
+        }
+        noOrderPurchase(this.postForm).then(() => {
           this.$notify({
             title: '成功',
             message: '采购单创建成功',
