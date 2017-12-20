@@ -57,7 +57,7 @@ class GmailScraper():
             if supplier == 'Amazon':
                 ds, payment2 = self.amazon(msg)
                 # 存在分拆发货的情况, 需要累加payment
-                if ds and ds[0] not in deliveryNos:
+                if (ds and ds[0] not in deliveryNos) or (not ds and payment2):
                     payment += float(payment2.replace(',', ''))
                 deliveryNos.extend(ds)
             else:
@@ -94,6 +94,11 @@ class GmailScraper():
                             r'(?:クレジットカード|合計).*\r?\n?.*?￥\s+([\d,]{3,})', html)
                         payment = match.group(1)
                         break
+                    else:  # 亚马逊有些第三方订单没有返回运单号
+                        match = re.search(
+                            r'(?:クレジットカード|合計).*\r?\n?.*?￥\s+([\d,]{3,})', html)
+                        if match:
+                            payment = match.group(1)
         return (result, payment)
 
     def rakuten(self, msg, payment):
