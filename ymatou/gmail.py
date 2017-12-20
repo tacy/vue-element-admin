@@ -46,6 +46,7 @@ class GmailScraper():
             return []
         logger.info('purchaseorder: %s, search result: %s', orderid, data[0])
 
+        payment = purchaseorder['payment'] if purchaseorder['payment'] else 0
         for num in data[0].split():
             rv, data = self.mailbox.fetch(num, '(RFC822)')
             if rv != 'OK':
@@ -54,9 +55,16 @@ class GmailScraper():
                 continue
             msg = email.message_from_bytes(data[0][1])
             if supplier == 'Amazon':
-                deliveryNos.extend(self.amazon(msg))
+                ds, payment2 = self.amazon(msg)
+                # 存在分拆发货的情况, 需要累加payment
+                if ds and ds[0] not in deliveryNos:
+                    payment += float(payment2.replace(',', ''))
+                deliveryNos.extend(ds)
             else:
-                deliveryNos.extend(self.rakuten(msg))
+                ds, payment2 = self.rakuten(msg, payment)
+                if not payment and payment2:
+                    payment = float(payment2.replace(',', ''))
+                deliveryNos.extend(ds)
 
             # https://stackoverflow.com/questions/1463074/how-can-i-get-an-email-messages-text-content-using-python
             # https://stackoverflow.com/questions/38970760/how-to-decode-a-mime-part-of-a-message-and-get-a-unicode-string-in-python-2
@@ -65,9 +73,12 @@ class GmailScraper():
         if dedup_deliveryNos:
             logger.info('purchaseorder: %s, delivery_nos: %s', orderid,
                         str(dedup_deliveryNos))
-        return dedup_deliveryNos
+        if payment:
+            logger.info('purchaseorder: %s, payment amount: %s', orderid,
+                        payment)
+        return (dedup_deliveryNos, payment)
 
-    def amazon(self, msg):
+    def amazon(self, msg, payment=None):
         result = []
         for part in msg.walk():
             # multipart are just containers, so we skip them
@@ -75,27 +86,36 @@ class GmailScraper():
                 part_charset = part.get_content_charset()
                 html = part.get_payload(decode=True).decode(
                     part_charset, 'replace')
-                match = re.search(r'伝票番号は([0-9\-].*?)です', html)
-                if match:
-                    result.append(match.group(1))
-                    break
-        return result
+                if not result:
+                    match = re.search(r'伝票番号は([0-9\-].*?)です', html)
+                    if match:
+                        result.append(match.group(1))
+                        match = re.search(
+                            r'クレジットカード.*\r?\n?.*?￥\s+([\d,]{3,})', html)
+                        payment = match.group(1)
+                        break
+        return (result, payment)
 
-    def rakuten(self, msg):
+    def rakuten(self, msg, payment):
         result = []
         for part in msg.walk():
             # multipart are just containers, so we skip them
-            if part.get_content_type() == 'text/plain':
+            if part.get_content_type() in ['text/plain', 'text/html']:
                 part_charset = part.get_content_charset()
                 html = part.get_payload(decode=True).decode(
                     part_charset, 'replace')
-                match = re.search(
-                    r'(?:(?:配送会社お)?問い?合わ?せ番号|伝票番号(?:.*?\r\n)?|宅配伝票No|送り状No|reqCodeNo1).*?(\d{5,})',
-                    html)
-                if match:
-                    result.append(match.group(1))
-                    break
-        return result
+                print(html)
+                if not result:
+                    match = re.search(
+                        r'(?:(?:配送会社お)?問い?合わ?せ番号|伝票番号(?:.*?\r\n)?|宅配伝票No|送り状No|reqCodeNo1).*?(\d{5,})',
+                        html)
+                    if match:
+                        result.append(match.group(1))
+                if not payment:
+                    match = re.search(r'合計.*?([\d,]{3,})', html)
+                    if match:
+                        payment = match.group(1)
+        return (result, payment)
 
 
 logpre = os.path.abspath(__file__)
@@ -115,55 +135,76 @@ if __name__ == '__main__':
     #     {
     #         'orderid': '244562-20171128-00516718',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None
     #     },
     #     {
     #         'orderid': '265611-20171120-00937802',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None,
     #     },
     #     {
     #         'orderid': '206504-20171120-01448812',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None,
     #     },
     #     {
     #         'orderid': '253260-20171120-00061801',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None,
     #     },
     #     {
     #         'orderid': '203677-20171129-013958715',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None,
     #     },
     #     {
     #         'orderid': '20171118-00203822',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None,
     #     },
     #     {
     #         'orderid': 'Y000000033193640',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None,
     #     },
     #     {
     #         'orderid': '068-g000335448-i01',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None,
     #     },
     #     {
     #         'orderid': '20171207000000741',
     #         'name': 'rakuten',
-    #         'delivery_no': None
+    #         'delivery_no': None,
+    #         'payment': None,
+    #     },
+    #     {
+    #         'orderid': '503-3006255-9574205',
+    #         'name': 'Amazon',
+    #         'delivery_no': None,
+    #         'payment': None,
+    #     },
+    #     {
+    #         'orderid': '503-3100187-7108622',
+    #         'name': 'Amazon',
+    #         'delivery_no': None,
+    #         'payment': None,
     #     },
     # ]
     # for po in pos:
-    #     deliveryNos = gsApi.processMailbox(po)
-    #     print(deliveryNos)
+    #     deliveryNos, payment = gsApi.processMailbox(po)
+    #     print(deliveryNos, payment)
 
-    query_sql = 'select po.orderid, s.name, po.delivery_no, po.id from stock_purchaseorder po inner join stock_supplier s on po.supplier_id=s.id where po.status in ("在途中", "入库中") and s.name in ("Amazon", "Rakuten", "产品官网", "Lohaco")'
-    update_sql = 'update stock_purchaseorder set delivery_no=%s where id=%s'
+    query_sql = 'select po.orderid, s.name, po.delivery_no, po.id, po.payment from stock_purchaseorder po inner join stock_supplier s on po.supplier_id=s.id where po.status in ("在途中", "入库中") and s.name in ("Amazon", "Rakuten", "产品官网", "Lohaco")'
+    update_sql = 'update stock_purchaseorder set delivery_no=%s,payment=%s where id=%s'
 
     connection = pymysql.connect(
         host='127.0.0.1',
@@ -178,7 +219,8 @@ if __name__ == '__main__':
         result = cursor.fetchall()
         for r in result:
             logger.info('purchaseorder: %s', str(r))
-            delivery_no = ','.join(gsApi.processMailbox(r))
-            if delivery_no != r['delivery_no']:
-                cursor.execute(update_sql, (delivery_no, r['id']))
+            deliverys, payment = gsApi.processMailbox(r)
+            delivery_no = ','.join(deliverys)
+            if delivery_no != r['delivery_no'] or payment != r['payment']:
+                cursor.execute(update_sql, (delivery_no, payment, r['id']))
                 connection.commit()
