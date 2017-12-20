@@ -48,6 +48,10 @@ logger = logging.getLogger(__name__)
 # 这里可能有合并订单发货情况, 需要根据订单ID去重, 然后去码头后台查每一
 # 个订单状态是否正常
 def checkOrderStatus(loop, sess, ords, disable_checkOrderDelivery=False):
+    ordObj = Order.objects.get(id=ords[0]['id'])
+    if ordObj.shippingdb:
+        errmsg = {'errmsg': '订单已出面单, 请及时刷新页面'}
+        return errmsg
     if '洋码头' in ords[0]['channel_name']:
         skey = YMTKEY[ords[0]['seller_name']]
         ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'], skey['appsecret'],
@@ -137,8 +141,8 @@ class XloboCreateNoVerification(views.APIView):
         order_piad_time = ords[0]['piad_time']
         billSenderInfo = {
             'Name': ords[0]['seller_name'],
-            'Address': '中央区新富1-3-15　京橋プリズムビル　４階',
-            'Phone': '11',
+            'Address': '埼玉県朝霞市泉水３-7-9-115',
+            'Phone': '08030097238',
         }
         if data['set_sender']:
             billSenderInfo['Name'] = data['sender_name']
