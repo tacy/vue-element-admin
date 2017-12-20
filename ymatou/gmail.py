@@ -111,7 +111,7 @@ class GmailScraper():
                     part_charset, 'replace')
                 if not result:
                     match = re.search(
-                        r'(?:(?:配送会社お)?問い?合わ?せ番号|伝票番号(?:.*?\r\n)?|宅配伝票No|送り状No|reqCodeNo1).*?(\d{5,})',
+                        r'(?:(?:配送会社お)?問い?合わ?せ(?:番号|No)|伝票番号(?:.*?\r\n)?|宅配伝票No|送り状No|reqCodeNo1).*?(\d{5,})',
                         html)
                     if match:
                         result.append(match.group(1))
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     #     deliveryNos, payment = gsApi.processMailbox(po)
     #     print(deliveryNos, payment)
 
-    query_sql = 'select po.orderid, s.name, po.delivery_no, po.id, po.payment from stock_purchaseorder po inner join stock_supplier s on po.supplier_id=s.id where po.status in ("在途中", "入库中") and s.name in ("Amazon", "Rakuten", "产品官网", "Lohaco")'
+    query_sql = 'select po.orderid, s.name, po.delivery_no, po.id, po.payment from stock_purchaseorder po inner join stock_supplier s on po.supplier_id=s.id where po.status in ("在途中", "入库中") and s.name in ("Amazon", "Rakuten", "产品官网", "Lohaco", "zozotown","Yahoo", "nojima", "Joshinweb")'
     update_sql = 'update stock_purchaseorder set delivery_no=%s,payment=%s where id=%s'
 
     connection = pymysql.connect(
