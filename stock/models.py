@@ -148,6 +148,8 @@ class PurchaseOrder(models.Model):
     supplier = models.ForeignKey(Supplier, related_name='purchaseorder')
     inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
     delivery_no = models.CharField(max_length=255, blank=True)
+    payment = models.DecimalField(
+        max_digits=7, null=True, decimal_places=2, blank=True)
     status = models.CharField(
         max_length=255, default='create')  # 在途中/已入库/入库中/转运中/已删除
     create_time = models.DateTimeField(auto_now_add=True)
