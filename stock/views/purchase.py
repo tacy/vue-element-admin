@@ -239,6 +239,7 @@ class NoOrderPurchase(views.APIView):
     #   inventory: undefined,
     #   supplier: undefined,
     #   orderid: '',
+    #   payment: ,
     #   items: [
     #     {
     #       jancode: undefined,

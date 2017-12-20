@@ -33,7 +33,7 @@
 
     <el-table :data="list" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
 
-      <el-table-column align="center" label="注文编号" width="150px">
+      <el-table-column align="center" label="注文编号" width="200px">
         <template scope="scope">
           <el-input v-show="scope.row.edit" size="small" v-model.trim="scope.row.orderid"></el-input>
           <span v-show="!scope.row.edit" class="link-type" @click="getItem(scope.row)">{{scope.row.orderid}}</span>
@@ -51,15 +51,22 @@
           <span>{{scope.row.supplier_name}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="运单号" width="200px" show-overflow-tooltip>
+      <el-table-column align="center" label="运单号">
         <template scope="scope">
           <span>{{scope.row.delivery_no}}</span>
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="状态">
+      <el-table-column align="center" label="状态" width="90px">
         <template scope="scope">
           <span>{{scope.row.status}}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" label="订单金额" width="120px">
+        <template scope="scope">
+          <el-input v-show="scope.row.edit" size="small" v-model.number="scope.row.payment" type="number"></el-input>
+          <span v-show="!scope.row.edit">{{scope.row.payment}}</span>
         </template>
       </el-table-column>
 
@@ -191,7 +198,7 @@
           supplier: undefined,
           orderid: undefined,
           jancode: undefined,
-	  delivery_no: undefined,
+          delivery_no: undefined,
           product_name: undefined
         },
         temp: {
