@@ -1,15 +1,17 @@
 import logging
+import re
 
 import arrow.arrow
 from django.db import IntegrityError, connection, transaction
+from django.db.models import F, Sum
 from rest_framework import status, views
 from rest_framework.response import Response
-from django.db.models import F, Sum
+
+from .order import computeOrderStatus
 from stock.exceptions import InputError
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
                           PurchaseOrderItem, Stock, Supplier)
 
-from .order import computeOrderStatus
 logger = logging.getLogger(__name__)
 
 
@@ -57,6 +59,14 @@ def createPO(orderid, inventory, supplier, items, createtime):
     supplierObj = Supplier.objects.get(id=supplier)
     inventoryObj = Inventory.objects.get(id=inventory)
 
+    if supplierObj.name in ['Amazon', 'Rakuten']:
+        patternStr = r'\d{3}-\d{7}-' if supplierObj.name == 'Amazon' else r'\d{6}-\d{8}-'
+        checkFormat = re.search(patternStr, orderid)
+        if not checkFormat:
+            return {
+                'errtype': 'InputError',
+                'errmsg': '注文番号[{}]采购渠道选择错误'.format(orderid),
+            }
     try:
         poObj = PurchaseOrder.objects.get(
             orderid=orderid, supplier=supplierObj, inventory=inventoryObj)
@@ -215,7 +225,7 @@ class OrderPurchase(views.APIView):
                         createtime,
                     )
                     if results:
-                        raise InputError
+                        raise InputError(None, None)
         except (IntegrityError, InputError) as e:
             logger.exception('保存采购单异常')
             if e.args and e.args[0] == 1062:
