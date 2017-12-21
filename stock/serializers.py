@@ -24,7 +24,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     supplier_name = serializers.ReadOnlyField(source='supplier.name')
     inventory_name = serializers.ReadOnlyField(source='inventory.name')
     inventory = serializers.PrimaryKeyRelatedField(read_only=True)
-    supplier = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
