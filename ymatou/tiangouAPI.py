@@ -1,6 +1,9 @@
-import asyncio
+import hashlib
 import logging
+import asyncio
 
+import aiohttp
+import arrow
 import async_timeout
 
 REQUEST_TIMEOUT = 30
@@ -67,3 +70,74 @@ class TiangouAPI():
         url = 'http://oserv.51tiangou.com/privates/seller/tgouPackage/matchAndShip'
         payload['domain'] = '.51tiangou.com'
         return await self.callAPI(url, payload)
+
+
+class TiangouOpenAPI():
+    def __init__(self, session):
+        self.urltpl = 'http://open.test.66buy.com.cn/'
+        self.appKey = 'kjc'
+        self.secrectKey = '583c8063d3be03a96cb50c9c1dfe2c5e'
+        self.storeId = '1685'
+        self.session = session
+
+    async def callAPI(self, method, action, payload):
+        url = self.urltpl + action
+        logger.debug(payload)
+        try:
+            with async_timeout.timeout(REQUEST_TIMEOUT):
+                if method == 'get':
+                    async with self.session.get(
+                            url, params=payload) as response:
+                        return await response.json()
+                elif method == 'post':
+                    async with self.session.get(url, data=payload) as response:
+                        return await response.json()
+        except asyncio.TimeoutError as e:
+            logger.exception(url, payload)
+            return None
+
+    async def getToken(self):
+        action = 'token'
+        method = 'get'
+        payload = {'appKey': self.appKey, 'secretKey': self.secrectKey}
+        r = await self.callAPI(method, action, payload)
+        logger.debug(r)
+        return r
+
+    def getSign(self, signStrList):
+        signOrgStr = ''.join(sorted(signStrList)) + self.secrectKey
+        sign = hashlib.md5(signOrgStr.encode('utf-8')).hexdigest()
+        return sign
+
+    async def getOrderList(self, createTimeGE, createTimeLT, stateList):
+        action = 'api/order/orderList'
+        method = 'get'
+        timestamp = arrow.now().timestamp * 1000
+        r = await self.getToken()
+        token = r['data']['token']
+        signList = [createTimeGE, createTimeLT, token]
+        signList.extend(stateList)
+        sign = self.getSign(signList)
+        payload = (
+            ('createTimeGE', createTimeGE),
+            ('createTimeLT', createTimeLT),
+            ('stateList', stateList[0]),
+            ('stateList', stateList[1]),
+            ('token', token),
+            ('sign', sign),
+            ('timestamp', str(timestamp)),
+        )
+        r = await self.callAPI(method, action, payload)
+        logger.debug(r)
+
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    with aiohttp.ClientSession(loop=loop) as sess:
+        tgOApi = TiangouOpenAPI(sess)
+        ct = '2017-12-15 00:00:00'
+        et = '2017-12-20 00:00:00'
+        stateList = ['Shipping', 'Processing']
+        r = loop.run_until_complete(tgOApi.getOrderList(ct, et, stateList))
+
+        print(r)
