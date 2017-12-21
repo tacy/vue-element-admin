@@ -140,7 +140,7 @@
         )
       },
       checkPurchaseOrderid(orderid) {
-        const patten = /^[a-zA-Z\d-]{5,}$/
+        const patten = /^[a-zA-Z\d-_]{5,}$/
         return patten.test(orderid)
       },
       handleDeleteItem(index) {

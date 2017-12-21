@@ -325,8 +325,22 @@
           this.disableSubmit = false;
         });
       },
+      checkPurchaseOrderid(orderid) {
+        const patten = /^[a-zA-Z\d-_]{5,}$/
+        return patten.test(orderid)
+      },
       updatePurchaseOrder(row) {
         const data = { orderid: row.orderid, supplier: row.supplier, payment: row.payment }
+        const r = this.checkPurchaseOrderid(row.orderid)
+        if (!r) {
+          this.$notify({
+            title: '警告',
+            message: '注文番号含非法字符! 仅允许字母,数字以及横杠,且长度不少于5',
+            type: 'warning',
+            duration: 2000
+          });
+          return
+        }
         updateOrder(data, '/purchase/' + row.id + '/').then(() => {
           for (const v of this.supplierOptions) {
             if (v.id === row.supplier) {
