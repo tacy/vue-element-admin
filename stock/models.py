@@ -61,12 +61,12 @@ class Product(models.Model):
     proddesc = models.CharField(max_length=255, null=True)
     unit = models.CharField(max_length=2, null=True)
     expired = models.CharField(max_length=8, null=True)
-    weight = models.DecimalField(max_digits=5, null=True, decimal_places=2)
+    weight = models.DecimalField(max_digits=7, null=True, decimal_places=2)
     purchase_link1 = models.CharField(max_length=255, null=True)
     purchase_link2 = models.CharField(max_length=255, null=True)
     purchase_link3 = models.CharField(max_length=255, null=True)
     price = models.DecimalField(
-        max_digits=7, null=True, blank=True, decimal_places=2)
+        max_digits=8, null=True, blank=True, decimal_places=2)
 
 
 class BondedProduct(models.Model):
@@ -149,7 +149,7 @@ class PurchaseOrder(models.Model):
     inventory = models.ForeignKey(Inventory, related_name='purchaseorder')
     delivery_no = models.CharField(max_length=255, blank=True)
     payment = models.DecimalField(
-        max_digits=7, null=True, decimal_places=2, blank=True)
+        max_digits=9, null=True, decimal_places=2, blank=True)
     status = models.CharField(
         max_length=255, default='create')  # 在途中/已入库/入库中/转运中/已删除
     create_time = models.DateTimeField(auto_now_add=True)
@@ -171,7 +171,7 @@ class PurchaseOrderItem(models.Model):
     quantity = models.IntegerField(null=False)
     status = models.CharField(max_length=8, null=True)  # 已入库/东京仓/转运中
     delivery_no = models.CharField(max_length=128, null=True)  # 转运单号
-    price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    price = models.DecimalField(max_digits=8, null=True, decimal_places=2)
     stockin_date = models.DateTimeField(null=True)
 
     class Meta:
@@ -217,9 +217,9 @@ class Order(models.Model):
     quantity = models.IntegerField(null=False)
     need_purchase = models.IntegerField(null=True, default=0)
     allocate_time = models.DateTimeField(null=True)  # 需要根据派单时间, 判断采购单是否能关联该订单
-    price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
-    real_price = models.DecimalField(max_digits=7, null=True, decimal_places=2)
-    payment = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    price = models.DecimalField(max_digits=8, null=True, decimal_places=2)
+    real_price = models.DecimalField(max_digits=8, null=True, decimal_places=2)
+    payment = models.DecimalField(max_digits=9, null=True, decimal_places=2)
     delivery_type = models.CharField(max_length=32, null=False)
     piad_time = models.DateTimeField()
     product_title = models.CharField(max_length=255, null=False)
@@ -301,7 +301,7 @@ class AfterSaleCase(models.Model):
     process_method = models.ForeignKey(
         AfterSaleMeta, related_name='aftersalecase2', blank=True, null=True)
     balance_price = models.DecimalField(
-        max_digits=7, null=True, decimal_places=2)
+        max_digits=8, null=True, decimal_places=2)
     return_product = models.ForeignKey(
         Product, related_name='aftersalecase', blank=True, null=True)
     return_quantity = models.IntegerField(null=True, blank=True)
