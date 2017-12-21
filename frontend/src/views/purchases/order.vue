@@ -48,7 +48,13 @@
 
       <el-table-column align="center" label="采购渠道" width="120px" show-overflow-tooltip>
         <template scope="scope">
-          <span>{{scope.row.supplier_name}}</span>
+	  <el-select v-show="scope.row.edit" v-model="scope.row.supplier" placeholder="选择渠道">
+	    <el-option v-for="item in supplierOptions" :key="item.id" :label="item.name" :value="item.id">
+	    </el-option>
+          </el-select>
+          <!--el-input v-show="scope.row.edit" size="small" v-model.number="scope.row.payment" type="number"></el-input> -->
+          <span v-show="!scope.row.edit">{{scope.row.supplier_name}}</span>
+          <!--span>{{scope.row.supplier_name}}</span>-->
         </template>
       </el-table-column>
       <el-table-column align="center" label="运单号">
@@ -320,8 +326,21 @@
         });
       },
       updatePurchaseOrder(row) {
-        const data = { orderid: row.orderid }
+        const data = { orderid: row.orderid, supplier: row.supplier, payment: row.payment }
         updateOrder(data, '/purchase/' + row.id + '/').then(() => {
+          for (const v of this.supplierOptions) {
+            if (v.id === row.supplier) {
+              row.supplier_name = v.name
+              break
+            }
+          }
+          for (const v of this.list) {
+            if (v.id === row.id) {
+              const index = this.list.indexOf(v)
+              this.list[index].supplier_name = row.supplier_name
+              break
+            }
+          }
           this.$notify({
             title: '成功',
             message: '更新成功',
