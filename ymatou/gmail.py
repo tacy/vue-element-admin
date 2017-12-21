@@ -98,7 +98,8 @@ class GmailScraper():
                         break
                     else:  # 亚马逊有些第三方订单没有返回运单号
                         match = re.search(
-                            r'(?:クレジットカード|合計).*\r?\n?.*?￥\s+([\d,]{3,})', html)
+                            r'(?:クレジットカード|合\s+計).*\r?\n?.*?￥\s+([\d,]{3,})',
+                            html)
                         if match:
                             payment = match.group(1)
         return (result, payment)
@@ -118,7 +119,7 @@ class GmailScraper():
                     if match:
                         result.append(match.group(1))
                 if not payment:
-                    match = re.search(r'合計.*?([\d,]{3,})', html)
+                    match = re.search(r'合\s+計.*?([\d,]{3,})', html)
                     if match:
                         payment = match.group(1)
         return (result, payment)
