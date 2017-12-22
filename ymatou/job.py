@@ -60,6 +60,7 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
             offset_one_second = r[0] + datetime.timedelta(seconds=1)
             st = offset_one_second.strftime('%Y-%m-%d %H:%M:%S')
 
+    logger.info('sync ymt order starttime:%s, endtime:%s', st, et)
     orders = await ymtapi.getOrderList(st, et)
     if not orders:
         return
@@ -152,6 +153,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
             offset_one_second = r[0] + datetime.timedelta(seconds=1)
             st = offset_one_second.strftime('%Y-%m-%d %H:%M:%S')
 
+    logger.info('sync tg order starttime:%s, endtime:%s', st, et)
     state = 'Shipping,Processing'
     rs = await tgapi.getOrderList(st, et, state)
     if not rs:
