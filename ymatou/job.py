@@ -135,10 +135,11 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
 
 
 async def syncTGOrder(tgapi, sellerName, pool):
-    result = await tgapi.login()
-    if not result:
-        return
-    et = arrow.now().to('local').format('YYYY-MM-DD HH:mm:ss')
+    # result = await tgapi.login()
+    # if not result:
+    #     return
+    et = arrow.now().replace(
+        hours=-1).to('local').format('YYYY-MM-DD HH:mm:ss')
 
     # get last export order time from stock_exportorderlog as st
     st = None
@@ -151,30 +152,30 @@ async def syncTGOrder(tgapi, sellerName, pool):
             offset_one_second = r[0] + datetime.timedelta(seconds=1)
             st = offset_one_second.strftime('%Y-%m-%d %H:%M:%S')
 
-    rs = await tgapi.queryOrder(1, st, et)
+    state = 'Shipping,Processing'
+    rs = await tgapi.getOrderList(st, et, state)
     if not rs:
         return
 
     # insert order to db
     ords = []
-    if not rs.get('data'):
+    if not rs['success'] or (rs['success'] and not rs.get('data')):
         return
-    for o in rs['data']['rows']:
-        delty = o['deliveryAddress']
-        receiver_name = delty['receiver']
+    for o in rs['data']:
+        delty = o['receiver']
+        receiver_name = delty['name']
         receiver_address = ','.join([
-            delty['province'], delty['city'],
-            delty.get('district', '无'), delty['address']
+            delty['province'],
+            delty['city'],
+            delty['district'],
+            delty['address'],
         ])
         receiver_mobile = delty['phone']
-        receiver_idcard = delty['cardNumber']
+        receiver_idcard = delty['idCard']
         createTime = arrow.get(
             o['createTime'] / 1000).format('YYYY-MM-DD HH:mm:ss')
 
-        orderItems = await tgapi.orderItem(o['id'])
-        if not orderItems:
-            return
-        for i, oi in enumerate(orderItems['data']):
+        for i, oi in enumerate(o['orderItems']):
             # 拆单:
             #    1. jancode (jancode*1+jancode*1)
             #    2. payment根据jancode数量平分
@@ -190,12 +191,14 @@ async def syncTGOrder(tgapi, sellerName, pool):
                 jinfo = j.split('*')
                 jancode = jinfo[0][2:]  # remove JH
                 num = oi['quantity']
-                payment = oi['fenTanAmount']
+                payment = oi['payAmount']
                 price = payment / num
                 product_title = oi['name']
-                product_id = oi[
-                    'activityToProductId']  # https://m.51tiangou.com/product/listing.html?id=11811435
-                sku_properties_name = oi['attrSku'] if oi['attrSku'] else '无'
+                # product_id = oi[
+                #     'activityToProductId']  # https://m.51tiangou.com/product/listing.html?id=11811435
+                # sku_properties_name = oi['attrSku'] if oi['attrSku'] else '无'
+                product_id = ''
+                sku_properties_name = '无'
                 if len(jinfo) == 2:
                     num = num * int(jinfo[1])
                     price = price / int(jinfo[1])
@@ -479,9 +482,9 @@ async def deliveryYmtBondedOrder(ymtapi, pool):
 # automatic process tiangou order delivery
 async def deliveryTgOrder(tgapi, pool):
     # 订单渠道是京东, 并且db单中的ymatou字段为空
-    result = await tgapi.login()
-    if not result:
-        return
+    # result = await tgapi.login()
+    # if not result:
+    #     return
     sql = "select orderid, db_number, tiangou_company from stock_shipping s inner join (select o.orderid, d.db_number, o.shipping_id from stock_order o inner join stock_shippingdb d on o.shippingdb_id=d.id where o.channel_name='京东' and channel_delivery_status<>'已发货' and seller_name='天狗') as t on s.id=t.shipping_id"
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
@@ -490,18 +493,15 @@ async def deliveryTgOrder(tgapi, pool):
             for i in rs:
                 if '-' in i[0]:  # 补发单子是否需要发货
                     continue
-                payload = {
-                    'orderId': i[0],
-                    'deliveryVendorId': i[2],
-                    'trackingNo': i[1],  # db_number
-                    'weight': 500,
-                    'shipAmount': 80,
-                    'deliveryId': i[2]
-                }
-                r = await tgapi.matchAndShip(payload)
+                # payload = {
+                #     'orderId': i[0],
+                #     'deliveryId': i[2],
+                #     'trackingNo': i[1],  # db_number
+                # }
+                r = await tgapi.shippingOrder(i[0], i[2], i[1])
                 if not r:
                     continue
-                if r['success'] or '订单状态错误' in r['message']:
+                if r['success']:
                     await cur.execute(
                         "update stock_order set channel_delivery_status='已发货' where orderid=%s",
                         (i[0], ))
@@ -586,10 +586,10 @@ async def main(loop):
     task = []
 
     # sync TG order
-    username = 'llw-rb'
-    password = '1q2w3e4r5t'
+    # username = 'llw-rb'
+    # password = '1q2w3e4r5t'
     sessTG = aiohttp.ClientSession(loop=loop)
-    tgapi = tiangouAPI.TiangouAPI(sessTG, username, password)
+    tgapi = tiangouAPI.TiangouOpenAPI(sessTG)
     task.append(
         asyncio.ensure_future(
             periodic.start(syncTGOrder, interval['syncorder'], tgapi, '天狗',

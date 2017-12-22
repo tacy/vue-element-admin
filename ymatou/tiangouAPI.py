@@ -1,10 +1,11 @@
-import hashlib
-import logging
 import asyncio
+import hashlib
+import json
+import logging
 
 import aiohttp
-import arrow
 import async_timeout
+import arrow
 
 REQUEST_TIMEOUT = 30
 logger = logging.getLogger(__name__)
@@ -74,13 +75,17 @@ class TiangouAPI():
 
 class TiangouOpenAPI():
     def __init__(self, session):
-        self.urltpl = 'http://open.test.66buy.com.cn/'
-        self.appKey = 'kjc'
-        self.secrectKey = '583c8063d3be03a96cb50c9c1dfe2c5e'
-        self.storeId = '1685'
+        self.urltpl = 'http://openapi.51tiangou.com/'
+        self.appKey = 'llw-rb'
+        self.secrectKey = '78397e63e9ec2b9a03a690fd569b6870'
+        self.storeId = '1556'
+        # self.urltpl = 'http://open.test.66buy.com.cn/'
+        # self.appKey = 'kjc'
+        # self.secrectKey = '583c8063d3be03a96cb50c9c1dfe2c5e'
+        # self.storeId = '1685'
         self.session = session
 
-    async def callAPI(self, method, action, payload):
+    async def callAPI(self, method, action, payload, params=None):
         url = self.urltpl + action
         logger.debug(payload)
         try:
@@ -90,7 +95,8 @@ class TiangouOpenAPI():
                             url, params=payload) as response:
                         return await response.json()
                 elif method == 'post':
-                    async with self.session.get(url, data=payload) as response:
+                    async with self.session.post(
+                            url, params=params, json=payload) as response:
                         return await response.json()
         except asyncio.TimeoutError as e:
             logger.exception(url, payload)
@@ -101,7 +107,6 @@ class TiangouOpenAPI():
         method = 'get'
         payload = {'appKey': self.appKey, 'secretKey': self.secrectKey}
         r = await self.callAPI(method, action, payload)
-        logger.debug(r)
         return r
 
     def getSign(self, signStrList):
@@ -109,26 +114,45 @@ class TiangouOpenAPI():
         sign = hashlib.md5(signOrgStr.encode('utf-8')).hexdigest()
         return sign
 
-    async def getOrderList(self, createTimeGE, createTimeLT, stateList):
+    async def getOrderList(self, createTimeGE, createTimeLT, state):
         action = 'api/order/orderList'
         method = 'get'
-        timestamp = arrow.now().timestamp * 1000
+        timestamp = str(arrow.now().timestamp * 1000)
         r = await self.getToken()
         token = r['data']['token']
-        signList = [createTimeGE, createTimeLT, token]
-        signList.extend(stateList)
-        sign = self.getSign(signList)
+        signStr = [createTimeGE, createTimeLT, token, timestamp, state]
+        sign = self.getSign(signStr)
         payload = (
             ('createTimeGE', createTimeGE),
             ('createTimeLT', createTimeLT),
-            ('stateList', stateList[0]),
-            ('stateList', stateList[1]),
+            ('stateList', state),
             ('token', token),
             ('sign', sign),
-            ('timestamp', str(timestamp)),
+            ('timestamp', timestamp),
         )
         r = await self.callAPI(method, action, payload)
-        logger.debug(r)
+        return r
+
+    async def shippingOrder(self, orderId, deliveryId, trackingNo):
+        action = 'api/order/orderShip'
+        method = 'post'
+        payload = {
+            'orderId': orderId,
+            'deliveryId': deliveryId,
+            'trackingNo': trackingNo,
+        }
+        timestamp = str(arrow.now().timestamp * 1000)
+        r = await self.getToken()
+        token = r['data']['token']
+        signStr = [token, timestamp, json.dumps(payload)]
+        sign = self.getSign(signStr)
+        params = {
+            'token': token,
+            'sign': sign,
+            'timestamp': timestamp,
+        }
+        r = await self.callAPI(method, action, payload, params)
+        return r
 
 
 if __name__ == '__main__':
@@ -137,7 +161,8 @@ if __name__ == '__main__':
         tgOApi = TiangouOpenAPI(sess)
         ct = '2017-12-15 00:00:00'
         et = '2017-12-20 00:00:00'
-        stateList = ['Shipping', 'Processing']
-        r = loop.run_until_complete(tgOApi.getOrderList(ct, et, stateList))
-
+        state = 'Shipping,Processing'
+        r = loop.run_until_complete(tgOApi.getOrderList(ct, et, state))
+        print(r)
+        r = loop.run_until_complete(tgOApi.shippingOrder('1', '1', '1'))
         print(r)
