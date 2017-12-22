@@ -87,7 +87,7 @@ class TiangouOpenAPI():
 
     async def callAPI(self, method, action, payload, params=None):
         url = self.urltpl + action
-        logger.debug('Call TgOpenAPI: method %s, payload: %s', method, payload)
+        logger.debug('Call TgOpenAPI: action %s, payload: %s', action, payload)
         try:
             with async_timeout.timeout(REQUEST_TIMEOUT):
                 if method == 'get':
