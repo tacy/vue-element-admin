@@ -86,6 +86,7 @@ class GmailScraper():
             # multipart are just containers, so we skip them
             if part.get_content_type() == 'text/html':
                 part_charset = part.get_content_charset()
+                if not part_charset: continue
                 html = part.get_payload(decode=True).decode(
                     part_charset, 'replace')
                 if not result:
@@ -111,9 +112,11 @@ class GmailScraper():
             # multipart are just containers, so we skip them
             if part.get_content_type() in ['text/plain', 'text/html']:
                 part_charset = part.get_content_charset()
+                if not part_charset: continue
                 html = part.get_payload(decode=True).decode(
                     part_charset, 'replace')
                 if not result:
+                    print(html)
                     match = re.search(
                         r'(?:(?:配送会社お)?問い?合わ?せ(?:番号|No)|伝票番号(?:.*?\r?\n?)?|宅配伝票No|送り状(?:No|番号)(?:.*?\r?\n?)?|reqCodeNo1).*?([\d-]{5,})',
                         html)
@@ -139,83 +142,6 @@ logging.getLogger('').addHandler(console)
 if __name__ == '__main__':
     gsApi = GmailScraper('rainbowtokyorainbowtokyo@gmail.com', 'rainbow123')
     gsApi.login()
-    # pos = [
-    #     # {
-    #     #     'orderid': '244562-20171128-00516718',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None
-    #     # },
-    #     # {
-    #     #     'orderid': '265611-20171120-00937802',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': '206504-20171120-01448812',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': '253260-20171120-00061801',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': '203677-20171129-013958715',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': '20171118-00203822',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': 'Y000000033193640',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': '068-g000335448-i01',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': '20171207000000741',
-    #     #     'name': 'rakuten',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': '503-3006255-9574205',
-    #     #     'name': 'Amazon',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     # {
-    #     #     'orderid': '503-3100187-7108622',
-    #     #     'name': 'Amazon',
-    #     #     'delivery_no': None,
-    #     #     'payment': None,
-    #     # },
-    #     {
-    #         'orderid': '503-2349801-1892618',
-    #         'name': 'Amazon',
-    #         'delivery_no': None,
-    #         'payment': None,
-    #     },
-    # ]
-    # for po in pos:
-    #     deliveryNos, payment = gsApi.processMailbox(po)
-    #     print(deliveryNos, payment)
 
     query_sql = 'select po.orderid, s.name, po.delivery_no, po.id, po.payment from stock_purchaseorder po inner join stock_supplier s on po.supplier_id=s.id where po.status in ("在途中", "入库中") and s.name in ("Amazon", "Rakuten", "产品官网", "Lohaco", "zozotown","Yahoo", "nojima", "Joshinweb")'
     update_sql = 'update stock_purchaseorder set delivery_no=%s,payment=%s where id=%s'
