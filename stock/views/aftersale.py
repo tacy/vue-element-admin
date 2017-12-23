@@ -11,9 +11,6 @@ from stock.models import (AfterSaleCase, AfterSaleMeta, Inventory, Product,
 def correctStock(ordObj, qty, now):
     prodObj = Product.objects.get(jancode=ordObj.jancode)
     stockObj = Stock.objects.get(inventory=ordObj.inventory, product=prodObj)
-    stockObj.quantity = F('quantity') + qty
-    stockObj.save(update_fields=['quantity'])
-
     # 记录返库操作stockinrecord(订单漏发, 需要做一个入库操作, 修正之前的错误出库)
     stockIRObj = StockInRecord(
         orderid=ordObj.orderid,
@@ -21,8 +18,14 @@ def correctStock(ordObj, qty, now):
         quantity=qty,
         in_date=now.format('YYYY-MM-DD HH:mm:ss'),
         product=prodObj,
+        before_stock_quantity=stockObj.quantity,
+        before_stock_inflight=stockObj.inflight,
+        before_stock_preallocation=stockObj.preallocation,
     )
     stockIRObj.save()
+    # 入库
+    stockObj.quantity = F('quantity') + qty
+    stockObj.save(update_fields=['quantity'])
 
 
 class ProcessAfterSale(views.APIView):
@@ -72,10 +75,6 @@ class ProcessAfterSale(views.APIView):
                     # 错发产品库存出库
                     stockRetentionObj = Stock.objects.get(
                         inventory=ordObj.inventory, product=prodObj)
-                    stockRetentionObj.quantity = F(
-                        'quantity') - data['retention_quantity']
-                    stockRetentionObj.save(update_fields=['quantity'])
-
                     # 记录错误发出的产品, 出库操作stockoutrecord
                     stockIRObj = StockOutRecord(
                         orderid=ordObj.orderid,
@@ -83,8 +82,17 @@ class ProcessAfterSale(views.APIView):
                         quantity=data['retention_quantity'],
                         out_date=now.format('YYYY-MM-DD HH:mm:ss'),
                         product=prodObj,
+                        before_stock_quantity=stockRetentionObj.quantity,
+                        before_stock_inflight=stockRetentionObj.inflight,
+                        before_stock_preallocation=stockRetentionObj.
+                        preallocation,
                     )
                     stockIRObj.save()
+                    # 出库
+                    stockRetentionObj.quantity = F(
+                        'quantity') - data['retention_quantity']
+                    stockRetentionObj.save(update_fields=['quantity'])
+
                 ascObj.balance_price = data['retention_amount']
 
             # 补发/重发需要新建订单. (注意, 补发需要调整库存)
@@ -144,9 +152,11 @@ class ArriveAfterSale(views.APIView):
                 pass
             else:
                 inventoryObj = Inventory.objects.get(name='广州')
+                before_quantity = 0
                 try:
                     stockObj = Stock.objects.get(
                         product=ascObj.return_product, inventory=inventoryObj)
+                    before_quantity = stockObj.quantity
                     stockObj.quantity = F('quantity') + ascObj.return_quantity
                     stockObj.save(update_fields=['quantity'])
                 except Stock.DoesNotExist:
@@ -166,6 +176,9 @@ class ArriveAfterSale(views.APIView):
                     quantity=ascObj.return_quantity,
                     in_date=arrow.now().format('YYYY-MM-DD HH:mm:ss'),
                     product=ascObj.return_product,
+                    before_stock_quantity=before_quantity,
+                    before_stock_inflight=stockObj.inflight,
+                    before_stock_preallocation=stockObj.preallocation,
                 )
                 stockIRObj.save()
 

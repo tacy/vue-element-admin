@@ -226,17 +226,22 @@ class StockOut(views.APIView):
                         o.save(update_fields=['status'])
                         stockObj = Stock.objects.get(
                             product__jancode=o.jancode, inventory=o.inventory)
-                        stockObj.quantity = F('quantity') - o.quantity
-                        stockObj.preallocation = F('preallocation') - o.quantity
-                        stockObj.save()
+
                         stockORObj = StockOutRecord(
                             orderid=o.orderid,
                             quantity=o.quantity,
                             inventory=o.inventory,
                             product=stockObj.product,
                             out_date=shippingdbObj.delivery_time,
+                            before_stock_quantity=stockObj.quantity,
+                            before_stock_inflight=stockObj.inflight,
+                            before_stock_preallocation=stockObj.preallocation,
                         )
                         stockORObj.save()
+
+                        stockObj.quantity = F('quantity') - o.quantity
+                        stockObj.preallocation = F('preallocation') - o.quantity
+                        stockObj.save()
         except IntegrityError:
             return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
@@ -263,17 +268,20 @@ class OrderOut(views.APIView):
                 productObj = Product.objects.get(jancode=ordObj.jancode)
                 stockObj = Stock.objects.get(
                     product=productObj, inventory=ordObj.inventory)
-                stockObj.preallocation = F('preallocation') - ordObj.quantity
-                stockObj.quantity = F('quantity') - ordObj.quantity
-                stockObj.save()
                 stockORObj = StockOutRecord(
                     orderid=ordObj.orderid,
                     quantity=ordObj.quantity,
                     inventory=ordObj.inventory,
                     product=stockObj.product,
                     out_date=arrow.now().format('YYYY-MM-DD HH:mm:ss'),
+                    before_stock_quantity=stockObj.quantity,
+                    before_stock_inflight=stockObj.inflight,
+                    before_stock_preallocation=stockObj.preallocation,
                 )
                 stockORObj.save()
+                stockObj.preallocation = F('preallocation') - ordObj.quantity
+                stockObj.quantity = F('quantity') - ordObj.quantity
+                stockObj.save()
                 return Response(status=status.HTTP_200_OK)
             else:
                 results = {'errmsg': '订单已发货'}
@@ -345,10 +353,6 @@ def inStock(poObj, poiObj, qty):
                 o.save()
                 break
 
-    stockObj.quantity = F('quantity') + qty
-    stockObj.inflight = F('inflight') - poiObj.quantity
-    stockObj.save()
-
     # 记录入库操作stockinrecord(采购单入库)
     stockIRObj = StockInRecord(
         orderid=poObj.orderid,
@@ -356,29 +360,41 @@ def inStock(poObj, poiObj, qty):
         quantity=qty,
         in_date=poiObj.stockin_date,
         product=poiObj.product,
+        before_stock_quantity=stockObj.quantity,
+        before_stock_inflight=stockObj.inflight,
+        before_stock_preallocation=stockObj.preallocation,
+        purchase_quantity=poiObj.quantity,
     )
     stockIRObj.save()
+
+    # 入库
+    stockObj.quantity = F('quantity') + qty
+    stockObj.inflight = F('inflight') - poiObj.quantity
+    stockObj.save()
 
     # 如果目标仓库是广州, 因为之前到东京仓的时候, 已经入库了东京仓和预分配了库存,
     # 所以这里要对东京仓做出库操作
     # if '东京仓' in poObj.supplier.name:
     if '广州' in poObj.inventory.name:
-        stockTokyo = Stock.objects.get(
+        stockTokyoObj = Stock.objects.get(
             inventory=Inventory.objects.get(name='东京'),
             product=poiObj.product,
         )
-        stockTokyo.preallocation = F('preallocation') - poiObj.quantity
-        stockTokyo.quantity = F('quantity') - qty
-        stockTokyo.save()
         # 记录出库到stockoutrecord表, 这里的orderid用采购单id
         stockORObj = StockOutRecord(
             orderid=poObj.orderid,
             quantity=qty,
-            inventory=stockTokyo.inventory,
+            inventory=stockTokyoObj.inventory,
             product=poiObj.product,
             out_date=poiObj.stockin_date,
+            before_stock_quantity=stockTokyoObj.quantity,
+            before_stock_inflight=stockTokyoObj.inflight,
+            before_stock_preallocation=stockTokyoObj.preallocation,
         )
         stockORObj.save()
+        stockTokyoObj.preallocation = F('preallocation') - poiObj.quantity
+        stockTokyoObj.quantity = F('quantity') - qty
+        stockTokyoObj.save()
 
     if poiObj.quantity != qty:  # 修正采购项采购数量为实际值
         PurchaseDivergence(
@@ -422,6 +438,7 @@ def inStockTemp(poObj, poiObj, qty):
                 inflight=0,
             )
         stockTokyoObj.save()
+        stockTokyoObj.refresh_from_db()
         # 记录东京仓入库操作stockinrecord(采购单入库)
         stockIRObj = StockInRecord(
             orderid=poObj.orderid,
@@ -429,7 +446,10 @@ def inStockTemp(poObj, poiObj, qty):
             quantity=qty,
             in_date=arrow.now().format('YYYY-MM-DD HH:mm:ss'),
             product=poiObj.product,
-        )
+            before_stock_quantity=stockTokyoObj.quantity - qty,
+            before_stock_inflight=stockTokyoObj.inflight,
+            before_stock_preallocation=stockTokyoObj.preallocation - qty,
+            purchase_quantity=poiObj.quantity)
         stockIRObj.save()
 
     # 看看实际到库数量是否和采购数量一致, 这里要非常小心
