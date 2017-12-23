@@ -97,6 +97,9 @@ class StockOutRecord(models.Model):
     quantity = models.IntegerField(null=True, default=0)  # 出库数量
     out_date = models.DateTimeField(null=True)
     orderid = models.CharField(max_length=64, null=False)  # 单/订采购单(仓库间调拨用的是采购)
+    before_stock_quantity = models.IntegerField(null=True, default=0)
+    before_stock_inflight = models.IntegerField(null=True, default=0)
+    before_stock_preallocation = models.IntegerField(null=True, default=0)
 
 
 class Shipping(models.Model):
@@ -200,6 +203,10 @@ class StockInRecord(models.Model):
     in_date = models.DateTimeField(null=True)
     orderid = models.CharField(
         max_length=64, blank=False)  # orderid或者采购单orderid
+    before_stock_quantity = models.IntegerField(null=True, default=0)
+    before_stock_inflight = models.IntegerField(null=True, default=0)
+    before_stock_preallocation = models.IntegerField(null=True, default=0)
+    purchase_quantity = models.IntegerField(null=True, default=0)
 
 
 class Order(models.Model):
