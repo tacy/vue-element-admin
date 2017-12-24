@@ -220,7 +220,7 @@ class ExportUexTrack(views.APIView):
                                    t1.format('YYYY-MM-DD HH:mm:ss'), o[1]))
                 trace_time.append((idx + length, '航班已起飞，离开日本东京',
                                    t2.format('YYYY-MM-DD HH:mm:ss'), o[1]))
-                trace_time.append((idx + 2 * length, '航班降落，到达北京机场',
+                trace_time.append((idx + 2 * length, '航班降落，到达广州机场',
                                    t3.format('YYYY-MM-DD HH:mm:ss'), o[1]))
                 trace_time.append((idx + 3 * length, '到达机场快件中心',
                                    t4.format('YYYY-MM-DD HH:mm:ss'), o[1]))

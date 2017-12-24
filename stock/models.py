@@ -316,7 +316,6 @@ class AfterSaleCase(models.Model):
         Order, related_name='aftersalecase2', blank=True, null=True)
     return_status = models.CharField(max_length=8, null=True)  # 处理中/已完成
     balance_status = models.CharField(max_length=8, null=True)  # 处理中/已完成
-    pass
 
 
 class Task(models.Model):
