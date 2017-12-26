@@ -51,6 +51,7 @@ class Category(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=255, null=False)
+    jp_name = models.CharField(max_length=255, blank=True, null=False)
     jancode = models.CharField(max_length=32, null=False, unique=True)
     category = models.ForeignKey(Category, related_name='product')
     brand = models.CharField(max_length=128, null=True)  # 品牌
