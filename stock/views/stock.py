@@ -576,40 +576,45 @@ class PurchaseOrderClear(views.APIView):
         logger.debug('PurchaseOrderClear入库调试: 用户输入 - {}'.format(request.data))
         poObj = PurchaseOrder.objects.get(id=id)  # 采购单
 
-        with transaction.atomic():
-            # stock in
-            for poi in pois:
-                poiObj = poObj.purchaseorderitem.get(
-                    product__jancode=poi['jancode'])
-                if not poi['qty'] or poiObj.status not in ['在途中', '转运中']:
-                    continue
-                qty = int(poi['qty'])
-                if qty <= 0:
-                    raise InputError(None, None)
+        errmsg = None
+        try:
+            with transaction.atomic():
+                # stock in
+                for poi in pois:
+                    poiObj = poObj.purchaseorderitem.get(
+                        product__jancode=poi['jancode'])
+                    if not poi['qty'] or poiObj.status not in ['在途中', '转运中']:
+                        continue
+                    qty = int(poi['qty'])
+                    if qty < 0:
+                        errmsg = {'errmsg': '产品[%s]入库数量错误' % (poi['jancode'])}
+                        raise InputError(None, None)
 
-                # 如果是广州仓库:
-                # 1. 标记订单明细状态
-                # 2. 采购单状态(入库中/转运中)
-                # 3. 入东京仓, 增加预分配(preallocation)
-                if poObj.inventory.name == '广州' and poiObj.status == '在途中':
-                    inStockTemp(poObj, poiObj, qty)  # 广州采购单暂存东京
-                else:
-                    inStock(poObj, poiObj, qty)
+                    # 如果是广州仓库:
+                    # 1. 标记订单明细状态
+                    # 2. 采购单状态(入库中/转运中)
+                    # 3. 入东京仓, 增加预分配(preallocation)
+                    if poObj.inventory.name == '广州' and poiObj.status == '在途中':
+                        inStockTemp(poObj, poiObj, qty)  # 广州采购单暂存东京
+                    else:
+                        inStock(poObj, poiObj, qty)
 
-            count = poObj.purchaseorderitem.filter(
-                status__in=['已入库', '东京仓', '转运中']).count()
-            all = poObj.purchaseorderitem.count(
-            )  # 不能和用户提交的采购明细条数比较, 用户可能在其他页面增加了采购明细, 却不刷新提交页面
-            if count > 0:
-                if count != all:
-                    poObj.status = '入库中'
-                else:
-                    poObj.status = '转运中' if inventory_id == 3 else '已入库'
+                count = poObj.purchaseorderitem.filter(
+                    status__in=['已入库', '东京仓', '转运中']).count()
+                all = poObj.purchaseorderitem.count(
+                )  # 不能和用户提交的采购明细条数比较, 用户可能在其他页面增加了采购明细, 却不刷新提交页面
+                if count > 0:
+                    if count != all:
+                        poObj.status = '入库中'
+                    else:
+                        poObj.status = '转运中' if inventory_id == 3 else '已入库'
 
-                poObj.save(update_fields=[
-                    'status',
-                ])
+                    poObj.save(update_fields=[
+                        'status',
+                    ])
 
-            return Response(status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
+        except InputError:
+            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
