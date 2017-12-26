@@ -456,9 +456,13 @@ class ManualAllocateDBNumber(views.APIView):
                         return Response(
                             data=errmsg, status=status.HTTP_400_BAD_REQUEST)
                     elif '拼邮' in o['shipping_name'] and '洋码头' in o['channel_name'] and '拼邮' not in o['delivery_type']:
-                        errmsg = {'errmsg': '该订单为直邮转拼邮发货, 需使用直邮面单号发货'}
-                        return Response(
-                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                        if shippingdbObj.channel_name == '京东' and shippingdbObj.status == '已出库':
+                            pass
+                        else:
+                            errmsg = {'errmsg': '该订单为直邮转拼邮发货, 需使用直邮面单号发货'}
+                            return Response(
+                                data=errmsg,
+                                status=status.HTTP_400_BAD_REQUEST)
                     else:
                         if shippingdbObj.status != '已出库':
                             errmsg = {'errmsg': '使用了直邮面单, 但面单尚未出库, 请仔细检查确认'}
