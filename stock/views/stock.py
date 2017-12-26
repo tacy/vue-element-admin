@@ -583,7 +583,9 @@ class PurchaseOrderClear(views.APIView):
                 for poi in pois:
                     poiObj = poObj.purchaseorderitem.get(
                         product__jancode=poi['jancode'])
-                    if not poi['qty'] or poiObj.status not in ['在途中', '转运中']:
+                    if poi['qty'] is None or poiObj.status not in [
+                            '在途中', '转运中'
+                    ]:
                         continue
                     qty = int(poi['qty'])
                     if qty < 0:
