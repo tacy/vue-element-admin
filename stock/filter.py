@@ -2,9 +2,9 @@ from django.db.models import F, Q
 from django_filters import (BaseInFilter, BooleanFilter, CharFilter, FilterSet,
                             NumberFilter)
 
-from .models import (Order, Product, PurchaseOrder, PurchaseOrderItem,
-                     ShippingDB, Stock)
-from stock.models import AfterSaleCase, AfterSaleMeta
+from stock.models import (AfterSaleCase, AfterSaleMeta, CostRecord, Order,
+                          Product, PurchaseOrder, PurchaseOrderItem,
+                          ShippingDB, Stock)
 
 
 class CharInFilter(BaseInFilter, CharFilter):
@@ -167,4 +167,12 @@ class AfterSaleCaseFilter(FilterSet):
 
     class Meta:
         model = AfterSaleCase
+        fields = []
+
+
+class CostRecordFilter(FilterSet):
+    inventory_in = CharInFilter(name='inventory', lookup_expr='in')
+
+    class Meta:
+        model = CostRecord
         fields = []

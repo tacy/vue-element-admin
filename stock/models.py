@@ -319,6 +319,25 @@ class AfterSaleCase(models.Model):
     balance_status = models.CharField(max_length=8, null=True)  # 处理中/已完成
 
 
+class CostType(models.Model):
+    inventory = models.ForeignKey(Inventory, related_name='costtype')
+    name = models.CharField(max_length=32, null=False)
+
+    def __str__(self):
+        return '仓库: {} / 支出项目:{}'.format(self.inventory.name, self.name)
+
+
+class CostRecord(models.Model):
+    inventory = models.ForeignKey(
+        Inventory, related_name='costrecord', null=False)
+    memo = models.CharField(max_length=255, null=True, blank=True)
+    pay_time = models.DateTimeField(null=False)
+    costtype = models.ForeignKey(
+        CostType, related_name='costrecord', null=False)
+    amount = models.DecimalField(max_digits=9, null=False, decimal_places=2)
+    status = models.CharField(max_length=8, null=True)  # 已删除
+
+
 class Task(models.Model):
     name = models.CharField(max_length=16, null=False)
     interval = models.IntegerField(null=False)

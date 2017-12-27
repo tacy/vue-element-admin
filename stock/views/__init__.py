@@ -7,3 +7,4 @@ from .tools import *
 from .xlobo import *
 from .uex import *
 from .aftersale import *
+from .finance import *
