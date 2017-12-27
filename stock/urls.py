@@ -16,7 +16,8 @@ from .views import (
     PurchaseOrderTransform, PurchaseOrderItemStockIn, OrderAllocateUpdate,
     OrderRollbackToPreprocess, ExportUexTrack, AddUexNumber, ExportPrint,
     AfterSaleCaseList, AfterSaleMetaList, ProcessAfterSale, ArriveAfterSale,
-    BalanceAfterSale, AfterSaleCaseDetail)
+    BalanceAfterSale, AfterSaleCaseDetail, CostTypeList, CostRecordList,
+    CreateCostRecord)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -139,6 +140,12 @@ urlpatterns = {
     url(r'^xlobo/createems/$', CreateJapanEMS.as_view(), name="createEMS"),
     url(r'^uex/stockout/$', UexStockOut.as_view(), name="createUexDB"),
     url(r'^uex/addnumber/$', AddUexNumber.as_view(), name="addUexNumber"),
+    url(r'^finance/cost/type/$', CostTypeList.as_view(), name='costType'),
+    url(r'^finance/cost/record/$', CostRecordList.as_view(),
+        name='costRecord'),
+    url(r'^finance/cost/createrecord/$',
+        CreateCostRecord.as_view(),
+        name='createCostRecord'),
 }
 
 urlpatterns = format_suffix_patterns(urlpatterns)

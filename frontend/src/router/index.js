@@ -39,7 +39,10 @@ const bondedproductsquery = _import('products/bondedquery');
 
 /* stock */
 const stocksquery = _import('stocks/query');
-const stocksmove = _import('stocks/move');
+
+/* finance */
+const costRecord = _import('finances/costrecord');
+const createCostRecord = _import('finances/createcostrecord');
 
 /* error page */
 const Err404 = _import('error/404');
@@ -113,43 +116,43 @@ export const asyncRouterMap = [
         path: 'allocate',
         component: ordersAllocate,
         name: '预处理',
-        meta: { role: ['admin'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal-big'] }
       },
       {
         path: 'purchase',
         component: ordersPurchase,
         name: '待采购',
-        meta: { role: ['admin'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal-big'] }
       },
       {
         path: 'conflict',
         component: ordersConflict,
         name: '需介入',
-        meta: { role: ['admin', 'normal'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
       },
       {
         path: 'createdb',
         component: ordersCreateDB,
         name: '出面单',
-        meta: { role: ['admin', 'tokyo'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'tokyo', 'normal-big'] }
       },
       {
         path: 'shipping',
         component: ordersShipping,
         name: '待发货',
-        meta: { role: ['admin', 'tokyo'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'tokyo', 'normal-big'] }
       },
       {
         path: 'needexport',
         component: ordersNeedExport,
         name: '拼邮&保税',
-        meta: { role: ['admin', 'normal'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
       },
       {
         path: 'uextrack',
         component: ordersUexTrack,
         name: '轨迹单',
-        meta: { role: ['admin', 'normal'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
       },
       { path: 'aftersale', component: afterSale, name: '售后单' }
     ]
@@ -165,25 +168,25 @@ export const asyncRouterMap = [
         path: 'order',
         component: purchasesorder,
         name: '采购单',
-        meta: { role: ['admin', 'tokyo'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'tokyo', 'normal-big'] }
       },
       {
         path: 'stockin',
         component: purchasesstockin,
         name: '采购入库',
-        meta: { role: ['admin', 'tokyo'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'tokyo', 'normal-big'] }
       },
       {
         path: 'transform',
         component: purchasestransform,
         name: '转运国内',
-        meta: { role: ['admin', 'tokyo'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'tokyo', 'normal-big'] }
       },
       {
         path: 'create',
         component: purchasescreate,
         name: '新采购',
-        meta: { role: ['admin', 'tokyo'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'tokyo', 'normal-big'] }
       }
     ]
   },
@@ -205,13 +208,18 @@ export const asyncRouterMap = [
     name: '仓库',
     icon: 'zujian',
     children: [
-      { path: 'query', component: stocksquery, name: '查库存' },
-      {
-        path: 'move',
-        component: stocksmove,
-        name: '移库单',
-        meta: { role: ['admin'] }
-      }
+      { path: 'query', component: stocksquery, name: '查库存' }
+    ]
+  },
+  {
+    path: '/finances',
+    component: Layout,
+    redirect: '/finances/index',
+    name: '财务',
+    icon: 'zujian',
+    children: [
+      { path: 'costrecord', component: costRecord, name: '查支出', meta: { role: ['supergz', 'supertokyo', 'super'] } },
+      { path: 'createcostrecord', component: createCostRecord, name: '新支出', meta: { role: ['supergz', 'supertokyo', 'super'] } }
     ]
   },
   { path: '*', redirect: '/404', hidden: true }

@@ -5,7 +5,7 @@ from .models import (BondedProduct, Inventory, Order, Product,
                      PurchaseDivergence, PurchaseOrder, PurchaseOrderItem,
                      Shipping, ShippingDB, Stock, StockInRecord,
                      StockOutRecord, Supplier, UexTrack)
-from stock.models import AfterSaleCase, AfterSaleMeta
+from stock.models import AfterSaleCase, AfterSaleMeta, CostRecord, CostType
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -238,6 +238,29 @@ class AfterSaleMetaSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = AfterSaleMeta
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class CostTypeSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+    inventory_name = serializers.ReadOnlyField(source='inventory.name')
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = CostType
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class CostRecordSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+    costtype_name = serializers.ReadOnlyField(source='costtype.name')
+    inventory_name = serializers.ReadOnlyField(source='inventory.name')
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = CostRecord
         # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
         fields = '__all__'
 
