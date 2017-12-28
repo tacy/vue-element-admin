@@ -21,7 +21,7 @@ class ProductUpdateJancode(views.APIView):
             jancode = productObj.jancode
             productSerializer = ProductSerializer(
                 productObj, data=request.data)
-            if productSerializer.is_valid(raise_exception=True):
+            if productSerializer.is_valid():
                 productSerializer.save()
                 Order.objects.filter(jancode=jancode).update(
                     jancode=data['jancode'],
@@ -29,5 +29,7 @@ class ProductUpdateJancode(views.APIView):
                     sku_properties_name=productObj.specification,
                 )
                 return Response(status=status.HTTP_200_OK)
+            else:
+                logger.exception(productSerializer.errors)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
