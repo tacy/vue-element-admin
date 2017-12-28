@@ -31,5 +31,8 @@ class ProductUpdateJancode(views.APIView):
                 return Response(status=status.HTTP_200_OK)
             else:
                 logger.exception(productSerializer.errors)
+                return Response(
+                    data={'errmsg': str(productSerializer.errors)},
+                    status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
