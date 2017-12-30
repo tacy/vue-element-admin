@@ -6,15 +6,16 @@ from collections import OrderedDict
 from io import BytesIO
 
 import aiohttp
+import arrow
 from PyPDF2 import PdfFileMerger, PdfFileReader
 from django.conf import settings
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
 from django.db.models import F
 from rest_framework import status, views
 from rest_framework.response import Response
 
-from stock.models import (Inventory, Order, Product, Shipping, ShippingDB,
-                          Stock)
+from stock.models import (Inventory, Order, Product, PurchaseOrderItem,
+                          Shipping, ShippingDB, Stock, TransformDB)
 from ymatou import japanems, utils, ymatouapi
 
 YMTKEY = {
@@ -408,6 +409,60 @@ class CreateJapanEMS(views.APIView):
         return Response(status=status.HTTP_200_OK)
 
 
+class CreateTransformDB(views.APIView):
+    def post(self, request, format=None):
+        # create ems number
+        # sendType
+        #    EMS(物品): 1 / 国际e包裹: 4 / 国际邮包: 5
+        # transType
+        #    航空: 1 / 标准航空(SAL): 3 / 海运: 2
+        shippingInfo = {
+            'EMS': (1, None),
+            'EPACK': (4, None),
+            'SAL': (5, 3),
+            'SURFACE': (5, 2)
+        }
+        data = request.data
+        pois = data['pois']
+        si = data.get('ems_type', None)
+        db_number = data.get('db_number', None)
+        if not db_number:
+            sendType = shippingInfo[si][0]
+            transType = shippingInfo[si][1]
+            ord = {
+                'receiver_name': data['receiver_name'],
+                'receiver_address': data['receiver_address'],
+                'receiver_zip': data['receiver_zip'],
+                'receiver_mobile': data['receiver_mobile'],
+                'jancode': pois[0]['jancode'],
+                'orderid': pois[0]['orderid'],
+            }
+            db_number = japanems.createJapanEMS(ord, sendType, transType)
+
+        with transaction.atomic():
+            inventoryObj = Inventory.objects.get(id=4)
+            try:
+                transformdbObj = TransformDB.objects.get(db_number=db_number)
+                if transformdbObj.status == '已出库':
+                    raise IntegrityError
+            except TransformDB.DoesNotExist:
+                transformdbObj = TransformDB(
+                    db_number=db_number,
+                    status='待处理',
+                    inventory=inventoryObj,
+                    create_time=arrow.now().format('YYYY-MM-DD HH:mm:ss'))
+                transformdbObj.save()
+            for o in pois:
+                poiObj = PurchaseOrderItem.objects.get(id=o['id'])
+                poiObj.transformdb = transformdbObj
+                poiObj.status = '转运中'
+                poiObj.delivery_no = db_number
+                poiObj.save(
+                    update_fields=['transformdb', 'status', 'delivery_no'])
+
+        return Response(status=status.HTTP_200_OK)
+
+
 # 思考: 拼邮订单, 还是需要填写正确的EMS单号, 否则不容易追踪包裹情况, 但是存在
 # 不正确填写EMS单号的情况, 这个需要怎么处理?
 class ManualAllocateDBNumber(views.APIView):
@@ -554,6 +609,44 @@ class XloboDeleteDBNumber(views.APIView):
         return Response(status=status.HTTP_200_OK)
 
 
+def getInvoiceInfo(db_type, result):
+    merger = PdfFileMerger()
+    pdftool = utils.PDFTool()
+    sqls = {
+        'shipping':
+        'select p.name, p.specification, o.jancode, o.quantity, s.location, o.seller_memo from stock_order o inner join stock_product p on o.jancode=p.jancode inner join stock_stock s on s.product_id=p.id where o.shippingdb_id=%s and s.inventory_id=%s',
+        'transform':
+        'select p.name,p.specification, p.jancode, poi.quantity,s.location,"" from stock_purchaseorderitem poi inner join stock_product p on poi.product_id=p.id inner join stock_stock s on s.product_id=p.id where poi.status="转运中" and poi.transformdb_id=%s and s.inventory_id=%s',
+    }
+    ptype = 'xlobo' if 'DB' in result[0]['BillCode'].upper() else 'ems'
+    for i, b in enumerate(result):
+        ordsData = None
+
+        with connection.cursor() as c:
+            dbObj = ShippingDB.objects.get(
+                db_number=b['BillCode']
+            ) if db_type != 'transform' else TransformDB.objects.get(
+                db_number=b['BillCode'])
+            c.execute(sqls[db_type], (dbObj.id, dbObj.inventory.id))
+            ordsData = c.cursor.fetchall()
+        merger.append(b['BillPdfLabel'])
+        merger.append(
+            BytesIO(pdftool.createShippingPDF(b['BillCode'], ordsData, ptype)))
+
+    res = BytesIO()
+    merger.write(res)
+    result = {
+        'Result': [
+            {
+                'BillPdfLabel': base64.b64encode(res.getvalue())
+            },
+        ]
+    }
+    res.close()
+
+    return result
+
+
 class XloboGetPDF(views.APIView):
     def get(self, request, format=None):
         loop = asyncio.new_event_loop()
@@ -564,6 +657,7 @@ class XloboGetPDF(views.APIView):
         # drf can't get query list
         # data = {'BillCodes': request.query_params.get('BillCodes[]')}
         data = {'BillCodes': self.request.GET.getlist("BillCodes[]")}
+        db_type = request.query_params.get('db_type')
         # data = {
         #     'BillCodes': [
         #         'DB273208811JP',
@@ -590,49 +684,23 @@ class XloboGetPDF(views.APIView):
                 msg.append(db_number + ':' + i['ErrorDescription'])
             errmsg = {'errmsg': '|'.join(msg), 'idmis': idmis}
             return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-        merger = PdfFileMerger()
-        pdftool = utils.PDFTool()
-        sql = 'select p.name, p.specification, o.jancode, o.quantity, s.location, o.seller_memo from stock_order o inner join stock_product p on o.jancode=p.jancode inner join stock_stock s on s.product_id=p.id where o.shippingdb_id=%s and s.inventory_id=%s'
-        for i, b in enumerate(result['Result']):
-            db_bytes = base64.b64decode(b['BillPdfLabel'])
-            ordsData = None
 
-            with connection.cursor() as c:
-                shippingdbObj = ShippingDB.objects.get(db_number=b['BillCode'])
-                c.execute(sql, (shippingdbObj.id, shippingdbObj.inventory.id))
-                # c.execute(sql, (8, ))
-                ordsData = c.cursor.fetchall()
-            # inp2 = BytesIO(pdftool.createShippingPDF(b['BillCode'], ordsData))
-            # inp2 = open(
-            #     '/home/tacy/workspace/python/lelewu/ymatou/simple_table.pdf',
-            #     'rb')
-            if not i:
-                merger.append(fileobj=BytesIO(db_bytes), pages=(0, 1))
-            else:
-                merger.merge(
-                    position=i * 2 + 1,
-                    fileobj=BytesIO(db_bytes),
-                    pages=(0, 1))
-            merger.merge(
-                position=2**(i + 1),
-                fileobj=BytesIO(
-                    pdftool.createShippingPDF(b['BillCode'], ordsData)),
-                pages=(0, 1))
+        result = result['Result']
+        for i, b in enumerate(result):
+            db_bytes = BytesIO(base64.b64decode(b['BillPdfLabel']))
+            result[i]['BillPdfLabel'] = db_bytes
 
-        res = BytesIO()
-        merger.write(res)
-        result['Result'] = [
-            {
-                'BillPdfLabel': base64.b64encode(res.getvalue())
-            },
-        ]
-        res.close()
+        r = getInvoiceInfo(db_type, result)
 
-        # update shippingdb print_status
-        ShippingDB.objects.filter(db_number__in=data['BillCodes']).update(
-            print_status='已打印')
+        # update shippingdb/transformdb print_status
+        if db_type != 'transform':
+            ShippingDB.objects.filter(db_number__in=data).update(
+                print_status='已打印')
+        else:
+            TransformDB.objects.filter(db_number__in=data).update(
+                print_status='已打印')
 
-        return Response(data=result, status=status.HTTP_200_OK)
+        return Response(data=r, status=status.HTTP_200_OK)
         # response = HttpResponse(content_type='application/pdf')
         # # response[
         # #     'Content-Disposition'] = 'attachment; filename="somefilename.pdf"'
@@ -643,42 +711,32 @@ class XloboGetPDF(views.APIView):
         # return response
 
 
-class getJapanEMSPDF(views.APIView):
+class JapanEMSPDF(views.APIView):
     def get(self, request, format=None):
         data = self.request.GET.getlist("BillCodes[]")
+        db_type = request.query_params.get('db_type')
         emsStorageDir = getJapanEMSStorageLocal()
 
-        result = [{'BillPdfLabel': db + '.pdf', 'BillCode': db} for db in data]
+        result = []
+        for db in data:
+            dbFN = os.path.join(emsStorageDir, db + '.pdf')
+            r = {
+                'BillPdfLabel': PdfFileReader(open(dbFN, 'rb')),
+                'BillCode': db,
+            }
+            result.append(r)
 
-        merger = PdfFileMerger()
-        pdftool = utils.PDFTool()
-        sql = 'select p.name, p.specification, o.jancode, o.quantity, s.location, o.seller_memo from stock_order o inner join stock_product p on o.jancode=p.jancode inner join stock_stock s on s.product_id=p.id where o.shippingdb_id=%s and s.inventory_id=%s'
-        for i, b in enumerate(result):
-            ordsData = None
-            with connection.cursor() as c:
-                shippingdbObj = ShippingDB.objects.get(db_number=b['BillCode'])
-                c.execute(sql, (shippingdbObj.id, shippingdbObj.inventory.id))
-                ordsData = c.cursor.fetchall()
+        r = getInvoiceInfo(db_type, result)
 
-            dbFN = os.path.join(emsStorageDir, b['BillPdfLabel'])
-            merger.append(PdfFileReader(open(dbFN, 'rb')))
-            merger.append(
-                BytesIO(pdftool.createShippingPDF(b['BillCode'], ordsData)))
+        # update shippingdb/transformdb print_status
+        if db_type != 'transform':
+            ShippingDB.objects.filter(db_number__in=data).update(
+                print_status='已打印')
+        else:
+            TransformDB.objects.filter(db_number__in=data).update(
+                print_status='已打印')
 
-        res = BytesIO()
-        merger.write(res)
-        result = {
-            'Result': [{
-                'BillPdfLabel': base64.b64encode(res.getvalue())
-            }]
-        }
-        res.close()
-
-        # update shippingdb print_status
-        ShippingDB.objects.filter(db_number__in=data).update(
-            print_status='已打印')
-
-        return Response(data=result, status=status.HTTP_200_OK)
+        return Response(data=r, status=status.HTTP_200_OK)
 
 
 class LogisticGet(views.APIView):

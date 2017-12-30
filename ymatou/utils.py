@@ -21,17 +21,17 @@ class PDFTool:
             ttfonts.TTFont(
                 'wqy', '/usr/share/fonts/wenquanyi/wqy-zenhei/wqy-zenhei.ttc'))
         self.pageType = {
-            'Xlobo': {
+            'xlobo': {
                 'size': (10 * cm, 15 * cm),
                 'colWidths': [4.5 * cm, 2.8 * cm, 1.0 * cm, 1.4 * cm],
             },
-            'EMS': {
+            'ems': {
                 'size': (21 * cm, 29.7 * cm),
                 'colWidths': [11 * cm, 6 * cm, 1.5 * cm, 2 * cm],
             }
         }
 
-    def createShippingPDF(self, db_number, orders, pType='Xlobo'):
+    def createShippingPDF(self, db_number, orders, pType='xlobo'):
         styles = getSampleStyleSheet()
         buf = BytesIO()
 

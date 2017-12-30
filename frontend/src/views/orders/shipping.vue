@@ -337,7 +337,8 @@
          db_numbers: undefined
        },
        xloboData: {
-         BillCodes: []
+         BillCodes: [],
+         db_type: 'shipping'
        }
      }
    },
@@ -479,7 +480,7 @@
      },
      stockOut() {
        this.disableSubmit = true;
-       stockOut(this.stockOutData).then(response => {
+       stockOut(this.stockOutData).then(() => {
          const dbs = this.stockOutData.db_numbers.split('\n')
          for (const d of dbs) {
            for (const v of this.list) {
@@ -499,12 +500,12 @@
            duration: 2000
          });
          this.dialogStockOutVisible = false;
-       }).catch(error => {
+       }).catch(() => {
          this.disableSubmit = false;
        })
      },
      handleDelete(row) {
-       deleteDBNumber(row).then(response => {
+       deleteDBNumber(row).then(() => {
          for (const v of this.list) {
            if (v.id === row.id) {
              const index = this.list.indexOf(v);
@@ -574,7 +575,7 @@
                }
              }
            }
-         }).catch(error => {
+         }).catch(() => {
            this.disableSubmit2 = false;
          })
        } else {
@@ -602,6 +603,7 @@
              }
            }
          }).catch(error => {
+           this.disableSubmit2 = false;
            for (const i of error.response.data.idmis) {
              for (const o of this.list) {
                if (i === o.db_number) {
@@ -611,7 +613,6 @@
                }
              }
            }
-           this.disableSubmit2 = false;
          })
        }
      },

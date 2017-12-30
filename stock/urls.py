@@ -9,7 +9,7 @@ from .views import (
     OrderConflict, NoOrderPurchase, PurchaseOrderDelete, OrderDelete,
     CategoryGet, LogisticGet, XloboCreateNoVerification, CreateJapanEMS,
     YmatouStockUpdate, ShippingDBList, XloboCreateFBXBill, XloboGetPDF,
-    getJapanEMSPDF, XloboDeleteDBNumber, ManualAllocateDBNumber, OrderItemGet,
+    JapanEMSPDF, XloboDeleteDBNumber, ManualAllocateDBNumber, OrderItemGet,
     StockOut, OrderTPRCreate, PurchaseOrderClear, UexStockOut,
     ExportBondedOrder, BondedProductList, BondedProductDetail,
     ProductUpdateJancode, SyncStock, ExportDomesticOrder, OrderOut,
@@ -17,7 +17,7 @@ from .views import (
     OrderRollbackToPreprocess, ExportUexTrack, AddUexNumber, ExportPrint,
     AfterSaleCaseList, AfterSaleMetaList, ProcessAfterSale, ArriveAfterSale,
     BalanceAfterSale, AfterSaleCaseDetail, CostTypeList, CostRecordList,
-    CreateCostRecord)
+    CreateCostRecord, TransformDBList, TransformDBDetail, CreateTransformDB)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -51,6 +51,13 @@ urlpatterns = {
     url(r'^stock/(?P<pk>[0-9]+)/$', StockDetail.as_view(), name="StockDetail"),
     url(r'^shipping/$', ShippingList.as_view(), name="createShipping"),
     url(r'^shippingdb/$', ShippingDBList.as_view(), name="createShippingdb"),
+    url(r'^transformdb/$', TransformDBList.as_view(), name="getTransformdb"),
+    url(r'^transformdb/create/$',
+        CreateTransformDB.as_view(),
+        name="createTransformdb"),
+    url(r'^transformdb/(?P<pk>[0-9]+)/$',
+        TransformDBDetail.as_view(),
+        name="transformdbDetail"),
     url(r'^getcategory/$', CategoryGet.as_view(), name="getCategory"),
     url(r'^inventory/$', InventoryList.as_view(), name="createInventory"),
     url(r'^supplier/$', SupplierList.as_view(), name="createSupplier"),
@@ -124,7 +131,7 @@ urlpatterns = {
         name="allocatedbnumber"),
     url(r'^xlobo/getlogistic/$', LogisticGet.as_view(), name="getLogistic"),
     url(r'^xlobo/getpdf/$', XloboGetPDF.as_view(), name="getPDF"),
-    url(r'^xlobo/getemspdf/$', getJapanEMSPDF.as_view(), name="getEMSPDF"),
+    url(r'^xlobo/getemspdf/$', JapanEMSPDF.as_view(), name="getEMSPDF"),
     url(r'^xlobo/deletedbnumber/$',
         XloboDeleteDBNumber.as_view(),
         name="deleteDBNumber"),

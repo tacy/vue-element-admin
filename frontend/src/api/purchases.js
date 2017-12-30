@@ -63,3 +63,27 @@ export function noOrderPurchase(data) {
     data
   });
 }
+
+export function createTransformDB(data) {
+  return fetch({
+    url: '/transformdb/create/',
+    method: 'post',
+    data
+  });
+}
+
+export function fetchTransformDB(query) {
+  return fetch({
+    url: '/transformdb',
+    method: 'get',
+    params: query
+  });
+}
+
+export function updateTransformDB(transformdb, url) {
+  return fetch({
+    url,
+    method: 'put',
+    data: transformdb
+  });
+}

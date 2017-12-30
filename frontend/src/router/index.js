@@ -32,6 +32,7 @@ const purchasesorder = _import('purchases/order');
 const purchasescreate = _import('purchases/create');
 const purchasestransform = _import('purchases/transform');
 const purchasesstockin = _import('purchases/orderstockin');
+const transformdb = _import('purchases/shipping');
 
 /* product */
 const productsquery = _import('products/query');
@@ -180,6 +181,12 @@ export const asyncRouterMap = [
         path: 'transform',
         component: purchasestransform,
         name: '转运国内',
+        meta: { role: ['supergz', 'supertokyo', 'super', 'tokyo', 'normal-big'] }
+      },
+      {
+        path: 'transformdb',
+        component: transformdb,
+        name: '待转运',
         meta: { role: ['supergz', 'supertokyo', 'super', 'tokyo', 'normal-big'] }
       },
       {
