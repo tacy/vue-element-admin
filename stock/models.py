@@ -142,6 +142,18 @@ class ShippingDB(models.Model):
         ordering = ['order_piad_time']
 
 
+class TransformDB(models.Model):
+    db_number = models.CharField(
+        max_length=32, unique=True,
+        null=False)  # xloboDBNumber, uexDBNumber, EMSNumber
+    status = models.CharField(max_length=8, null=True)  # 待处理/已删除/已出库
+    create_time = models.DateTimeField(null=True)
+    delivery_time = models.DateTimeField(null=True)
+    print_status = models.CharField(max_length=8, null=True, default='')  # 已打印
+    inventory = models.ForeignKey(Inventory, related_name='transformdb')
+    memo = models.CharField(max_length=128, null=True)
+
+
 class PurchaseOrder(models.Model):
     # 采购单状态: 在途/删除/入库
     # 按单采购流程:
@@ -171,10 +183,13 @@ class PurchaseOrder(models.Model):
 class PurchaseOrderItem(models.Model):
     purchaseorder = models.ForeignKey(
         PurchaseOrder, related_name='purchaseorderitem')
-    product = models.ForeignKey(Product, related_name='purchaseorderitem')
+    product = models.ForeignKey(
+        Product, related_name='purchaseorderitem', null=True)
     quantity = models.IntegerField(null=False)
     status = models.CharField(max_length=8, null=True)  # 已入库/东京仓/转运中
     delivery_no = models.CharField(max_length=128, null=True)  # 转运单号
+    transformdb = models.ForeignKey(
+        TransformDB, related_name='purchaseorderitem', null=True)
     price = models.DecimalField(max_digits=8, null=True, decimal_places=2)
     stockin_date = models.DateTimeField(null=True)
 

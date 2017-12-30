@@ -26,7 +26,8 @@
       </el-select>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleTransform">转运</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleTransform">回填运单</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="document" @click="handleEMSTransform">生成EMS运单</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" @selection-change="handleSelect" border fit highlight-current-row style="width: 100%">
@@ -86,14 +87,41 @@
       </el-pagination>
     </div>
 
-    <el-dialog title="转运国内" size="small" :visible.sync="dialogTransformVisible">
+    <el-dialog title="回填转运单" size="tiny" :visible.sync="dialogTransformVisible">
       <el-form class="small-space" :model="transformData" label-position="left" label-width="80px">
         <el-form-item label="运单号">
-          <el-input v-model.trim="transformData.delivery_no"></el-input>
+          <el-input v-model.trim="transformData.db_number"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogTransformVisible=false">取 消</el-button>
+        <el-button type="primary" @click="transform()">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog title="生成EMS转运单" size="tiny" :visible.sync="dialogEMSVisible">
+      <el-form class="small-space" :model="transformData" label-position="left" label-width="80px">
+	<el-form-item label="运输方式">
+	  <el-select clearable style="width: 120px" class="filter-item" v-model="transformData.ems_type" placeholder="选择运输方式">
+            <el-option v-for="item in emsTypeOptions" :key="item" :label="item" :value="item">
+            </el-option>
+	  </el-select>
+	</el-form-item>
+        <el-form-item label="收件人">
+          <el-input v-model.trim="transformData.receiver_name"></el-input>
+        </el-form-item>
+        <el-form-item label="地址">
+          <el-input v-model.trim="transformData.receiver_address"></el-input>
+        </el-form-item>
+        <el-form-item label="邮编">
+          <el-input v-model.trim="transformData.receiver_zip"></el-input>
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model.trim="transformData.receiver_mobile"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogEMSVisible=false">取 消</el-button>
         <el-button type="primary" @click="transform()">确 定</el-button>
       </div>
     </el-dialog>
@@ -116,7 +144,7 @@
 </template>
 
 <script>
-  import { fetchPurchaseOrderItem, purchaseOrderTransform, PurchaseOrderItemStockIn } from 'api/purchases';
+  import { fetchPurchaseOrderItem, createTransformDB, PurchaseOrderItemStockIn } from 'api/purchases';
 
   export default {
     data() {
@@ -128,6 +156,7 @@
         selectRow: [],
         dialogTransformVisible: false,
         dialogStockInVisible: false,
+        dialogEMSVisible: false,
         selectedOptions: [{
           value: '1',
           label: '注文编号'
@@ -141,6 +170,7 @@
           value: '4',
           label: '转运单号'
         }],
+        emsTypeOptions: ['EMS', 'EPACK', 'SAL', 'SURFACE'],
         listQuery: {
           page: 1,
           limit: 50,
@@ -154,8 +184,13 @@
           delivery_no: undefined
         },
         transformData: {
-          purchaseorderitems: undefined,
-          delivery_no: undefined
+          pois: undefined,
+          ems_type: undefined,
+          db_number: undefined,
+          receiver_name: undefined,
+          receiver_address: undefined,
+          receiver_zip: undefined,
+          receiver_mobile: undefined
         },
         stockInData: {
           id: undefined,
@@ -195,6 +230,15 @@
           this.listLoading = false;
         })
       },
+      resetTransformData() {
+        this.transformData.pois = undefined
+        this.transformData.ems_type = undefined
+        this.transformData.db_number = undefined
+        this.transformData.receiver_name = undefined
+        this.transformData.receiver_address = undefined
+        this.transformData.receiver_zip = undefined
+        this.transformData.receiver_mobile = undefined
+      },
       handleFilter() {
         this.listQuery.page = 1;
         this.getPurchaseOrderItem();
@@ -213,6 +257,18 @@
         this.listQuery.page = val;
         this.getPurchaseOrderItem();
       },
+      handleEMSTransform() {
+        if (this.selectRow.length === 0) {
+          this.$message({
+            type: 'error',
+            message: '请选择转运商品',
+            duration: 2000
+          });
+          return;
+        }
+        this.resetTransformData()
+        this.dialogEMSVisible = true;
+      },
       handleTransform() {
         if (this.selectRow.length === 0) {
           this.$message({
@@ -222,12 +278,12 @@
           });
           return;
         }
-        this.transformData.delivery_no = null;
+        this.resetTransformData()
         this.dialogTransformVisible = true;
       },
       transform() {
-        this.transformData.purchaseorderitems = this.selectRow
-        purchaseOrderTransform(this.transformData).then(() => {
+        this.transformData.pois = this.selectRow
+        createTransformDB(this.transformData).then(() => {
           this.$notify({
             title: '成功',
             message: '转运完成',
@@ -238,8 +294,6 @@
             for (const s of this.selectRow) {
               if (o.id === s.id) {
                 const index = this.list.indexOf(o);
-                // this.list[index].status = '转运中';
-                // this.list[index].delivery_no = this.transformData.delivery_no;
                 this.list.splice(index, 1);
                 break;
               }
@@ -247,6 +301,7 @@
           }
           this.selectRow = [];
           this.dialogTransformVisible = false;
+          this.dialogEMSVisible = false;
         });
       },
       handleStockIn(row) {

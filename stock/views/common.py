@@ -8,13 +8,14 @@ from stock.filter import (AfterSaleCaseFilter, AfterSaleMetaFilter,
 from stock.models import (AfterSaleCase, AfterSaleMeta, BondedProduct,
                           CostRecord, CostType, Inventory, Order, Product,
                           PurchaseOrder, PurchaseOrderItem, Shipping,
-                          ShippingDB, Stock, Supplier)
+                          ShippingDB, Stock, Supplier, TransformDB)
 from stock.serializers import (
     AfterSaleCaseSerializer, AfterSaleMetaSerializer, BondedProductSerializer,
     CostTypeSerializer, InventorySerializer, OrderSerializer,
     ProductSerializer, PurchaseOrderItemSerializer, PurchaseOrderSerializer,
     ShippingDBSerializer, ShippingSerializer, StockSerializer,
-    SupplierSerializer, Token, TokenSerializer, CostRecordSerializer)
+    SupplierSerializer, Token, TokenSerializer, CostRecordSerializer,
+    TransformDBSerializer)
 
 
 class UserInfo(generics.ListAPIView):
@@ -125,6 +126,18 @@ class ShippingDBList(generics.ListAPIView):
     serializer_class = ShippingDBSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
     filter_class = ShippingDBFilter
+
+
+class TransformDBList(generics.ListAPIView):
+    queryset = TransformDB.objects.all()
+    serializer_class = TransformDBSerializer
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+    filter_fields = ('status', )
+
+
+class TransformDBDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = TransformDB.objects.all()
+    serializer_class = TransformDBSerializer
 
 
 class InventoryList(generics.ListCreateAPIView):
