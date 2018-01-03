@@ -114,18 +114,19 @@ class TiangouOpenAPI():
         sign = hashlib.md5(signOrgStr.encode('utf-8')).hexdigest()
         return sign
 
-    async def getOrderList(self, createTimeGE, createTimeLT, state):
+    async def getOrderList(self, timeGE, timeLT, state):
         action = 'api/order/orderList'
         method = 'get'
         timestamp = str(arrow.now().timestamp * 1000)
         r = await self.getToken()
         token = r['data']['token']
-        signStr = [createTimeGE, createTimeLT, token, timestamp, state]
+        signStr = [timeGE, timeLT, token, timestamp, state]
         sign = self.getSign(signStr)
         payload = (
-            ('createTimeGE', createTimeGE),
-            ('createTimeLT', createTimeLT),
+            ('timeGE', timeGE),
+            ('timeLT', timeLT),
             ('stateList', state),
+            ('timeType', 'payTime'),
             ('token', token),
             ('sign', sign),
             ('timestamp', timestamp),
