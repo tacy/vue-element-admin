@@ -170,6 +170,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
             delty['province'],
             delty['city'],
             delty['district'],
+            delty.get('district', '无'),
             delty['address'],
         ])
         receiver_mobile = delty['phone']
