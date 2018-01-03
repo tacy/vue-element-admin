@@ -120,7 +120,7 @@ class TiangouOpenAPI():
         timestamp = str(arrow.now().timestamp * 1000)
         r = await self.getToken()
         token = r['data']['token']
-        signStr = [timeGE, timeLT, token, timestamp, state]
+        signStr = [timeGE, timeLT, token, 'payTime', timestamp, state]
         sign = self.getSign(signStr)
         payload = (
             ('timeGE', timeGE),
@@ -160,10 +160,10 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     with aiohttp.ClientSession(loop=loop) as sess:
         tgOApi = TiangouOpenAPI(sess)
-        ct = '2017-12-15 00:00:00'
-        et = '2017-12-20 00:00:00'
+        ct = '2018-01-03 19:01:14'
+        et = '2018-01-03 22:47:10'
         state = 'Shipping,Processing'
         r = loop.run_until_complete(tgOApi.getOrderList(ct, et, state))
         print(r)
-        r = loop.run_until_complete(tgOApi.shippingOrder('1', '1', '1'))
-        print(r)
+        # r = loop.run_until_complete(tgOApi.shippingOrder('1', '1', '1'))
+        # print(r)
