@@ -497,7 +497,7 @@ async def deliveryTgOrder(tgapi, pool):
             await cur.execute(sql)
             rs = await cur.fetchall()
             for i in rs:
-                if '-' in i[0]:  # 补发单子是否需要发货
+                if '-' in i[0] or 'wx' in i[0]:  # 补发单子或者微信渠道无需渠道后台发货
                     continue
                 # payload = {
                 #     'orderId': i[0],
