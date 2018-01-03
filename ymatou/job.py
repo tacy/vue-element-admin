@@ -139,8 +139,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
     # result = await tgapi.login()
     # if not result:
     #     return
-    et = arrow.now().replace(
-        hours=-1).to('local').format('YYYY-MM-DD HH:mm:ss')
+    et = arrow.now().to('local').format('YYYY-MM-DD HH:mm:ss')
 
     # get last export order time from stock_exportorderlog as st
     st = None
@@ -163,6 +162,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
     ords = []
     if not rs['success'] or (rs['success'] and not rs.get('data')):
         return
+    next_job_start_time = ''
     for o in rs['data']:
         delty = o['receiver']
         receiver_name = delty['name']
@@ -175,8 +175,9 @@ async def syncTGOrder(tgapi, sellerName, pool):
         receiver_mobile = delty['phone']
         receiver_idcard = delty['idCard']
         createTime = arrow.get(
-            o['createTime'] / 1000).format('YYYY-MM-DD HH:mm:ss')
-
+            o['payTime'] / 1000).format('YYYY-MM-DD HH:mm:ss')
+        if next_job_start_time < createTime:
+            next_job_start_time = createTime
         for i, oi in enumerate(o['orderItems']):
             # 拆单:
             #    1. jancode (jancode*1+jancode*1)
@@ -225,6 +226,8 @@ async def syncTGOrder(tgapi, sellerName, pool):
             await cur.executemany(insertOrderSQL, ords)
 
             # insert sync order log
+            if next_job_start_time and et > next_job_start_time:
+                et = next_job_start_time
             await cur.execute(insertExportOrderLog,
                               (sellerName, st, et, len(ords)))
             await conn.commit()
