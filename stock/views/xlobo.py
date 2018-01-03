@@ -694,10 +694,10 @@ class XloboGetPDF(views.APIView):
 
         # update shippingdb/transformdb print_status
         if db_type != 'transform':
-            ShippingDB.objects.filter(db_number__in=data).update(
+            ShippingDB.objects.filter(db_number__in=data['BillCodes']).update(
                 print_status='已打印')
         else:
-            TransformDB.objects.filter(db_number__in=data).update(
+            TransformDB.objects.filter(db_number__in=data['BillCodes']).update(
                 print_status='已打印')
 
         return Response(data=r, status=status.HTTP_200_OK)
