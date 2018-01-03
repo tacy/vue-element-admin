@@ -176,7 +176,7 @@ async def syncTGOrder(tgapi, sellerName, pool):
         receiver_mobile = delty['phone']
         receiver_idcard = delty['idCard']
         createTime = arrow.get(
-            o['payTime'] / 1000).format('YYYY-MM-DD HH:mm:ss')
+            o['payTime'] / 1000).to('local').format('YYYY-MM-DD HH:mm:ss')
         if next_job_start_time < createTime:
             next_job_start_time = createTime
         for i, oi in enumerate(o['orderItems']):
