@@ -199,7 +199,7 @@
           </el-col>
           <el-col :span="6">
             <el-form-item label="卖家:" prop="seller_name">
-              <el-select clearable style="width: 150px" class="filter-item" v-model.trim="orderData.seller_name" placeholder="渠道">
+              <el-select clearable style="width: 150px" class="filter-item" v-model.trim="orderData.seller_name" placeholder="选择卖家">
               <el-option v-for="item in sellerOptions" :key="item" :label="item" :value="item">
               </el-option>
               </el-select>
@@ -253,6 +253,37 @@
           <el-col :span="12">
             <el-form-item label="备注:" prop="seller_memo">
               <el-input style="width: 430px" v-model.trim="orderData.seller_memo"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="6">
+            <el-form-item label="收款区域:" prop="who">
+              <el-select clearable style="width: 150px" class="filter-item" v-model.trim="orderData.who" placeholder="">
+		<el-option v-for="item in whoOptions" :key="item" :label="item" :value="item">
+		</el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="收款方式:" prop="pay_channel">
+              <el-select clearable style="width: 150px" class="filter-item" v-model.trim="orderData.pay_channel" placeholder="">
+		<el-option v-for="item in payChannelOptions" :key="item" :label="item" :value="item">
+		</el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="订单金额:" prop="amount">
+              <el-input style="width: 150px" v-model.trim="orderData.amount"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="币种:" prop="currency">
+              <el-select clearable style="width: 150px" class="filter-item" v-model.trim="orderData.currency" placeholder="">
+		<el-option v-for="item in currencyOptions" :key="item" :label="item" :value="item">
+		</el-option>
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -365,8 +396,11 @@
         inventoryOptions: [],
         statusOptions: ['待处理', '需面单', '待采购', '待发货', '已采购', '需介入', '已发货', '已删除'],
         afterSaleMetaOptions: [],
-        channelOptions: ['洋码头', '京东', 'AMZN', 'YHOO', 'TOKYOWH'],
+        channelOptions: ['微信', '京东', '洋码头', 'AMZN', 'YHOO', 'TOKYOWH'],
         sellerOptions: ['东京彩虹桥', '妈妈宝宝日本馆', '天狗'],
+        payChannelOptions: ['微信', '银行卡'],
+        whoOptions: ['广州', '北京', '东京'],
+        currencyOptions: ['人民币', '日元'],
         deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
         selectedOptions: [{
           value: '1',
@@ -410,6 +444,10 @@
           receiver_mobile: undefined,
           receiver_idcard: undefined,
           seller_memo: undefined,
+          who: undefined,
+          pay_channel: undefined,
+          amount: undefined,
+          currency: undefined,
           products: [
             {
               jancode: undefined,
@@ -524,15 +562,6 @@
         this.listQuery.page = val;
         this.getOrder();
       },
-      // 不能删除订单, 如果订单已经分配了DB单号
-      // checkShippingdb(row) {
-      //   if ( row.shippingdb !== null ) {
-      //          return true
-      //        };
-      //        if (row.status === '已删除' ) {
-      //          return true
-      //        };
-      // },
       deleteProduct(item) {
         const index = this.orderData.products.indexOf(item)
         if (index !== -1) {
@@ -561,28 +590,31 @@
         this.temp = Object.assign({}, row);
         this.dialogFormVisible = true;
       },
+      resetOrderData() {
+        this.orderData.orderid = undefined
+        this.orderData.seller_name = undefined
+        this.orderData.channel_name = undefined
+        this.orderData.delivery_type = undefined
+        this.orderData.receiver_name = undefined
+        this.orderData.receiver_address = undefined
+        this.orderData.receiver_zip = undefined
+        this.orderData.receiver_mobile = undefined
+        this.orderData.receiver_idcard = undefined
+        this.orderData.seller_memo = undefined
+        this.orderData.who = undefined
+        this.orderData.pay_channel = undefined
+        this.orderData.amount = undefined
+        this.orderData.currency = undefined
+        this.orderData.products = [{
+          jancode: undefined,
+          quantity: undefined,
+          price: undefined,
+          product_title: undefined,
+          sku_properties_name: undefined
+        }]
+      },
       handleCreate() {
-        this.orderData = {
-          orderid: undefined,
-          seller_name: undefined,
-          channel_name: undefined,
-          delivery_type: undefined,
-          receiver_name: undefined,
-          receiver_address: undefined,
-          receiver_zip: undefined,
-          receiver_mobile: undefined,
-          receiver_idcard: undefined,
-          seller_memo: undefined,
-          products: [
-            {
-              jancode: undefined,
-              quantity: undefined,
-              price: undefined,
-              product_title: undefined,
-              sku_properties_name: undefined
-            }
-          ]
-        },
+        this.resetOrderData()
         this.dialogCreateVisible = true
       },
       handleMark(row) {

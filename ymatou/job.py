@@ -291,7 +291,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
         "a.product_title, a.quantity, a.price, c.category_id, c.category_version, "
         "b.weight, b.brand, b.specification, a.jancode "
         "from stock_order as a inner join stock_product as b "
-        "on a.jancode=b.jancode and a.channel_name='京东' and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购') "
+        "on a.jancode=b.jancode and a.channel_name<>'洋码头' and a.shipping_id in (1,2,6)and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购') "
         "inner join stock_category as c "
         "on b.category_id=c.id")
     async with pool.acquire() as conn:
@@ -317,7 +317,8 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
 
                 try:
                     msg_param = {
-                        'ChannelName': r[1],
+                        # 'ChannelName': r[1],
+                        'ChannelName': '京东',  # 目前只能用JD
                         'OrderCode': r[2],
                         'ReceiverName': r[3],
                         'ReceiverProvince': ai[0].strip(),
@@ -333,7 +334,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                     }
                 except IndexError:
                     logger.exception(
-                        '导入天狗订单入贝海失败: data error, orderData is {}'.format(r))
+                        '导入第三方订单入贝海失败: data error, orderData is {}'.format(r))
                     continue
 
                 result = await xloboapi.importOrder(msg_param)
@@ -346,7 +347,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                     await conn.commit()
                 else:
                     logger.error(
-                        "导入天狗订单入贝海失败: xlobo api result: {}, orderData is: {}".
+                        "导入第三方订单入贝海失败: xlobo api result: {}, orderData is: {}".
                         format(result, r))
 
 
