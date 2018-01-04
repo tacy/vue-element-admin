@@ -55,6 +55,41 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-dialog title="新增收入" size="tiny" :visible.sync="dialogCreateVisible">
+      <el-form class="small-space" :model="orderData" label-position="left" label-width="80px">
+	<el-form-item label="订单号:" prop="orderid">
+	  <el-select clearable style="width: 150px" class="filter-item" v-model.trim="incomeData.orderid" placeholder="">
+	    <el-option v-for="item in whoOptions" :key="item" :label="item" :value="item">
+	    </el-option>
+	  </el-select>
+	</el-form-item>
+	<el-form-item label="收款区域:" prop="who">
+	  <el-select clearable style="width: 150px" class="filter-item" v-model.trim="incomeData.who" placeholder="">
+	    <el-option v-for="item in whoOptions" :key="item" :label="item" :value="item">
+	    </el-option>
+	  </el-select>
+	</el-form-item>
+	<el-form-item label="收款方式:" prop="pay_channel">
+	  <el-select clearable style="width: 150px" class="filter-item" v-model.trim="incomeData.pay_channel" placeholder="">
+	    <el-option v-for="item in payChannelOptions" :key="item" :label="item" :value="item">
+	    </el-option>
+	  </el-select>
+	</el-form-item>
+	<el-form-item label="订单金额:" prop="amount">
+	  <el-input style="width: 150px" v-model.trim="incomeData.amount"></el-input>
+	</el-form-item>
+	<el-form-item label="币种:" prop="currency">
+	  <el-select clearable style="width: 150px" class="filter-item" v-model.trim="incomeData.currency" placeholder="">
+	    <el-option v-for="item in currencyOptions" :key="item" :label="item" :value="item">
+	    </el-option>
+	  </el-select>
+	</el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogCreateVisible=false">取消</el-button>
+        <el-button type="primary" @click="createTPROrder">提交</el-button>
+      </div>
+    </el-dialog>
 
     <div v-show="!listLoading" class="pagination-container">
       <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page.sync="listQuery.page"
@@ -79,6 +114,15 @@
           page: 1,
           limit: 10,
           inventory_in: undefined
+        },
+        payChannelOptions: ['微信', '银行卡'],
+        whoOptions: ['广州', '北京', '东京'],
+        currencyOptions: ['人民币', '日元'],
+        incomeData: {
+          who: undefined,
+          pay_channel: undefined,
+          amount: undefined,
+          currency: undefined
         }
       }
     },
