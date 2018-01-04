@@ -27,15 +27,15 @@ class CreateCostRecord(views.APIView):
     def put(self, request, format=None):
         data = request.data
         logger.debug('新建费用支出调试:%s', data)
-        pay_time = arrow.get(
-            data['pay_time']).to('local').format('YYYY-MM-DD hh:mm:ss')
+        # pay_time = arrow.get(
+        #     data['pay_time']).to('local').format('YYYY-MM-DD hh:mm:ss')
         inventoryObj = Inventory.objects.get(id=data['inventory'])
 
         with transaction.atomic():
             for i in data['items']:
                 costtype = CostType.objects.get(id=i['costtype'])
                 costrecordObj = CostRecord(
-                    pay_time=pay_time,
+                    pay_time=data['pay_time'],
                     inventory=inventoryObj,
                     costtype=costtype,
                     memo=i['memo'],
@@ -63,15 +63,15 @@ class CreateIncomeRecord(views.APIView):
     def put(self, request, format=None):
         data = request.data
         logger.debug('新建费用收入调试:%s', data)
-        pay_time = arrow.get(
-            data['pay_time']).to('local').format('YYYY-MM-DD hh:mm:ss')
+        # pay_time = arrow.get(
+        #     data['pay_time']).to('local').format('YYYY-MM-DD hh:mm:ss')
 
         with transaction.atomic():
             incomerecordObj = IncomeRecord(
                 orderid=data['orderid'],
                 who=data['who'],
                 pay_channel=data['pay_channel'],
-                pay_time=pay_time,
+                pay_time=data['pay_time'],
                 memo=data.get('memo', None),
                 amount=data['amount'],
                 currency=data['currency'],

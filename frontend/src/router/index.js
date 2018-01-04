@@ -45,6 +45,7 @@ const stocksquery = _import('stocks/query');
 const costRecord = _import('finances/costrecord');
 const createCostRecord = _import('finances/createcostrecord');
 const incomeRecord = _import('finances/incomerecord');
+const transformRecord = _import('finances/transformrecord');
 
 /* error page */
 const Err404 = _import('error/404');
@@ -228,7 +229,8 @@ export const asyncRouterMap = [
     children: [
       { path: 'costrecord', component: costRecord, name: '查支出', meta: { role: ['supergz', 'supertokyo', 'super'] } },
       { path: 'incomerecord', component: incomeRecord, name: '查收入', meta: { role: ['supergz', 'supertokyo', 'super'] } },
-      { path: 'createcostrecord', component: createCostRecord, name: '新支出', meta: { role: ['supergz', 'supertokyo', 'super'] } }
+      { path: 'createcostrecord', component: createCostRecord, name: '新支出', meta: { role: ['supergz', 'supertokyo', 'super'] } },
+      { path: 'transformrecord', component: transformRecord, name: '转账日本', meta: { role: ['supertokyo', 'super'] } }
     ]
   },
   { path: '*', redirect: '/404', hidden: true }

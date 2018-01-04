@@ -5,7 +5,7 @@ from .models import (BondedProduct, Inventory, Order, Product,
                      PurchaseDivergence, PurchaseOrder, PurchaseOrderItem,
                      Shipping, ShippingDB, Stock, StockInRecord,
                      StockOutRecord, Supplier, UexTrack, TransformDB)
-from stock.models import AfterSaleCase, AfterSaleMeta, CostRecord, CostType, IncomeRecord
+from stock.models import AfterSaleCase, AfterSaleMeta, CostRecord, CostType, IncomeRecord, TransformRecord
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -275,12 +275,22 @@ class CostRecordSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class IncomeSerializer(serializers.ModelSerializer):
+class IncomeRecordSerializer(serializers.ModelSerializer):
     """Serializer to map the Model instance into JSON format."""
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = IncomeRecord
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class TransformRecordSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = TransformRecord
         # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
         fields = '__all__'
 

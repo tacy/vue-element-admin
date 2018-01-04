@@ -18,7 +18,8 @@ from .views import (
     AfterSaleCaseList, AfterSaleMetaList, ProcessAfterSale, ArriveAfterSale,
     BalanceAfterSale, AfterSaleCaseDetail, CostTypeList, CostRecordList,
     CreateCostRecord, TransformDBList, TransformDBDetail, CreateTransformDB,
-    IncomeRecordList, CreateIncomeRecord)
+    IncomeRecordList, CreateIncomeRecord, TransformRecordList,
+    TransformRecordDetail)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -160,6 +161,12 @@ urlpatterns = {
     url(r'^finance/income/createrecord/$',
         CreateIncomeRecord.as_view(),
         name='createIncomeRecord'),
+    url(r'^finance/transform/record/(?P<pk>[0-9]+)/$',
+        TransformRecordDetail.as_view(),
+        name="TransformRecordDetail"),
+    url(r'^finance/transform/record/$',
+        TransformRecordList.as_view(),
+        name='transformRecord'),
 }
 
 urlpatterns = format_suffix_patterns(urlpatterns)
