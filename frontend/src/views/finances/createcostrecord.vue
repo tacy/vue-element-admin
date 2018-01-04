@@ -25,7 +25,7 @@
             </el-col>
             <el-col :span="10">
               <el-form-item label-width="60px" label="日期" class="postInfo-container-item">
-		<el-date-picker v-model="postForm.pay_time" type="date" placeholder="选择日期" :picker-options="pickerOptions0">
+		<el-date-picker v-model="postForm.pay_time" type="datetime" placeholder="选择日期" :picker-options="pickerOptions0">
 		</el-date-picker>
               </el-form-item>
             </el-col>

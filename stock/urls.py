@@ -18,7 +18,7 @@ from .views import (
     AfterSaleCaseList, AfterSaleMetaList, ProcessAfterSale, ArriveAfterSale,
     BalanceAfterSale, AfterSaleCaseDetail, CostTypeList, CostRecordList,
     CreateCostRecord, TransformDBList, TransformDBDetail, CreateTransformDB,
-    IncomeRecordList)
+    IncomeRecordList, CreateIncomeRecord)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -157,6 +157,9 @@ urlpatterns = {
     url(r'^finance/income/record/$',
         IncomeRecordList.as_view(),
         name='incomeRecord'),
+    url(r'^finance/income/createrecord/$',
+        CreateIncomeRecord.as_view(),
+        name='createIncomeRecord'),
 }
 
 urlpatterns = format_suffix_patterns(urlpatterns)
