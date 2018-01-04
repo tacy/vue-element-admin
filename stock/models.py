@@ -353,6 +353,19 @@ class CostRecord(models.Model):
     status = models.CharField(max_length=8, null=True)  # 已删除
 
 
+class IncomeRecord(models.Model):
+    orderid = models.CharField(
+        max_length=64, null=False)  # purchaseorderitem__id/orderid
+    memo = models.CharField(max_length=255, null=True, blank=True)
+    pay_time = models.DateTimeField(null=False)
+    amount = models.DecimalField(max_digits=9, null=False, decimal_places=2)
+    status = models.CharField(max_length=8, null=True)  # 已删除
+    who = models.CharField(max_length=8, null=True)  # 收款人
+    pay_channel = models.CharField(max_length=8, null=True)  # 收款渠道 微信/银行卡
+    currency = models.CharField(max_length=8, null=True)  # 币种  人民币/日元
+    income_type = models.CharField(max_length=8, null=True)  # 收入来源(订单/返品)
+
+
 class Task(models.Model):
     name = models.CharField(max_length=16, null=False)
     interval = models.IntegerField(null=False)

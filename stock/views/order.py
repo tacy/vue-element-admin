@@ -7,7 +7,7 @@ from rest_framework import status, views
 from rest_framework.response import Response
 
 from stock.models import (Inventory, Order, Product, PurchaseOrder, Shipping,
-                          Stock, UexTrack, ShippingDB)
+                          Stock, UexTrack, ShippingDB, IncomeRecord)
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +115,17 @@ class OrderTPRCreate(views.APIView):
                 }
                 orderObj = Order(**o)
                 orderObj.save()
+            if o['channel_name'] not in ['洋码头', '京东']:  # 其他渠道订单需要记录收入
+                incomeRecordObj = IncomeRecord(
+                    orderid=data['orderid'],
+                    who=data['who'],
+                    pay_channel=data['pay_channel'],
+                    pay_time=piad_time,
+                    amount=data['amount'],
+                    currency=data['currency'],
+                    income_type='订单',
+                )
+                incomeRecordObj.save()
         return Response(status=status.HTTP_200_OK)
 
 

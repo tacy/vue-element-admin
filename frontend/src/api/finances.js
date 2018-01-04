@@ -23,3 +23,11 @@ export function fetchCostType(query) {
     params: query
   });
 }
+
+export function fetchIncomeRecord(query) {
+  return fetch({
+    url: '/finance/income/record',
+    method: 'get',
+    params: query
+  });
+}

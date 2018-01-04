@@ -5,17 +5,17 @@ from stock.filter import (AfterSaleCaseFilter, AfterSaleMetaFilter,
                           OrderFilter, ProductFilter, PurchaseOrderFilter,
                           PurchaseOrderItemFilter, ShippingDBFilter,
                           StockFilter)
-from stock.models import (AfterSaleCase, AfterSaleMeta, BondedProduct,
-                          CostRecord, CostType, Inventory, Order, Product,
-                          PurchaseOrder, PurchaseOrderItem, Shipping,
-                          ShippingDB, Stock, Supplier, TransformDB)
+from stock.models import (
+    AfterSaleCase, AfterSaleMeta, BondedProduct, CostRecord, CostType,
+    Inventory, Order, Product, PurchaseOrder, PurchaseOrderItem, Shipping,
+    ShippingDB, Stock, Supplier, TransformDB, IncomeRecord)
 from stock.serializers import (
     AfterSaleCaseSerializer, AfterSaleMetaSerializer, BondedProductSerializer,
     CostTypeSerializer, InventorySerializer, OrderSerializer,
     ProductSerializer, PurchaseOrderItemSerializer, PurchaseOrderSerializer,
     ShippingDBSerializer, ShippingSerializer, StockSerializer,
     SupplierSerializer, Token, TokenSerializer, CostRecordSerializer,
-    TransformDBSerializer)
+    TransformDBSerializer, IncomeSerializer)
 
 
 class UserInfo(generics.ListAPIView):
@@ -181,4 +181,10 @@ class CostTypeList(generics.ListCreateAPIView):
 class CostRecordList(generics.ListCreateAPIView):
     queryset = CostRecord.objects.all()
     serializer_class = CostRecordSerializer
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+
+
+class IncomeRecordList(generics.ListCreateAPIView):
+    queryset = IncomeRecord.objects.all()
+    serializer_class = IncomeSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )

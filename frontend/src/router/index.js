@@ -44,6 +44,7 @@ const stocksquery = _import('stocks/query');
 /* finance */
 const costRecord = _import('finances/costrecord');
 const createCostRecord = _import('finances/createcostrecord');
+const incomeRecord = _import('finances/incomerecord');
 
 /* error page */
 const Err404 = _import('error/404');
@@ -226,6 +227,7 @@ export const asyncRouterMap = [
     icon: 'zujian',
     children: [
       { path: 'costrecord', component: costRecord, name: '查支出', meta: { role: ['supergz', 'supertokyo', 'super'] } },
+      { path: 'incomerecord', component: incomeRecord, name: '查收入', meta: { role: ['supergz', 'supertokyo', 'super'] } },
       { path: 'createcostrecord', component: createCostRecord, name: '新支出', meta: { role: ['supergz', 'supertokyo', 'super'] } }
     ]
   },
