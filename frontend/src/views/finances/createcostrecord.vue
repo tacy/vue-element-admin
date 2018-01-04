@@ -25,7 +25,7 @@
             </el-col>
             <el-col :span="10">
               <el-form-item label-width="60px" label="日期" class="postInfo-container-item">
-		<el-date-picker v-model="postForm.pay_time" type="datetime" placeholder="选择日期" :picker-options="pickerOptions0">
+		<el-date-picker v-model="pay_time" type="datetime" placeholder="选择日期" :picker-options="pickerOptions0">
 		</el-date-picker>
               </el-form-item>
             </el-col>
@@ -83,6 +83,7 @@
             }
           ]
         },
+        pay_time: undefined,
         roles: [],
         fetchSuccess: true,
         loading: false,
@@ -120,10 +121,19 @@
           }
         )
       },
+      transformTime(val) {
+        let tdate = val;
+        tdate = [
+          [tdate.getFullYear(), tdate.getMonth() + 1, tdate.getDate()].join('-'),
+          [tdate.getHours(), tdate.getMinutes(), tdate.getSeconds()].join(':')
+        ].join(' ').replace(/(?=\b\d\b)/g, '0');
+        return tdate
+      },
       handleDeleteItem(index) {
         this.postForm.items.splice(index, 1)
       },
       submitForm() {
+        this.postForm.pay_time = this.transformTime(this.pay_time)
         createCostRecord(this.postForm).then(() => {
           this.$notify({
             title: '成功',

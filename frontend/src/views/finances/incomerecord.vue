@@ -5,7 +5,7 @@
       </el-input>
 
       <el-button class="filter-item" type="primary" v-waves icon="search" @click="handleFilter">搜索</el-button>
-      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleCreate">新增支出</el-button>
+      <el-button class="filter-item" type="success" style="float:right" v-waves icon="edit" @click="handleCreate">新增收入</el-button>
     </div>
 
     <el-table :data="list" v-loading.body="listLoading" border fit highlight-current-row style="width: 100%">
@@ -57,7 +57,7 @@
       </el-table-column>
     </el-table>
     <el-dialog title="新增收入" size="tiny" :visible.sync="dialogCreateVisible">
-      <el-form class="small-space" :model="orderData" label-position="left" label-width="80px">
+      <el-form class="small-space" :model="incomeData" label-position="left" label-width="80px">
 	<el-form-item label="订单号:" prop="orderid">
 	  <el-input style="width: 180px" v-model.trim="incomeData.orderid"></el-input>
 	</el-form-item>
@@ -68,7 +68,7 @@
 	  </el-select>
 	</el-form-item>
 	<el-form-item label="日期:">
-	  <el-date-picker style="width: 180px" v-model="incomeData.pay_time" type="datetime" placeholder="选择日期" :picker-options="pickerOptions0">
+	  <el-date-picker style="width: 180px" v-model="pay_time" type="datetime" placeholder="选择日期" :picker-options="pickerOptions0">
 	  </el-date-picker>
 	</el-form-item>
 	<el-form-item label="收款方式:" prop="pay_channel">
@@ -123,6 +123,7 @@
         payChannelOptions: ['微信', '银行卡'],
         whoOptions: ['广州', '北京', '东京'],
         currencyOptions: ['人民币', '日元'],
+        pay_time: undefined,
         incomeData: {
           who: undefined,
           pay_channel: undefined,
@@ -165,6 +166,14 @@
         this.listQuery.page = val;
         this.getOrder();
       },
+      transformTime(val) {
+        let tdate = val;
+        tdate = [
+          [tdate.getFullYear(), tdate.getMonth() + 1, tdate.getDate()].join('-'),
+          [tdate.getHours(), tdate.getMinutes(), tdate.getSeconds()].join(':')
+        ].join(' ').replace(/(?=\b\d\b)/g, '0');
+        return tdate
+      },
       resetIncomeData() {
         this.incomeData.orderid = undefined
         this.incomeData.who = undefined
@@ -173,12 +182,14 @@
         this.incomeData.amount = undefined
         this.incomeData.currency = undefined
         this.incomeData.memo = undefined
+        this.pay_time = undefined
       },
       handleCreate() {
         this.resetIncomeData()
         this.dialogCreateVisible = true
       },
       createIncome() {
+        this.incomeData.pay_time = this.transformTime(this.pay_time)
         createIncomeRecord(this.incomeData).then(() => {
           this.$notify({
             title: '成功',

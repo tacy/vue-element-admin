@@ -366,6 +366,19 @@ class IncomeRecord(models.Model):
     income_type = models.CharField(max_length=8, null=True)  # 收入来源(订单/返品)
 
 
+class TransformRecord(models.Model):
+    transform_time = models.DateTimeField(null=False)
+    channel_name = models.CharField(max_length=16, null=False)  # 资金来源(天狗/码头)
+    amount = models.DecimalField(max_digits=9, null=False, decimal_places=1)
+    transform_fee = models.DecimalField(
+        max_digits=9, null=False, decimal_places=1)  # 提现和转账手续费
+    amount_jp = models.DecimalField(
+        max_digits=9, null=True, decimal_places=1, blank=True)  # 转日币金额
+    accept_time = models.DateTimeField(null=True, blank=True)
+    accept_fee = models.DecimalField(
+        max_digits=9, null=True, blank=True, decimal_places=1)  # 提现手续费
+
+
 class Task(models.Model):
     name = models.CharField(max_length=16, null=False)
     interval = models.IntegerField(null=False)

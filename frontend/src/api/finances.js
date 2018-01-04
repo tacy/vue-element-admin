@@ -39,3 +39,27 @@ export function createIncomeRecord(data) {
     data
   });
 }
+
+export function updateTransformRecord(transformrecord, url) {
+  return fetch({
+    url,
+    method: 'put',
+    data: transformrecord
+  });
+}
+
+export function createTransformRecord(transformrecord) {
+  return fetch({
+    url: '/finance/transform/record/',
+    method: 'post',
+    data: transformrecord
+  });
+}
+
+export function fetchTransformRecord(query) {
+  return fetch({
+    url: '/finance/transform/record',
+    method: 'get',
+    params: query
+  });
+}
