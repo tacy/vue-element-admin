@@ -31,3 +31,11 @@ export function fetchIncomeRecord(query) {
     params: query
   });
 }
+
+export function createIncomeRecord(data) {
+  return fetch({
+    url: '/finance/income/createrecord/',
+    method: 'put',
+    data
+  });
+}
