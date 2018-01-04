@@ -629,7 +629,10 @@ def getInvoiceInfo(db_type, result):
                 db_number=b['BillCode'])
             c.execute(sqls[db_type], (dbObj.id, dbObj.inventory.id))
             ordsData = c.cursor.fetchall()
-        merger.append(b['BillPdfLabel'])
+        if ptype == 'xlobo':
+            merger.append(b['BillPdfLabel'], pages=(0, 1))  # 贝海的面单会莫名其妙出现配货单
+        else:
+            merger.append(b['BillPdfLabel'])
         merger.append(
             BytesIO(pdftool.createShippingPDF(b['BillCode'], ordsData, ptype)))
 
