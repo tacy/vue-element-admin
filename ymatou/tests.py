@@ -93,6 +93,12 @@ class GmailScraperTestCase(TestCase):
                 'delivery_no': None,
                 'payment': None,
             },
+            {
+                'orderid': '2018010300489',
+                'name': 'Rakuten',
+                'delivery_no': None,
+                'payment': None,
+            },
         ]
         for po in pos:
             deliveryNos, payment = gsApi.processMailbox(po)
