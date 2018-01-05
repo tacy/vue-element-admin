@@ -122,7 +122,7 @@ class GmailScraper():
                     if match:
                         result.append(match.group(1))
                 if not payment:
-                    match = re.search(r'合\s*計.*?([\d,]{3,})', html)
+                    match = re.search(r'(?:合\s*計|決済金額).*?([\d,]{3,})', html)
                     if match:
                         payment = match.group(1)
         return (result, payment)
