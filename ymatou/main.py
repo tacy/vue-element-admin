@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 
 from tiangouAPI import TiangouAPI
 from ymatouapi import XloboAPI, YmatouAPI
+from rakuten import RakutenAPI
 
 REQUEST_TIMEOUT = 120
 db_password = 'asd12288'
@@ -601,6 +602,35 @@ def exportStock():
         conn.close()
 
 
+@click.command()
+def scraperProductJapanNameByRakuten():
+    loop = asyncio.get_event_loop()
+    conn = pymysql.connect(
+        user='root',
+        host='127.0.0.1',
+        passwd=db_password,
+        db='ymatou',
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor)
+    with aiohttp.ClientSession(loop=loop) as sess:
+        rakutenApi = RakutenAPI(sess)
+        query_sql = "select id, jancode from stock_product where jp_name='' or name is null"
+        update_sql = "update stock_product set jp_name=%s where id=%s"
+        with conn.cursor() as cursor:
+            cursor.execute(query_sql)
+            rs = cursor.fetchall()
+            for j in rs:
+                r = loop.run_until_complete(
+                    rakutenApi.searchItem(j['jancode']))
+                if r:
+                    if r['count']:
+                        item = r['Items'][0]['Item']
+                        cursor.execute(update_sql, (item['itemName'], j['id']))
+                    else:
+                        cursor.execute(update_sql, ('需介入', j['id']))
+                    conn.commit()
+
+
 @click.group()
 def cli():
     pass
@@ -624,6 +654,7 @@ cli.add_command(exportYMTOrder)
 cli.add_command(getYMTOrderInfo)
 cli.add_command(updateYMTStock)
 cli.add_command(updateYMTOrderInfo)
+cli.add_command(scraperProductJapanNameByRakuten)
 
 if __name__ == '__main__':
     cli()

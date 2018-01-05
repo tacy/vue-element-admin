@@ -46,7 +46,7 @@
       </el-table-column>
       <el-table-column align="center" label="操作" width="120px">
         <template scope="scope">
-          <el-button size="small" :disabled="scope.row.accept_jp===null?false:true" type="primary" @click="handleUpdate(scope.row)">收款
+          <el-button size="small" :disabled="scope.row.amount_jp===null?false:true" type="primary" @click="handleUpdate(scope.row)">收款
           </el-button>
         </template>
       </el-table-column>
