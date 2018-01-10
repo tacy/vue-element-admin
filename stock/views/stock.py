@@ -67,7 +67,8 @@ class SyncStock(views.APIView):
                     incr = stockObj.quantity - oldQuantity
                     if incr > 0:  # 检查是否有待采购, 如果有待采购, 标记成待发货
                         ords = Order.objects.filter(
-                            jancode=i[0], inventory=inventoryObj, status='待采购')
+                            jancode=i[0], inventory=inventoryObj,
+                            status='待采购').order_by('id')
                         for od in ords:
                             if od.need_purchase > incr:
                                 od.need_purchase = F('need_purchase') - incr
@@ -83,10 +84,8 @@ class SyncStock(views.APIView):
                             if incr == 0: break
                     else:  # 实际库存小于系统在库库存
                         ords = Order.objects.filter(
-                            jancode=i[0],
-                            inventory=inventoryObj,
-                            status='待发货',
-                            purchaseorder__isnull=True)
+                            jancode=i[0], inventory=inventoryObj,
+                            status='待发货').order_by('id')
                         incr = stockObj.quantity
                         for od in ords:
                             if od.quantity > incr:
@@ -335,9 +334,7 @@ def inStock(poObj, poiObj, qty):
                     break
     elif poiObj.quantity > qty:  # 实际到库小于采购数量, 关联部分订单
         ords = poObj.order.filter(
-            status='已采购',
-            jancode=poiObj.product.jancode,
-        ).order_by('id')
+            status='已采购', jancode=poiObj.product.jancode).order_by('id')
         incr = qty
         for o in ords:
             if o.need_purchase <= incr:
@@ -459,9 +456,7 @@ def inStockTemp(poObj, poiObj, qty):
     # 入库的时候, 采购单才是真正完成, 订单才能置位
     if poiObj.quantity > qty:  # 少采了
         ords = poObj.order.filter(
-            status='已采购',
-            jancode=poiObj.product.jancode,
-        ).order_by('id')
+            status='已采购', jancode=poiObj.product.jancode).order_by('id')
         incr = qty
         for o in ords:
             if o.need_purchase > incr:  # 需要把一些订单打回到待采购
@@ -519,7 +514,7 @@ def inStockTemp(poObj, poiObj, qty):
         poiObj.save()
 
 
-#采购单中的单个商品入库
+# 采购单中的单个商品入库
 class PurchaseOrderItemStockIn(views.APIView):
     # 1. 首先判断是发是广州采购单到东京仓
     #    if True:

@@ -70,8 +70,8 @@ const user = {
       return new Promise((resolve, reject) => {
         getInfo(state.token).then(response => {
           const data = response.data;
-            commit('SET_ROLES', [data.results[0].group]);
-          commit('SET_NAME', 'tacy');
+          commit('SET_ROLES', [data.results[0].group]);
+          commit('SET_NAME', data.results[0].user);
           commit('SET_AVATAR', '');
           commit('SET_INTRODUCTION', '测试');
           resolve(response);

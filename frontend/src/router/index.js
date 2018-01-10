@@ -75,15 +75,15 @@ export const constantRouterMap = [
   {
     path: '/',
     component: Layout,
-    redirect: '/orders/query',
+    redirect: '/dashboard/index',
     name: '首页',
-    hidden: true,
-    children: [{ path: 'dashboard', component: dashboard }]
+    hidden: true
+    // children: [{ path: 'index', component: dashboard }]
   },
   {
-    path: '/introduction',
+    path: '/dashboard',
     component: Layout,
-    redirect: '/introduction/index',
+    redirect: '/dashboard/index',
     icon: 'xinrenzhinan',
     noDropdown: true,
     children: [{ path: 'index', component: dashboard, name: '仪表盘' }]

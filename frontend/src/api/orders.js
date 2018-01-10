@@ -328,3 +328,11 @@ export function afterSaleUpdate(asc, url) {
     data: asc
   });
 }
+
+export function fetchOrderAlert(query) {
+  return fetch({
+    url: '/order/alert',
+    method: 'get',
+    params: query
+  });
+}
