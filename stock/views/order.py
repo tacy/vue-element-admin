@@ -603,3 +603,52 @@ class OrderDelete(views.APIView):
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrderAlert(views.APIView):
+    def get(self, request, format=None):
+        now = arrow.now()
+
+        # 超时派单 (24小时未派单)
+        t1 = now.replace(days=-1).format('YYYY-MM-DD HH:mm:ss')
+        preprocess = Order.objects.filter(
+            piad_time__lt=t1, status='待处理').count()
+
+        # 超时采购 (48小时未采购)
+        t2 = now.replace(days=-2).format('YYYY-MM-DD HH:mm:ss')
+        purchaseorder = Order.objects.filter(
+            piad_time__lt=t2, status__in=['待采购', '需介入']).count()
+
+        # 超时发货 (5天)
+        t3 = now.replace(days=-5).format('YYYY-MM-DD HH:mm:ss')
+        delivery_warning = Order.objects.filter(
+            piad_time__lt=t3,
+            status__in=['待处理', '待采购', '需介入', '已采购', '需面单', '待发货']).count()
+
+        # 严重超时发货 (10天)
+        t3 = now.replace(days=-10).format('YYYY-MM-DD HH:mm:ss')
+        delivery_danger = Order.objects.filter(
+            piad_time__lt=t3,
+            status__in=['待处理', '待采购', '需介入', '已采购', '需面单', '待发货']).count()
+
+        data = {
+            'results': [
+                {
+                    'key': '超时派单',
+                    'value': preprocess
+                },
+                {
+                    'key': '超时采购',
+                    'value': purchaseorder
+                },
+                {
+                    'key': '超时发货',
+                    'value': delivery_warning
+                },
+                {
+                    'key': '即将扣分',
+                    'value': delivery_danger
+                },
+            ]
+        }
+        return Response(data=data, status=status.HTTP_200_OK)

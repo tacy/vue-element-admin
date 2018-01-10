@@ -19,7 +19,7 @@ from .views import (
     BalanceAfterSale, AfterSaleCaseDetail, CostTypeList, CostRecordList,
     CreateCostRecord, TransformDBList, TransformDBDetail, CreateTransformDB,
     IncomeRecordList, CreateIncomeRecord, TransformRecordList,
-    TransformRecordDetail)
+    TransformRecordDetail, OrderAlert)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -49,6 +49,7 @@ urlpatterns = {
         name="BondedProductDetail"),
     url(r'^order/$', OrderList.as_view(), name="createOrder"),
     url(r'^order/(?P<pk>[0-9]+)/$', OrderDetail.as_view(), name="OrderDetail"),
+    url(r'^order/alert/$', OrderAlert.as_view(), name="AlertOrder"),
     url(r'^stock/$', StockList.as_view(), name="createStock"),
     url(r'^stock/(?P<pk>[0-9]+)/$', StockDetail.as_view(), name="StockDetail"),
     url(r'^shipping/$', ShippingList.as_view(), name="createShipping"),
