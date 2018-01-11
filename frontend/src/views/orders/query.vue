@@ -534,7 +534,7 @@
         if (this.listQuery.labelVal !== '5') {
           this.listQuery.purchaseorder__orderid = undefined
         }
-        if (this.$route.query !== undefined) {
+        if (this.$route.query.status !== undefined) {
           this.listQuery.status = this.$route.query.status
           this.listQuery.piad_time__lt = this.$route.query.piad_time__lt
         }

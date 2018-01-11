@@ -395,7 +395,7 @@
        } else {
          this.listQuery.xlobo_sign = 1
        }
-       if (this.$route.query !== undefined) {
+       if (this.$route.query.status !== undefined) {
          this.listQuery.status = this.$route.query.status
          this.listQuery.xlobo_sign = this.$route.query.xlobo_sign
          this.listQuery.isXloboSign = true
