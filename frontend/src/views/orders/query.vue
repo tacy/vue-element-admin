@@ -431,7 +431,8 @@
           product_title: undefined,
           purchaseorder__orderid: undefined,
           sku_properties_name: undefined,
-          delivery_type: undefined
+          delivery_type: undefined,
+          piad_time__lt: undefined
         },
         orderData: {
           orderid: undefined,
@@ -532,6 +533,10 @@
         }
         if (this.listQuery.labelVal !== '5') {
           this.listQuery.purchaseorder__orderid = undefined
+        }
+        if (this.$route.query !== undefined) {
+          this.listQuery.status = this.$route.query.status
+          this.listQuery.piad_time__lt = this.$route.query.piad_time__lt
         }
         fetchOrder(this.listQuery).then(response => {
           this.list = response.data.results;

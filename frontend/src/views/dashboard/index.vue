@@ -7,8 +7,8 @@
             <span class="display_name">订单</span>
           </div>
           <div class="info-item" v-for="item in orderinfo">
-	    <span >{{item.key}}:</span>
-	    <span >{{item.value}}</span>
+	    <span>{{item.key}}:</span>
+	    <router-link :to="{path:item.path}" target="_blank"><el-button size="mini" type="info">{{item.value}}</el-button></router-link>
           </div>
         </el-card>
       </el-col>
