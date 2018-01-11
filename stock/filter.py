@@ -89,6 +89,7 @@ class ShippingDBFilter(FilterSet):
     xlobo_sign = BooleanFilter(name='xlobo_sign', lookup_expr='isnull')
     receiver_name = CharFilter(name='order__receiver_name', distinct=True)
     print_status__ne = CharFilter(name='print_status', method='filter_ne')
+    shipping_in = CharInFilter(name='shipping__name', lookup_expr='in')
 
     def filter_ne(self, queryset, name, value):
         if not value:

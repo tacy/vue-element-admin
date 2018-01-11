@@ -327,7 +327,8 @@
          isXloboSign: false,
          xlobo_sign: undefined,
          tax_included_channel: undefined,
-         print_status__ne: undefined
+         print_status__ne: undefined,
+         shipping_in: undefined
        },
        queryOrderItems: {
          shippingdb_id: undefined
@@ -398,6 +399,7 @@
        if (this.$route.query.status !== undefined) {
          this.listQuery.status = this.$route.query.status
          this.listQuery.xlobo_sign = this.$route.query.xlobo_sign
+         this.listQuery.shipping_in = this.$route.query.shipping_in
          this.listQuery.isXloboSign = true
        }
        fetchShippingDB(this.listQuery).then(response => {
