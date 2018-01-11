@@ -1,7 +1,7 @@
 <template>
   <section class="app-main" style="min-height: 100%">
     <transition name="fade" mode="out-in">
-      <keep-alive>
+      <keep-alive exclude="/orders/purchase/">
 	<router-view></router-view>
       </keep-alive>
     </transition>
