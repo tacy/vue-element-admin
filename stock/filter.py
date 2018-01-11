@@ -25,6 +25,7 @@ class OrderFilter(FilterSet):
     product_title = CharFilter(lookup_expr='icontains')
     shipping_name = CharFilter(name='shipping__name')
     delivery_type_exclude = CharFilter(name='delivery_type', exclude=True)
+    piad_time__lt = CharFilter(name='piad_time', lookup_expr='lt')
 
     class Meta:
         model = Order

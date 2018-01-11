@@ -626,28 +626,50 @@ class OrderAlert(views.APIView):
             status__in=['待处理', '待采购', '需介入', '已采购', '需面单', '待发货']).count()
 
         # 严重超时发货 (10天)
-        t3 = now.replace(days=-10).format('YYYY-MM-DD HH:mm:ss')
+        t4 = now.replace(days=-10).format('YYYY-MM-DD HH:mm:ss')
         delivery_danger = Order.objects.filter(
-            piad_time__lt=t3,
+            piad_time__lt=t4,
             status__in=['待处理', '待采购', '需介入', '已采购', '需面单', '待发货']).count()
+
+        # 发货未签收
+        shippingdb_sign = ShippingDB.objects.filter(
+            xlobo_sign__isnull=True, status='已出库').count()
 
         data = {
             'results': [
                 {
                     'key': '超时派单',
-                    'value': preprocess
+                    'value': preprocess,
+                    'path': '/orders/query/?status=待处理&piad_time__lt=' + t1,
                 },
                 {
                     'key': '超时采购',
-                    'value': purchaseorder
+                    'value': purchaseorder,
+                    'path':
+                    '/orders/query/?status=待采购,需介入&piad_time__lt=' + t2,
                 },
                 {
-                    'key': '超时发货',
-                    'value': delivery_warning
+                    'key':
+                    '超时发货',
+                    'value':
+                    delivery_warning,
+                    'path':
+                    '/orders/query/?status=待处理,待采购,需介入,已采购,需面单,待发货&piad_time__lt='
+                    + t3,
                 },
                 {
-                    'key': '即将扣分',
-                    'value': delivery_danger
+                    'key':
+                    '即将扣分',
+                    'value':
+                    delivery_danger,
+                    'path':
+                    '/orders/query/?status=待处理,待采购,需介入,已采购,需面单,待发货&piad_time__lt='
+                    + t4,
+                },
+                {
+                    'key': '签收异常',
+                    'value': shippingdb_sign,
+                    'path': '/orders/shipping/?status=已出库&xlobo_sign=2'
                 },
             ]
         }

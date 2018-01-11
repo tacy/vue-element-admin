@@ -395,6 +395,11 @@
        } else {
          this.listQuery.xlobo_sign = 1
        }
+       if (this.$route.query !== undefined) {
+         this.listQuery.status = this.$route.query.status
+         this.listQuery.xlobo_sign = this.$route.query.xlobo_sign
+         this.listQuery.isXloboSign = true
+       }
        fetchShippingDB(this.listQuery).then(response => {
          this.list = response.data.results;
          for (const t of this.list) {
