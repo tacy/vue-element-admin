@@ -633,7 +633,9 @@ class OrderAlert(views.APIView):
 
         # 发货未签收
         shippingdb_sign = ShippingDB.objects.filter(
-            xlobo_sign__isnull=True, status='已出库').count()
+            xlobo_sign__isnull=True,
+            status='已出库',
+            shipping__name__in=['直邮电商', '虚仓电商', '贝海直邮电商']).count()
 
         data = {
             'results': [
@@ -667,9 +669,12 @@ class OrderAlert(views.APIView):
                     + t4,
                 },
                 {
-                    'key': '签收异常',
-                    'value': shippingdb_sign,
-                    'path': '/orders/shipping/?status=已出库&xlobo_sign=2'
+                    'key':
+                    '签收异常',
+                    'value':
+                    shippingdb_sign,
+                    'path':
+                    '/orders/shipping/?status=已出库&xlobo_sign=2&shipping_in=直邮电商,虚仓电商,贝海直邮电商'
                 },
             ]
         }
