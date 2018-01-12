@@ -411,6 +411,9 @@ class PurchaseOrderAlert(views.APIView):
         t2 = now.replace(days=-5).format('YYYY-MM-DD HH:mm:ss')
         other = PurchaseOrder.objects.filter(
             create_time__lt=t2, status='在途中').count()
+        # 入库异常 (5天未完成入库)
+        running = PurchaseOrder.objects.filter(
+            create_time__lt=t2, status='入库中').count()
 
         # 采购单无金额 (需要金额计算采购总额)
         payment = PurchaseOrder.objects.filter(payment__isnull=True).count()
@@ -430,6 +433,11 @@ class PurchaseOrderAlert(views.APIView):
                     'key': '其他超时',
                     'value': other,
                     'path': p + 'status=在途中&create_time__lt=' + t2,
+                },
+                {
+                    'key': '入库异常',
+                    'value': running,
+                    'path': p + 'status=入库中&create_time__lt=' + t2,
                 },
                 {
                     'key': '需补金额',
