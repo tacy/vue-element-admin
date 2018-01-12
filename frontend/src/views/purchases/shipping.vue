@@ -105,7 +105,7 @@
          id: undefined,
          memo: undefined,
          delivery_time: undefined,
-	 status: undefined
+         status: undefined
        }
      }
    },
@@ -122,6 +122,9 @@
    methods: {
      getList() {
        this.listLoading = true;
+       if (this.$route.query.status !== undefined) {
+         this.listQuery.status = this.$route.query.status
+       }
        fetchTransformDB(this.listQuery).then(response => {
          this.list = response.data.results;
          this.total = response.data.count;
@@ -169,7 +172,7 @@
          this.dialogTransformOutVisible = false
        })
      },
-     handleDelete(row) {
+     handleDelete() {
        return
      },
      handleDBPrint(row) {

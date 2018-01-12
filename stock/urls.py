@@ -19,7 +19,7 @@ from .views import (
     BalanceAfterSale, AfterSaleCaseDetail, CostTypeList, CostRecordList,
     CreateCostRecord, TransformDBList, TransformDBDetail, CreateTransformDB,
     IncomeRecordList, CreateIncomeRecord, TransformRecordList,
-    TransformRecordDetail, OrderAlert)
+    TransformRecordDetail, OrderAlert, PurchaseOrderAlert)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -34,6 +34,7 @@ urlpatterns = {
     url(r'^purchase/item(?P<pk>[0-9]+)/$',
         PurchaseOrderItemDetail.as_view(),
         name="POItemDetail"),
+    url(r'^purchase/alert$', PurchaseOrderAlert.as_view(), name="poAlert"),
     url(r'^product/$', ProductList.as_view(), name="createProduct"),
     url(r'^product/(?P<pk>[0-9]+)/$',
         ProductDetail.as_view(),

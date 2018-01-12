@@ -87,3 +87,11 @@ export function updateTransformDB(transformdb, url) {
     data: transformdb
   });
 }
+
+export function fetchPurchaseOrderAlert(query) {
+  return fetch({
+    url: '/purchase/alert',
+    method: 'get',
+    params: query
+  });
+}
