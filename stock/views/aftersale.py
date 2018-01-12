@@ -111,7 +111,7 @@ class ProcessAfterSale(views.APIView):
                 ordObj.domestic_delivery_no = None
                 ordObj.domestic_delivery_company = None
                 ordObj.quantity = data['resend_quantity']
-                ordObj.channel_name = '京东'
+                ordObj.channel_name = '京东' if ordObj.delivery_type != '第三方保税' else '洋码头'
                 ordObj.seller_memo = '售后单'
                 ordObj.orderid = ordObj.orderid + '-' + now.format('MMDD')
                 ordObj.status = '待处理'
