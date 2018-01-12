@@ -381,322 +381,322 @@
 </style>
 
 <script>
-  import { fetchInventory, fetchOrder, orderDelete, updateOrder, orderTPRCreate, fetchAfterSaleMeta, createAfterSaleCase } from 'api/orders';
+ import { fetchInventory, fetchOrder, orderDelete, updateOrder, orderTPRCreate, fetchAfterSaleMeta, createAfterSaleCase } from 'api/orders';
 
-  export default {
-    data() {
-      return {
-        list: [],
-        listLoading: true,
-        total: null,
-        dialogFormVisible: false,
-        dialogCreateVisible: false,
-        dialogMarkVisible: false,
-        dialogAfterSaleCaseVisible: false,
-        inventoryOptions: [],
-        statusOptions: ['待处理', '需面单', '待采购', '待发货', '已采购', '需介入', '已发货', '已删除'],
-        afterSaleMetaOptions: [],
-        channelOptions: ['微信', '京东', '洋码头', 'AMZN', 'YHOO', 'TOKYOWH'],
-        sellerOptions: ['东京彩虹桥', '妈妈宝宝日本馆', '天狗'],
-        payChannelOptions: ['微信', '银行卡'],
-        whoOptions: ['广州', '北京', '东京'],
-        currencyOptions: ['人民币', '日元'],
-        deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
-        selectedOptions: [{
-          value: '1',
-          label: '订单号'
-        }, {
-          value: '2',
-          label: '商品条码'
-        }, {
-          value: '3',
-          label: '商品名称'
-        }, {
-          value: '4',
-          label: '收件人'
-        }, {
-          value: '5',
-          label: '采购单'
-        }],
-        listQuery: {
-          page: 1,
-          limit: 10,
-          labelVal: '1',
-          inventory: undefined,
-          channel_name: undefined,
-          receiver_name: undefined,
-          jancode: undefined,
-          orderid: undefined,
-          status: undefined,
-          product_title: undefined,
-          purchaseorder__orderid: undefined,
-          sku_properties_name: undefined,
-          delivery_type: undefined,
-          piad_time__lt: undefined
-        },
-        orderData: {
-          orderid: undefined,
-          seller_name: undefined,
-          channel_name: undefined,
-          delivery_type: undefined,
-          receiver_name: undefined,
-          receiver_address: undefined,
-          receiver_zip: undefined,
-          receiver_mobile: undefined,
-          receiver_idcard: undefined,
-          seller_memo: undefined,
-          who: undefined,
-          pay_channel: undefined,
-          amount: undefined,
-          currency: undefined,
-          products: [
-            {
-              jancode: undefined,
-              quantity: undefined,
-              price: undefined,
-              product_title: undefined,
-              sku_properties_name: undefined
-            }
-          ]
-        },
-        ascData: {
-          case_type: undefined,
-          order: undefined
-        },
-        temp: {
-          id: undefined,
-          status: undefined,
-          seller_memo: undefined,
-          conflict_feedback: undefined
-        },
-        rules: {
-          orderid: [
-            { required: true, message: '请输入订单号', trigger: 'blur' }
-          ],
-          seller_name: [
-              { required: true, message: '请选择卖家', trigger: 'blur' }
-          ],
-          channel_name: [
-              { required: true, message: '请选择渠道', trigger: 'blur' }
-          ],
-          delivery_type: [
-              { required: true, message: '请选择运输方式', trigger: 'blur' }
-          ],
-          receiver_name: [
-              { required: true, message: '请输入买家姓名', trigger: 'blur' }
-          ],
-          receiver_mobile: [
-              { required: true, message: '请输入买家电话', trigger: 'blur' }
-          ],
-          receiver_zip: [
-              { required: true, message: '请输入买家邮编', trigger: 'blur' }
-          ],
-          receiver_address: [
-              { required: true, message: '请输入买家地址', trigger: 'blur' }
-          ]
-        }
-      };
-    },
-    filters: {
-      statusFilter(status) {
-        const statusMap = {
-          待发货: 'success',
-          需面单: 'primary',
-          已采购: 'primary',
-          待处理: 'primary',
-          已删除: 'danger',
-          需介入: 'danger',
-          待采购: 'warning'
-        };
-        return statusMap[status]
-      }
-    },
-    created() {
-      this.getInventory();
-      this.getOrder();
-      this.getAfterSaleMeta();
-    },
-    methods: {
-      getOrder() {
-        this.listLoading = true;
-        if (this.listQuery.labelVal !== '1') {
-          this.listQuery.orderid = undefined
-        }
-        if (this.listQuery.labelVal !== '2') {
-          this.listQuery.jancode = undefined
-        }
-        if (this.listQuery.labelVal !== '3') {
-          this.listQuery.product_title = undefined
-        }
-        if (this.listQuery.labelVal !== '4') {
-          this.listQuery.receiver_name = undefined
-        }
-        if (this.listQuery.labelVal !== '5') {
-          this.listQuery.purchaseorder__orderid = undefined
-        }
-        if (this.$route.query.status !== undefined) {
-          this.listQuery.status = this.$route.query.status
-          this.listQuery.piad_time__lt = this.$route.query.piad_time__lt
-        }
-        fetchOrder(this.listQuery).then(response => {
-          this.list = response.data.results;
-          this.total = response.data.count;
-          this.listLoading = false;
-        })
-      },
-      getAfterSaleMeta() {
-        const queryParam = { noparent: 2 }
-        fetchAfterSaleMeta(queryParam).then(response => {
-          this.afterSaleMetaOptions = response.data.results;
-        })
-      },
-      getInventory() {
-        fetchInventory().then(response => {
-          this.inventoryOptions = response.data.results;
-        })
-      },
-      handleFilter() {
-        this.listQuery.page = 1;
-        this.getOrder();
-      },
-      handleSizeChange(val) {
-        this.listQuery.limit = val;
-        this.getOrder();
-      },
-      handleCurrentChange(val) {
-        this.listQuery.page = val;
-        this.getOrder();
-      },
-      deleteProduct(item) {
-        const index = this.orderData.products.indexOf(item)
-        if (index !== -1) {
-          this.orderData.products.splice(index, 1)
-        }
-      },
-      addProduct() {
-        this.orderData.products.push({
-          jancode: undefined,
-          quantity: undefined,
-          price: undefined,
-          product_title: undefined,
-          sku_properties_name: undefined
-        });
-      },
-      handleDelete(row) {
-        if (row.shippingdb !== null && !['拼邮', '轨迹'].includes(row.shipping_name)) {
-          this.$notify({
-            title: '警告',
-            message: '订单已经出面单, 需先在系统删除对应面单',
-            type: 'error',
-            duration: 2000
-          });
-          return
-        }
-        this.temp = Object.assign({}, row);
-        this.dialogFormVisible = true;
-      },
-      resetOrderData() {
-        this.orderData.orderid = undefined
-        this.orderData.seller_name = undefined
-        this.orderData.channel_name = undefined
-        this.orderData.delivery_type = undefined
-        this.orderData.receiver_name = undefined
-        this.orderData.receiver_address = undefined
-        this.orderData.receiver_zip = undefined
-        this.orderData.receiver_mobile = undefined
-        this.orderData.receiver_idcard = undefined
-        this.orderData.seller_memo = undefined
-        this.orderData.who = undefined
-        this.orderData.pay_channel = undefined
-        this.orderData.amount = undefined
-        this.orderData.currency = undefined
-        this.orderData.products = [{
-          jancode: undefined,
-          quantity: undefined,
-          price: undefined,
-          product_title: undefined,
-          sku_properties_name: undefined
-        }]
-      },
-      handleCreate() {
-        this.resetOrderData()
-        this.dialogCreateVisible = true
-      },
-      handleMark(row) {
-        this.temp = Object.assign({}, row);
-        this.dialogMarkVisible = true;
-      },
-      markOrder() {
-        updateOrder(this.temp, '/order/' + this.temp.id + '/').then(() => {
-          for (const v of this.list) {
-            if (v.id === this.temp.id) {
-              const index = this.list.indexOf(v);
-              this.list.splice(index, 1, this.temp);
-              break;
-            }
-          }
-          this.$notify({
-            title: '成功',
-            message: '订单标记成功',
-            type: 'success',
-            duration: 2000
-          });
-          this.dialogMarkVisible = false
-        })
-      },
-      handleAfterSale(row) {
-        this.temp = Object.assign({}, row);
-        this.dialogAfterSaleCaseVisible = true;
-      },
-      createAsc() {
-        this.ascData.order = this.temp.id
-        this.ascData.status = '待处理'
-        createAfterSaleCase(this.ascData).then(() => {
-          this.dialogAfterSaleCaseVisible = false
-          this.$notify({
-            title: '成功',
-            message: '售后单创建成功',
-            type: 'success',
-            duration: 2000
-          });
-        })
-      },
-      createTPROrder() {
-        this.$refs.form.validate(valid => {
-          if (!valid) {
-            return false;
-          } else {
-            orderTPRCreate(this.orderData).then(() => {
-              this.$notify({
-                title: '成功',
-                message: '订单创建成功',
-                type: 'success',
-                duration: 2000
-              });
-              this.dialogCreateVisible = false
-            });
-          }
-        });
-      },
-      deleteOrder() {
-        orderDelete(this.temp).then(() => {
-          this.temp.status = '已删除';
-          for (const v of this.list) {
-            if (v.id === this.temp.id) {
-              const index = this.list.indexOf(v);
-              this.list.splice(index, 1, this.temp);
-              break;
-            }
-          }
-          this.$notify({
-            title: '成功',
-            message: '订单删除成功',
-            type: 'success',
-            duration: 2000
-          });
-          this.dialogFormVisible = false
-        })
-      }
-    }
-  }
+ export default {
+   data() {
+     return {
+       list: [],
+       listLoading: true,
+       total: null,
+       dialogFormVisible: false,
+       dialogCreateVisible: false,
+       dialogMarkVisible: false,
+       dialogAfterSaleCaseVisible: false,
+       inventoryOptions: [],
+       statusOptions: ['待处理', '需面单', '待采购', '待发货', '已采购', '需介入', '已发货', '已删除'],
+       afterSaleMetaOptions: [],
+       channelOptions: ['微信', '京东', '洋码头', 'AMZN', 'YHOO', 'TOKYOWH'],
+       sellerOptions: ['东京彩虹桥', '妈妈宝宝日本馆', '天狗'],
+       payChannelOptions: ['微信', '银行卡'],
+       whoOptions: ['广州', '北京', '东京'],
+       currencyOptions: ['人民币', '日元'],
+       deliveryTypeOptions: ['直邮', '官方（贝海）直邮', '第三方保税', '官方（贝海）保税', '拼邮'],
+       selectedOptions: [{
+         value: '1',
+         label: '订单号'
+       }, {
+         value: '2',
+         label: '商品条码'
+       }, {
+         value: '3',
+         label: '商品名称'
+       }, {
+         value: '4',
+         label: '收件人'
+       }, {
+         value: '5',
+         label: '采购单'
+       }],
+       listQuery: {
+         page: 1,
+         limit: 10,
+         labelVal: '1',
+         inventory: undefined,
+         channel_name: undefined,
+         receiver_name: undefined,
+         jancode: undefined,
+         orderid: undefined,
+         status: undefined,
+         product_title: undefined,
+         purchaseorder__orderid: undefined,
+         sku_properties_name: undefined,
+         delivery_type: undefined,
+         piad_time__lt: undefined
+       },
+       orderData: {
+         orderid: undefined,
+         seller_name: undefined,
+         channel_name: undefined,
+         delivery_type: undefined,
+         receiver_name: undefined,
+         receiver_address: undefined,
+         receiver_zip: undefined,
+         receiver_mobile: undefined,
+         receiver_idcard: undefined,
+         seller_memo: undefined,
+         who: undefined,
+         pay_channel: undefined,
+         amount: undefined,
+         currency: undefined,
+         products: [
+           {
+             jancode: undefined,
+             quantity: undefined,
+             price: undefined,
+             product_title: undefined,
+             sku_properties_name: undefined
+           }
+         ]
+       },
+       ascData: {
+         case_type: undefined,
+         order: undefined
+       },
+       temp: {
+         id: undefined,
+         status: undefined,
+         seller_memo: undefined,
+         conflict_feedback: undefined
+       },
+       rules: {
+         orderid: [
+           { required: true, message: '请输入订单号', trigger: 'blur' }
+         ],
+         seller_name: [
+           { required: true, message: '请选择卖家', trigger: 'blur' }
+         ],
+         channel_name: [
+           { required: true, message: '请选择渠道', trigger: 'blur' }
+         ],
+         delivery_type: [
+           { required: true, message: '请选择运输方式', trigger: 'blur' }
+         ],
+         receiver_name: [
+           { required: true, message: '请输入买家姓名', trigger: 'blur' }
+         ],
+         receiver_mobile: [
+           { required: true, message: '请输入买家电话', trigger: 'blur' }
+         ],
+         receiver_zip: [
+           { required: true, message: '请输入买家邮编', trigger: 'blur' }
+         ],
+         receiver_address: [
+           { required: true, message: '请输入买家地址', trigger: 'blur' }
+         ]
+       }
+     };
+   },
+   filters: {
+     statusFilter(status) {
+       const statusMap = {
+         待发货: 'success',
+         需面单: 'primary',
+         已采购: 'primary',
+         待处理: 'primary',
+         已删除: 'danger',
+         需介入: 'danger',
+         待采购: 'warning'
+       };
+       return statusMap[status]
+     }
+   },
+   created() {
+     this.getInventory();
+     this.getOrder();
+     this.getAfterSaleMeta();
+   },
+   methods: {
+     getOrder() {
+       this.listLoading = true;
+       if (this.$route.query.status !== undefined) {
+         this.listQuery.status = this.$route.query.status
+         this.listQuery.piad_time__lt = this.$route.query.piad_time__lt
+       }
+       if (this.listQuery.labelVal !== '1') {
+         this.listQuery.orderid = undefined
+       }
+       if (this.listQuery.labelVal !== '2') {
+         this.listQuery.jancode = undefined
+       }
+       if (this.listQuery.labelVal !== '3') {
+         this.listQuery.product_title = undefined
+       }
+       if (this.listQuery.labelVal !== '4') {
+         this.listQuery.receiver_name = undefined
+       }
+       if (this.listQuery.labelVal !== '5') {
+         this.listQuery.purchaseorder__orderid = undefined
+       }
+       fetchOrder(this.listQuery).then(response => {
+         this.list = response.data.results;
+         this.total = response.data.count;
+         this.listLoading = false;
+       })
+     },
+     getAfterSaleMeta() {
+       const queryParam = { noparent: 2 }
+       fetchAfterSaleMeta(queryParam).then(response => {
+         this.afterSaleMetaOptions = response.data.results;
+       })
+     },
+     getInventory() {
+       fetchInventory().then(response => {
+         this.inventoryOptions = response.data.results;
+       })
+     },
+     handleFilter() {
+       this.listQuery.page = 1;
+       this.getOrder();
+     },
+     handleSizeChange(val) {
+       this.listQuery.limit = val;
+       this.getOrder();
+     },
+     handleCurrentChange(val) {
+       this.listQuery.page = val;
+       this.getOrder();
+     },
+     deleteProduct(item) {
+       const index = this.orderData.products.indexOf(item)
+       if (index !== -1) {
+         this.orderData.products.splice(index, 1)
+       }
+     },
+     addProduct() {
+       this.orderData.products.push({
+         jancode: undefined,
+         quantity: undefined,
+         price: undefined,
+         product_title: undefined,
+         sku_properties_name: undefined
+       });
+     },
+     handleDelete(row) {
+       if (row.shippingdb !== null && !['拼邮', '轨迹'].includes(row.shipping_name)) {
+         this.$notify({
+           title: '警告',
+           message: '订单已经出面单, 需先在系统删除对应面单',
+           type: 'error',
+           duration: 2000
+         });
+         return
+       }
+       this.temp = Object.assign({}, row);
+       this.dialogFormVisible = true;
+     },
+     resetOrderData() {
+       this.orderData.orderid = undefined
+       this.orderData.seller_name = undefined
+       this.orderData.channel_name = undefined
+       this.orderData.delivery_type = undefined
+       this.orderData.receiver_name = undefined
+       this.orderData.receiver_address = undefined
+       this.orderData.receiver_zip = undefined
+       this.orderData.receiver_mobile = undefined
+       this.orderData.receiver_idcard = undefined
+       this.orderData.seller_memo = undefined
+       this.orderData.who = undefined
+       this.orderData.pay_channel = undefined
+       this.orderData.amount = undefined
+       this.orderData.currency = undefined
+       this.orderData.products = [{
+         jancode: undefined,
+         quantity: undefined,
+         price: undefined,
+         product_title: undefined,
+         sku_properties_name: undefined
+       }]
+     },
+     handleCreate() {
+       this.resetOrderData()
+       this.dialogCreateVisible = true
+     },
+     handleMark(row) {
+       this.temp = Object.assign({}, row);
+       this.dialogMarkVisible = true;
+     },
+     markOrder() {
+       updateOrder(this.temp, '/order/' + this.temp.id + '/').then(() => {
+         for (const v of this.list) {
+           if (v.id === this.temp.id) {
+             const index = this.list.indexOf(v);
+             this.list.splice(index, 1, this.temp);
+             break;
+           }
+         }
+         this.$notify({
+           title: '成功',
+           message: '订单标记成功',
+           type: 'success',
+           duration: 2000
+         });
+         this.dialogMarkVisible = false
+       })
+     },
+     handleAfterSale(row) {
+       this.temp = Object.assign({}, row);
+       this.dialogAfterSaleCaseVisible = true;
+     },
+     createAsc() {
+       this.ascData.order = this.temp.id
+       this.ascData.status = '待处理'
+       createAfterSaleCase(this.ascData).then(() => {
+         this.dialogAfterSaleCaseVisible = false
+         this.$notify({
+           title: '成功',
+           message: '售后单创建成功',
+           type: 'success',
+           duration: 2000
+         });
+       })
+     },
+     createTPROrder() {
+       this.$refs.form.validate(valid => {
+         if (!valid) {
+           return false;
+         } else {
+           orderTPRCreate(this.orderData).then(() => {
+             this.$notify({
+               title: '成功',
+               message: '订单创建成功',
+               type: 'success',
+               duration: 2000
+             });
+             this.dialogCreateVisible = false
+           });
+         }
+       });
+     },
+     deleteOrder() {
+       orderDelete(this.temp).then(() => {
+         this.temp.status = '已删除';
+         for (const v of this.list) {
+           if (v.id === this.temp.id) {
+             const index = this.list.indexOf(v);
+             this.list.splice(index, 1, this.temp);
+             break;
+           }
+         }
+         this.$notify({
+           title: '成功',
+           message: '订单删除成功',
+           type: 'success',
+           duration: 2000
+         });
+         this.dialogFormVisible = false
+       })
+     }
+   }
+ }
 </script>
