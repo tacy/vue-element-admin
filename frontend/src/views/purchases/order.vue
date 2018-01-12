@@ -180,203 +180,217 @@
 </template>
 
 <script>
-  import { fetchInventory, fetchSupplier } from 'api/orders';
-  import { fetchPurchaseOrder, fetchPurchaseOrderItem, purchaseOrderDelete, purchaseOrderClear, updateOrder } from 'api/purchases';
+ import { fetchInventory, fetchSupplier } from 'api/orders';
+ import { fetchPurchaseOrder, fetchPurchaseOrderItem, purchaseOrderDelete, purchaseOrderClear, updateOrder } from 'api/purchases';
 
-  export default {
-    data() {
-      return {
-        list: [],
-        listLoading: true,
-        total: null,
-        dialogItemVisible: false,
-        disableSubmit: false,
-        dialogPOItemVisible: false,
-        dialogFormVisible: false,
-        inventoryOptions: [],
-        supplierOptions: [],
-        statusOptions: ['在途中', '入库中', '转运中', '已入库', '已删除'],
-        listQuery: {
-          page: 1,
-          limit: 10,
-          status: undefined,
-          inventory: undefined,
-          supplier: undefined,
-          orderid: undefined,
-          jancode: undefined,
-          delivery_no: undefined,
-          product_name: undefined
-        },
-        temp: {
-          id: undefined,
-          status: undefined
-        },
-        poitemp: {
-          id: undefined,
-          inventory: undefined,
-          pois: []
-        },
-        listItem: {
-          limit: 50,
-          purchaseorder: undefined
-        },
-        itemData: []
-      }
-    },
-    filters: {
-      fmDate(value) {
-        if (!value) return ''
-        value = value.substr(2, 8) + ' ' + value.substr(11, 5)
-        return value
-      }
-    },
-    created() {
-      this.getInventory();
-      this.getSupplier();
-      this.getPurchaseOrder();
-    },
-    methods: {
-      getPurchaseOrder() {
-        this.listLoading = true;
-        fetchPurchaseOrder(this.listQuery).then(response => {
-          // this.list = response.data.results;
-          this.list = response.data.results.map(v => {
-            v.edit = false;
-            return v
-          });
-          for (const t of this.list) {
-            const index = this.list.indexOf(t);
-            const tmp = [];
-            for (const o of t.purchaseorderitem) {
-              const poi = o.split('@')
-              let qty = null
-              let disabledStatus = false
-              if (poi[5] !== '在途中') {
-                qty = poi[3]
-                disabledStatus = true
-              }
-              tmp.push({
-                jancode: poi[0],
-                product_title: poi[1],
-                sku_properties_name: poi[2],
-                quantity: poi[3],
-                price: poi[4],
-                qty,
-                status: disabledStatus
-              });
-            }
-            this.list[index].pois = tmp;
-          }
-          this.total = response.data.count;
-          this.listLoading = false;
-        })
-      },
-      getInventory() {
-        fetchInventory().then(response => {
-          this.inventoryOptions = response.data.results;
-        })
-      },
-      getSupplier() {
-        const query = { limit: 50 }
-        fetchSupplier(query).then(response => {
-          this.supplierOptions = response.data.results;
-        })
-      },
-      handleFilter() {
-        this.listQuery.page = 1;
-        this.getPurchaseOrder();
-      },
-      handleSizeChange(val) {
-        this.listQuery.limit = val;
-        this.getPurchaseOrder();
-      },
-      handleCurrentChange(val) {
-        this.listQuery.page = val;
-        this.getPurchaseOrder();
-      },
-      getItem(row) {
-        this.dialogItemVisible = true;
-        this.listItem.purchaseorder = row.id;
-        fetchPurchaseOrderItem(this.listItem).then(response => {
-          this.itemData = response.data.results;
-        })
-      },
-      handleDelete(row) {
-        this.temp = Object.assign({}, row);
-        this.dialogFormVisible = true;
-      },
-      handleStockIn(row) {
-        this.poitemp = row;
-        this.dialogPOItemVisible = true;
-        this.disableSubmit = false;
-      },
-      clearPurchaseOrder() {
-        this.disableSubmit = true
-        purchaseOrderClear(this.poitemp).then(() => {
-          this.$notify({
-            title: '成功',
-            message: '入库成功',
-            type: 'success',
-            duration: 2000
-          });
-          this.dialogPOItemVisible = false;
-          this.handleCurrentChange(this.listQuery.page);
-        }).catch(() => {
-          this.disableSubmit = false;
-        });
-      },
-      checkPurchaseOrderid(orderid) {
-        const patten = /^[a-zA-Z\d-_]{5,}$/
-        return patten.test(orderid)
-      },
-      updatePurchaseOrder(row) {
-        const data = { orderid: row.orderid, supplier: row.supplier, payment: row.payment }
-        const r = this.checkPurchaseOrderid(row.orderid)
-        if (!r) {
-          this.$notify({
-            title: '警告',
-            message: '注文番号含非法字符! 仅允许字母,数字以及横杠,且长度不少于5',
-            type: 'warning',
-            duration: 2000
-          });
-          return
-        }
-        updateOrder(data, '/purchase/' + row.id + '/').then(() => {
-          for (const v of this.supplierOptions) {
-            if (v.id === row.supplier) {
-              row.supplier_name = v.name
-              break
-            }
-          }
-          for (const v of this.list) {
-            if (v.id === row.id) {
-              const index = this.list.indexOf(v)
-              this.list[index].supplier_name = row.supplier_name
-              break
-            }
-          }
-          this.$notify({
-            title: '成功',
-            message: '更新成功',
-            type: 'success',
-            duration: 2000
-          });
-          row.edit = false;
-        })
-      },
-      deletePurchaseOrder() {
-        purchaseOrderDelete(this.temp).then(() => {
-          this.temp.status = '已删除';
-          for (const v of this.list) {
-            if (v.id === this.temp.id) {
-              const index = this.list.indexOf(v);
-              this.list.splice(index, 1, this.temp);
-              break;
-            }
-          }
-          this.dialogFormVisible = false
-        })
-      }
-    }
-  }
+ export default {
+   data() {
+     return {
+       list: [],
+       listLoading: true,
+       total: null,
+       dialogItemVisible: false,
+       disableSubmit: false,
+       dialogPOItemVisible: false,
+       dialogFormVisible: false,
+       inventoryOptions: [],
+       supplierOptions: [],
+       statusOptions: ['在途中', '入库中', '转运中', '已入库', '已删除'],
+       listQuery: {
+         page: 1,
+         limit: 10,
+         status: undefined,
+         inventory: undefined,
+         supplier: undefined,
+         orderid: undefined,
+         jancode: undefined,
+         delivery_no: undefined,
+         product_name: undefined,
+         payment__isnull: undefined,
+         create_time__lt: undefined
+       },
+       temp: {
+         id: undefined,
+         status: undefined
+       },
+       poitemp: {
+         id: undefined,
+         inventory: undefined,
+         pois: []
+       },
+       listItem: {
+         limit: 50,
+         purchaseorder: undefined
+       },
+       itemData: []
+     }
+   },
+   filters: {
+     fmDate(value) {
+       if (!value) return ''
+       value = value.substr(2, 8) + ' ' + value.substr(11, 5)
+       return value
+     }
+   },
+   created() {
+     this.getInventory();
+     this.getSupplier();
+     this.getPurchaseOrder();
+   },
+   methods: {
+     getPurchaseOrder() {
+       this.listLoading = true;
+       if (this.$route.query.status !== undefined) {
+         this.listQuery.status = this.$route.query.status
+       }
+       if (this.$route.query.supplier !== undefined) {
+         this.listQuery.supplier = this.$route.query.supplier
+       }
+       if (this.$route.query.create_time__lt !== undefined) {
+         this.listQuery.create_time__lt = this.$route.query.create_time__lt
+       }
+       if (this.$route.query.payment__isnull !== undefined) {
+         this.listQuery.payment__isnull = this.$route.query.payment__isnull
+       }
+       fetchPurchaseOrder(this.listQuery).then(response => {
+         // this.list = response.data.results;
+         this.list = response.data.results.map(v => {
+           v.edit = false;
+           return v
+         });
+         for (const t of this.list) {
+           const index = this.list.indexOf(t);
+           const tmp = [];
+           for (const o of t.purchaseorderitem) {
+             const poi = o.split('@')
+             let qty = null
+             let disabledStatus = false
+             if (poi[5] !== '在途中') {
+               qty = poi[3]
+               disabledStatus = true
+             }
+             tmp.push({
+               jancode: poi[0],
+               product_title: poi[1],
+               sku_properties_name: poi[2],
+               quantity: poi[3],
+               price: poi[4],
+               qty,
+               status: disabledStatus
+             });
+           }
+           this.list[index].pois = tmp;
+         }
+         this.total = response.data.count;
+         this.listLoading = false;
+       })
+     },
+     getInventory() {
+       fetchInventory().then(response => {
+         this.inventoryOptions = response.data.results;
+       })
+     },
+     getSupplier() {
+       const query = { limit: 50 }
+       fetchSupplier(query).then(response => {
+         this.supplierOptions = response.data.results;
+       })
+     },
+     handleFilter() {
+       this.listQuery.page = 1;
+       this.getPurchaseOrder();
+     },
+     handleSizeChange(val) {
+       this.listQuery.limit = val;
+       this.getPurchaseOrder();
+     },
+     handleCurrentChange(val) {
+       this.listQuery.page = val;
+       this.getPurchaseOrder();
+     },
+     getItem(row) {
+       this.dialogItemVisible = true;
+       this.listItem.purchaseorder = row.id;
+       fetchPurchaseOrderItem(this.listItem).then(response => {
+         this.itemData = response.data.results;
+       })
+     },
+     handleDelete(row) {
+       this.temp = Object.assign({}, row);
+       this.dialogFormVisible = true;
+     },
+     handleStockIn(row) {
+       this.poitemp = row;
+       this.dialogPOItemVisible = true;
+       this.disableSubmit = false;
+     },
+     clearPurchaseOrder() {
+       this.disableSubmit = true
+       purchaseOrderClear(this.poitemp).then(() => {
+         this.$notify({
+           title: '成功',
+           message: '入库成功',
+           type: 'success',
+           duration: 2000
+         });
+         this.dialogPOItemVisible = false;
+         this.handleCurrentChange(this.listQuery.page);
+       }).catch(() => {
+         this.disableSubmit = false;
+       });
+     },
+     checkPurchaseOrderid(orderid) {
+       const patten = /^[a-zA-Z\d-_]{5,}$/
+       return patten.test(orderid)
+     },
+     updatePurchaseOrder(row) {
+       const data = { orderid: row.orderid, supplier: row.supplier, payment: row.payment }
+       const r = this.checkPurchaseOrderid(row.orderid)
+       if (!r) {
+         this.$notify({
+           title: '警告',
+           message: '注文番号含非法字符! 仅允许字母,数字以及横杠,且长度不少于5',
+           type: 'warning',
+           duration: 2000
+         });
+         return
+       }
+       updateOrder(data, '/purchase/' + row.id + '/').then(() => {
+         for (const v of this.supplierOptions) {
+           if (v.id === row.supplier) {
+             row.supplier_name = v.name
+             break
+           }
+         }
+         for (const v of this.list) {
+           if (v.id === row.id) {
+             const index = this.list.indexOf(v)
+             this.list[index].supplier_name = row.supplier_name
+             break
+           }
+         }
+         this.$notify({
+           title: '成功',
+           message: '更新成功',
+           type: 'success',
+           duration: 2000
+         });
+         row.edit = false;
+       })
+     },
+     deletePurchaseOrder() {
+       purchaseOrderDelete(this.temp).then(() => {
+         this.temp.status = '已删除';
+         for (const v of this.list) {
+           if (v.id === this.temp.id) {
+             const index = this.list.indexOf(v);
+             this.list.splice(index, 1, this.temp);
+             break;
+           }
+         }
+         this.dialogFormVisible = false
+       })
+     }
+   }
+ }
 </script>

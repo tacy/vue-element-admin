@@ -120,6 +120,8 @@ class PurchaseOrderFilter(FilterSet):
         name='purchaseorderitem__product__name',
         lookup_expr='icontains',
         distinct=True)
+    create_time__lt = CharFilter(name='create_time', lookup_expr='lt')
+    payment__isnull = BooleanFilter(name='payment', lookup_expr='isnull')
 
     class Meta:
         model = PurchaseOrder

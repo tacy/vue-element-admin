@@ -18,7 +18,7 @@
           <div slot="header" class="box-card-header">
             <span class="display_name">采购单</span>
           </div>
-          <div class="info-item" v-for="item in orderinfo">
+          <div class="info-item" v-for="item in poinfo">
 	    <span>{{item.key}}:</span>
 	    <router-link :to="{path:item.path}" target="_blank"><el-button size="mini" type="info">{{item.value}}</el-button></router-link>
           </div>
@@ -33,25 +33,33 @@
 </template>
 
 <script>
-  import { fetchOrderAlert } from 'api/orders';
-  export default {
-    data() {
-      return {
-        orderinfo: []
-      }
-    },
-    created() {
-      this.getOrder();
-    },
-    methods: {
-      getOrder() {
-        this.listLoading = true;
-        fetchOrderAlert().then(response => {
-          this.orderinfo = response.data.results;
-          this.listLoading = false;
-        })
-      }
-    }
-  }
+ import { fetchOrderAlert } from 'api/orders';
+ import { fetchPurchaseOrderAlert } from 'api/purchases';
+ export default {
+   data() {
+     return {
+       orderinfo: [],
+       poinfo: []
+     }
+   },
+   created() {
+     this.getOrder();
+     this.getPO()
+   },
+   methods: {
+     getOrder() {
+       this.listLoading = true;
+       fetchOrderAlert().then(response => {
+         this.orderinfo = response.data.results;
+         this.listLoading = false;
+       })
+     },
+     getPO() {
+       fetchPurchaseOrderAlert().then(response => {
+         this.poinfo = response.data.results;
+       })
+     }
+   }
+ }
 
 </script>

@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from .order import computeOrderStatus
 from stock.exceptions import InputError
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
-                          PurchaseOrderItem, Stock, Supplier)
+                          PurchaseOrderItem, Stock, Supplier, TransformDB)
 
 logger = logging.getLogger(__name__)
 
@@ -396,3 +396,51 @@ class PurchaseOrderTransform(views.APIView):
                 poiObj.delivery_no = data['delivery_no']
                 poiObj.save()
         return Response(status=status.HTTP_200_OK)
+
+
+class PurchaseOrderAlert(views.APIView):
+    def get(self, request, format=None):
+        now = arrow.now()
+
+        # AMZA超时 (3天未到库)
+        t1 = now.replace(days=-3).format('YYYY-MM-DD HH:mm:ss')
+        amza = PurchaseOrder.objects.filter(
+            create_time__lt=t1, status='在途中', supplier=1).count()
+
+        # 其他采购 (5天未到库)
+        t2 = now.replace(days=-5).format('YYYY-MM-DD HH:mm:ss')
+        other = PurchaseOrder.objects.filter(
+            create_time__lt=t2, status='在途中').count()
+
+        # 采购单无金额 (需要金额计算采购总额)
+        payment = PurchaseOrder.objects.filter(payment__isnull=True).count()
+
+        # 待转运单
+        transform = TransformDB.objects.filter(status='待处理').count()
+
+        p = '/purchases/order/?'
+        data = {
+            'results': [
+                {
+                    'key': '日亚超时',
+                    'value': amza,
+                    'path': p + 'status=在途中&supplier=1&create_time__lt=' + t1,
+                },
+                {
+                    'key': '其他超时',
+                    'value': other,
+                    'path': p + 'status=在途中&create_time__lt=' + t2,
+                },
+                {
+                    'key': '需补金额',
+                    'value': payment,
+                    'path': p + 'payment__isnull=True',
+                },
+                {
+                    'key': '待转运单',
+                    'value': transform,
+                    'path': '/purchases/transformdb/?status=待处理',
+                },
+            ]
+        }
+        return Response(data=data, status=status.HTTP_200_OK)
