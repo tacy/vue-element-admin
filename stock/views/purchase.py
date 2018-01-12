@@ -76,11 +76,15 @@ def createPO(orderid, inventory, supplier, items, createtime):
                 'errmsg': '注文编号{}已经存在, 且状态非在途. 请更换注文编号'.format(orderid),
             }
     except PurchaseOrder.DoesNotExist:
+        payment = None
+        if supplierObj.name in ['东京仓', '调整库存']:
+            payment = 0
         poObj = PurchaseOrder(
             orderid=orderid,
             supplier=supplierObj,
             inventory=inventoryObj,
             create_time=createtime,
+            payment=payment,
             status='在途中',
         )
         poObj.save()
@@ -378,7 +382,9 @@ class PurchaseOrderDelete(views.APIView):
             # mark purchaseorder status as '删除'
             poitemObjs.update(status='已删除')
             poObj.status = '已删除'
-            poObj.save(update_fields=['status'])
+            if poObj.payment == None:
+                poObj.payment = 0
+            poObj.save(update_fields=['status', 'payment'])
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
