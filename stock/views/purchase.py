@@ -427,6 +427,10 @@ class PurchaseOrderAlert(views.APIView):
         # 待转运单
         transform = TransformDB.objects.filter(status='待处理').count()
 
+        # 库存预警
+        stockalert = Stock.objects.filter(stock_alert__gt=F('quantity') + F(
+            'inflight') - F('preallocation')).count()
+
         p = '/purchases/order/?'
         data = {
             'results': [
@@ -446,7 +450,7 @@ class PurchaseOrderAlert(views.APIView):
                     'path': p + 'status=入库中&create_time__lt=' + t2,
                 },
                 {
-                    'key': '需补金额',
+                    'key': '补填金额',
                     'value': payment,
                     'path': p + 'payment__isnull=True',
                 },
@@ -454,6 +458,11 @@ class PurchaseOrderAlert(views.APIView):
                     'key': '待转运单',
                     'value': transform,
                     'path': '/purchases/transformdb/?status=待处理',
+                },
+                {
+                    'key': '库存预警',
+                    'value': stockalert,
+                    'path': '/stocks/query/?alerting=T',
                 },
             ]
         }

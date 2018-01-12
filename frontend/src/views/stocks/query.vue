@@ -132,163 +132,165 @@
 </template>
 
 <script>
-  import { parseTime } from 'utils';
-  import { fetchInventory, fetchCategory, fetchSupplier } from 'api/orders';
-  import { fetchStock, updateStock, syncStock } from 'api/stocks';
+ import { fetchInventory, fetchCategory, fetchSupplier } from 'api/orders';
+ import { fetchStock, updateStock, syncStock } from 'api/stocks';
 
-  export default {
-    data() {
-      return {
-        list: [],
-        listLoading: true,
-        total: null,
-        syncInvOptions: ['贝海', '广州', '东京'],
-        dialogSyncVisible: false,
-        inventoryOptions: [],
-        supplierOptions: [],
-        submitting: false,
-        listQuery: {
-          page: 1,
-          limit: 10,
-          labelVal: '1',
-          jancode: undefined,
-          inventory: undefined,
-          product_title: undefined,
-          sku_properties: undefined,
-          brand: undefined,
-          quantity_g: undefined,
-          quantity__range: undefined,
-          quantity_l: undefined,
-          stocking_supplier: undefined,
-          check_alert: false,
-          alerting: undefined
-        },
-        selectedOptions: [{
-          value: '1',
-          label: '商品条码'
-        }, {
-          value: '2',
-          label: '商品名称'
-        }, {
-          value: '3',
-          label: '规格'
-        }],
-        temp: {
-          inventory_name: undefined
-        }
-      }
-    },
-    created() {
-      this.getCategory();
-      this.getInventory();
-      this.getSupplier();
-      this.getStock();
-    },
-    methods: {
-      getStock() {
-        this.listLoading = true;
-        if (this.listQuery.labelVal !== '1') {
-          this.listQuery.jancode = undefined
-        }
-        if (this.listQuery.labelVal !== '2') {
-          this.listQuery.product_title = undefined
-        }
-        if (this.listQuery.labelVal !== '3') {
-          this.listQuery.sku_properties = undefined
-        }
-        if (this.listQuery.check_alert) {
-          this.listQuery.alerting = 'T'
-        } else {
-          this.listQuery.alerting = undefined
-        }
-        if (this.listQuery.quantity_g && this.listQuery.quantity_l) {
-          this.listQuery.quantity__range = this.listQuery.quantity_l + ',' + this.listQuery.quantity_g
-        } else {
-          this.listQuery.quantity__range = undefined
-        }
-        fetchStock(this.listQuery).then(response => {
-          // this.list = response.data.results;
-          this.list = response.data.results.map(v => {
-            v.edit = false;
-            return v
-          });
-          this.total = response.data.count;
-          this.listLoading = false;
-        })
-      },
-      getCategory() {
-        fetchCategory().then(response => {
-          this.categoryOptions = response.data.results;
-        })
-      },
-      getInventory() {
-        fetchInventory().then(response => {
-          this.inventoryOptions = response.data.results;
-        })
-      },
-      getSupplier() {
-        const query = { limit: 50 };
-        fetchSupplier(query).then(response => {
-          this.supplierOptions = response.data.results;
-        }).catch(err => {
-          this.fetchSuccess = false;
-          console.log(err);
-        });
-      },
-      handleFilter() {
-        this.listQuery.page = 1;
-        this.getStock();
-      },
-      handleSizeChange(val) {
-        this.listQuery.limit = val;
-        this.getStock();
-      },
-      handleCurrentChange(val) {
-        this.listQuery.page = val;
-        this.getStock();
-      },
-      update(row) {
-        updateStock(row, '/stock/' + row.id + '/').then(response => {
-          this.$notify({
-            title: '成功',
-            message: '更新成功',
-            type: 'success',
-            duration: 2000
-          });
-          for (const v of this.list) {
-            if (v.id === row.id) {
-              const index = this.list.indexOf(v);
-              for (const s of this.supplierOptions) {
-                if (row.stocking_supplier == s.id) {
-                  this.list[index].supplier_name = s.name
-                  break
-                }
-              }
-              break
-            }
-          }
-          row.edit = false;
-        })
-      },
-      handleSync() {
-        this.dialogSyncVisible = true;
-        this.temp.inventory_name = null;
-      },
-      sync() {
-        this.submitting = true;
-        syncStock(this.temp).then(response => {
-          this.$notify({
-            title: '成功',
-            message: '更新成功',
-            type: 'success',
-            duration: 2000
-          });
-          this.dialogSyncVisible = false;
-          this.submitting = false;
-        }).catch(error => {
-          this.submitting = false;
-        })
-      }
-    }
-  }
+ export default {
+   data() {
+     return {
+       list: [],
+       listLoading: true,
+       total: null,
+       syncInvOptions: ['贝海', '广州', '东京'],
+       dialogSyncVisible: false,
+       inventoryOptions: [],
+       supplierOptions: [],
+       submitting: false,
+       listQuery: {
+         page: 1,
+         limit: 10,
+         labelVal: '1',
+         jancode: undefined,
+         inventory: undefined,
+         product_title: undefined,
+         sku_properties: undefined,
+         brand: undefined,
+         quantity_g: undefined,
+         quantity__range: undefined,
+         quantity_l: undefined,
+         stocking_supplier: undefined,
+         check_alert: false,
+         alerting: undefined
+       },
+       selectedOptions: [{
+         value: '1',
+         label: '商品条码'
+       }, {
+         value: '2',
+         label: '商品名称'
+       }, {
+         value: '3',
+         label: '规格'
+       }],
+       temp: {
+         inventory_name: undefined
+       }
+     }
+   },
+   created() {
+     this.getCategory();
+     this.getInventory();
+     this.getSupplier();
+     this.getStock();
+   },
+   methods: {
+     getStock() {
+       this.listLoading = true;
+       if (this.listQuery.labelVal !== '1') {
+         this.listQuery.jancode = undefined
+       }
+       if (this.listQuery.labelVal !== '2') {
+         this.listQuery.product_title = undefined
+       }
+       if (this.listQuery.labelVal !== '3') {
+         this.listQuery.sku_properties = undefined
+       }
+       if (this.listQuery.check_alert) {
+         this.listQuery.alerting = 'T'
+       } else {
+         this.listQuery.alerting = undefined
+       }
+       if (this.listQuery.quantity_g && this.listQuery.quantity_l) {
+         this.listQuery.quantity__range = this.listQuery.quantity_l + ',' + this.listQuery.quantity_g
+       } else {
+         this.listQuery.quantity__range = undefined
+       }
+       if (this.$route.query.alerting !== undefined) {
+         this.listQuery.alerting = this.$route.query.alerting
+       }
+       fetchStock(this.listQuery).then(response => {
+         // this.list = response.data.results;
+         this.list = response.data.results.map(v => {
+           v.edit = false;
+           return v
+         });
+         this.total = response.data.count;
+         this.listLoading = false;
+       })
+     },
+     getCategory() {
+       fetchCategory().then(response => {
+         this.categoryOptions = response.data.results;
+       })
+     },
+     getInventory() {
+       fetchInventory().then(response => {
+         this.inventoryOptions = response.data.results;
+       })
+     },
+     getSupplier() {
+       const query = { limit: 50 };
+       fetchSupplier(query).then(response => {
+         this.supplierOptions = response.data.results;
+       }).catch(err => {
+         this.fetchSuccess = false;
+         console.log(err);
+       });
+     },
+     handleFilter() {
+       this.listQuery.page = 1;
+       this.getStock();
+     },
+     handleSizeChange(val) {
+       this.listQuery.limit = val;
+       this.getStock();
+     },
+     handleCurrentChange(val) {
+       this.listQuery.page = val;
+       this.getStock();
+     },
+     update(row) {
+       updateStock(row, '/stock/' + row.id + '/').then(() => {
+         this.$notify({
+           title: '成功',
+           message: '更新成功',
+           type: 'success',
+           duration: 2000
+         });
+         for (const v of this.list) {
+           if (v.id === row.id) {
+             const index = this.list.indexOf(v);
+             for (const s of this.supplierOptions) {
+               if (row.stocking_supplier === s.id) {
+                 this.list[index].supplier_name = s.name
+                 break
+               }
+             }
+             break
+           }
+         }
+         row.edit = false;
+       })
+     },
+     handleSync() {
+       this.dialogSyncVisible = true;
+       this.temp.inventory_name = null;
+     },
+     sync() {
+       this.submitting = true;
+       syncStock(this.temp).then(() => {
+         this.$notify({
+           title: '成功',
+           message: '更新成功',
+           type: 'success',
+           duration: 2000
+         });
+         this.dialogSyncVisible = false;
+         this.submitting = false;
+       }).catch(() => {
+         this.submitting = false;
+       })
+     }
+   }
+ }
 </script>
