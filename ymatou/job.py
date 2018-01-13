@@ -1,8 +1,9 @@
-import asyncio
 import datetime
+import asyncio
 import json
 import logging
 import os.path
+from itertools import groupby
 
 import aiohttp
 import aiomysql
@@ -11,8 +12,8 @@ import async_timeout
 from bs4 import BeautifulSoup
 
 import tiangouAPI
-import ymatouapi
 import ubay
+import ymatouapi
 
 REQUEST_TIMEOUT = 60
 access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
@@ -186,8 +187,8 @@ async def syncTGOrder(tgapi, sellerName, pool):
             #    3. price根据num平分
             #    4. quantity = num*数量
             orderid = o['id']
-            if i:
-                orderid = str(orderid) + '-' + str(i)
+            # if i:
+            #     orderid = str(orderid) + '-' + str(i)
             js = oi['barcode'].split('+')
             for k, j in enumerate(js):
                 if k:
@@ -289,31 +290,35 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
         "select a.id, a.channel_name, a.orderid, a.receiver_name, a.receiver_address, "
         "a.receiver_mobile, a.receiver_zip, a.receiver_idcard, a.payment, "
         "a.product_title, a.quantity, a.price, c.category_id, c.category_version, "
-        "b.weight, b.brand, b.specification, a.jancode "
-        "from stock_order as a inner join stock_product as b "
-        "on a.jancode=b.jancode and a.channel_name<>'洋码头' and a.shipping_id in (1,2,6)and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购') "
-        "inner join stock_category as c "
-        "on b.category_id=c.id")
+        "b.weight, b.brand, b.specification, a.jancode from stock_order as a "
+        "inner join stock_product as b on a.jancode=b.jancode "
+        "inner join stock_category as c on b.category_id=c.id "
+        "where and a.channel_name<>'洋码头' and a.shipping_id in (1,2,6) and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购') order by a.orderid"
+    )
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(sql)
             rs = await cur.fetchall()
-            for r in rs:
+            for orderid, items in groupby(rs, lambda x: x[2]):
+                orders = list(items)
+                productList = []
+                for r in orders:
+                    productList.append(
+                        {
+                            'SkuCode': r[17],
+                            'SkuName': r[9],
+                            'SendCountryName': '日本',
+                            'SecondLevelCategoryId': r[12],
+                            'CategoryVersion': r[13],
+                            'Num': r[10],
+                            'Weight': str(r[14]) if r[14] else '0.3',
+                            'UnitPrice': str(r[11]),
+                            'Brand': r[15],
+                            'Specification': r[16]
+                        }, )
+
+                r = orders[0]
                 ai = r[4].split(',')
-                productList = [
-                    {
-                        'SkuCode': r[17],
-                        'SkuName': r[9],
-                        'SendCountryName': '日本',
-                        'SecondLevelCategoryId': r[12],
-                        'CategoryVersion': r[13],
-                        'Num': r[10],
-                        'Weight': str(r[14]) if r[14] else '0.3',
-                        'UnitPrice': str(r[11]),
-                        'Brand': r[15],
-                        'Specification': r[16]
-                    },
-                ]
 
                 try:
                     msg_param = {
@@ -342,8 +347,8 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                     return
                 if result.get('Succeed'):
                     await cur.execute(
-                        "update stock_order set importstatus='已导入' where id=%s",
-                        (r[0], ))
+                        "update stock_order set importstatus='已导入' where orderid=%s",
+                        (r[2], ))
                     await conn.commit()
                 else:
                     logger.error(
