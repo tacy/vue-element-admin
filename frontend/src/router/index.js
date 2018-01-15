@@ -244,8 +244,8 @@ export const asyncRouterMap = [
     name: '统计',
     icon: 'zujian',
     children: [
-      { path: 'order', component: orderAnalyze, name: '销售统计', meta: { role: ['supergz', 'supertokyo', 'super'] } },
-      { path: 'purchase', component: purchaseAnalyze, name: '采购统计', meta: { role: ['supergz', 'supertokyo', 'super'] } }
+      { path: 'order', component: orderAnalyze, name: '销售统计', meta: { role: ['super'] } },
+      { path: 'purchase', component: purchaseAnalyze, name: '采购统计', meta: { role: ['super'] } }
     ]
   },
   { path: '*', redirect: '/404', hidden: true }
