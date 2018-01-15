@@ -26,6 +26,7 @@ class AnalyzeOrderAndPurchase(views.APIView):
         end_time = at.replace(
             months=+1).floor('month').format('YYYY-MM-DD HH:mm:ss')
 
+        logger.debug('analyze time range [st:%s, et:%s]', start_time, end_time)
         ordsInfo = Order.objects.filter(
             Q(piad_time__range=(start_time, end_time)),
             ~Q(status='已删除'),
