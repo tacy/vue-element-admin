@@ -4,8 +4,10 @@ from rest_framework.authtoken.models import Token
 from .models import (BondedProduct, Inventory, Order, Product,
                      PurchaseDivergence, PurchaseOrder, PurchaseOrderItem,
                      Shipping, ShippingDB, Stock, StockInRecord,
-                     StockOutRecord, Supplier, UexTrack, TransformDB)
-from stock.models import AfterSaleCase, AfterSaleMeta, CostRecord, CostType, IncomeRecord, TransformRecord
+                     StockOutRecord, Supplier, TransformDB, UexTrack)
+from stock.models import (AfterSaleCase, AfterSaleMeta, CostRecord, CostType,
+                          IncomeRecord, OrderAnalyze, PurchaseAnalyze,
+                          TransformRecord)
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -291,6 +293,30 @@ class TransformRecordSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta class to map serializer's fields with the model fields."""
         model = TransformRecord
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class PurchaseAnalyzeSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+    product_name = serializers.ReadOnlyField(source='product.name')
+    jancode = serializers.ReadOnlyField(source='product.jancode')
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = PurchaseAnalyze
+        # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
+        fields = '__all__'
+
+
+class OrderAnalyzeSerializer(serializers.ModelSerializer):
+    """Serializer to map the Model instance into JSON format."""
+    product_name = serializers.ReadOnlyField(source='product.name')
+    jancode = serializers.ReadOnlyField(source='product.jancode')
+
+    class Meta:
+        """Meta class to map serializer's fields with the model fields."""
+        model = OrderAnalyze
         # fields = ('id', 'order_id', 'delivery_id', 'cost', 'discount', 'status', 'invertory_name', 'supplier_name', 'create_time')
         fields = '__all__'
 
