@@ -40,9 +40,14 @@ class AnalyzeOrderAndPurchase(views.APIView):
         with transaction.atomic():
             for o in ordsInfo:
                 try:
+                    product = Product.objects.get(jancode=o['jancode'])
+                except Product.DoesNotExist:
+                    logger.exception(o['jancode'])
+                    continue
+                try:
                     oaObj = OrderAnalyze.objects.get(
                         seller_name=o['seller_name'],
-                        product=Product.objects.get(jancode=o['jancode']),
+                        product=product,
                         yeah=yeah,
                     )
                     setattr(oaObj, month, o['total'])
@@ -55,7 +60,7 @@ class AnalyzeOrderAndPurchase(views.APIView):
                     oa = {
                         'seller_name': o['seller_name'],
                         'yeah': yeah,
-                        'product': Product.objects.get(jancode=o['jancode']),
+                        'product': product,
                         'january': 0,
                         'february': 0,
                         'march': 0,
@@ -76,8 +81,13 @@ class AnalyzeOrderAndPurchase(views.APIView):
 
             for o in poisInfo:
                 try:
+                    product = Product.objects.get(id=o['product'])
+                except Product.DoesNotExist:
+                    logger.exception(o['product'])
+                    continue
+                try:
                     paObj = PurchaseAnalyze.objects.get(
-                        product=Product.objects.get(id=o['product']),
+                        product=product,
                         yeah=yeah,
                     )
                     setattr(paObj, month, o['total'])
@@ -89,7 +99,7 @@ class AnalyzeOrderAndPurchase(views.APIView):
                 except PurchaseAnalyze.DoesNotExist:
                     pa = {
                         'yeah': yeah,
-                        'product': Product.objects.get(id=o['product']),
+                        'product': product,
                         'january': 0,
                         'february': 0,
                         'march': 0,
