@@ -379,6 +379,49 @@ class TransformRecord(models.Model):
         max_digits=9, null=True, blank=True, decimal_places=1)  # 提现手续费
 
 
+class OrderAnalyze(models.Model):
+    seller_name = models.CharField(max_length=32, null=False)
+    yeah = models.CharField(max_length=4, null=False)
+    product = models.ForeignKey(Product, related_name='orderanalyze')
+    january = models.IntegerField(null=True, default=0)
+    february = models.IntegerField(null=True, default=0)
+    march = models.IntegerField(null=True, default=0)
+    april = models.IntegerField(null=True, default=0)
+    may = models.IntegerField(null=True, default=0)
+    june = models.IntegerField(null=True, default=0)
+    july = models.IntegerField(null=True, default=0)
+    august = models.IntegerField(null=True, default=0)
+    september = models.IntegerField(null=True, default=0)
+    october = models.IntegerField(null=True, default=0)
+    november = models.IntegerField(null=True, default=0)
+    december = models.IntegerField(null=True, default=0)
+    total = models.IntegerField(null=True, default=0)
+
+    class Meta:
+        ordering = ['-total']
+
+
+class PurchaseAnalyze(models.Model):
+    yeah = models.CharField(max_length=4, null=False)
+    product = models.ForeignKey(Product, related_name='purchaseanalyze')
+    january = models.IntegerField(null=True, default=0)
+    february = models.IntegerField(null=True, default=0)
+    march = models.IntegerField(null=True, default=0)
+    april = models.IntegerField(null=True, default=0)
+    may = models.IntegerField(null=True, default=0)
+    june = models.IntegerField(null=True, default=0)
+    july = models.IntegerField(null=True, default=0)
+    august = models.IntegerField(null=True, default=0)
+    september = models.IntegerField(null=True, default=0)
+    october = models.IntegerField(null=True, default=0)
+    november = models.IntegerField(null=True, default=0)
+    december = models.IntegerField(null=True, default=0)
+    total = models.IntegerField(null=True, default=0)
+
+    class Meta:
+        ordering = ['-total']
+
+
 class Task(models.Model):
     name = models.CharField(max_length=16, null=False)
     interval = models.IntegerField(null=False)

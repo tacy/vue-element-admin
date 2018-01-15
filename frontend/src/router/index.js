@@ -47,6 +47,10 @@ const createCostRecord = _import('finances/createcostrecord');
 const incomeRecord = _import('finances/incomerecord');
 const transformRecord = _import('finances/transformrecord');
 
+/* analyze */
+const orderAnalyze = _import('analyzes/order');
+const purchaseAnalyze = _import('analyzes/purchase');
+
 /* error page */
 const Err404 = _import('error/404');
 const Err401 = _import('error/401');
@@ -231,6 +235,17 @@ export const asyncRouterMap = [
       { path: 'incomerecord', component: incomeRecord, name: '查收入', meta: { role: ['supergz', 'supertokyo', 'super'] } },
       { path: 'createcostrecord', component: createCostRecord, name: '新支出', meta: { role: ['supergz', 'supertokyo', 'super'] } },
       { path: 'transformrecord', component: transformRecord, name: '转账日本', meta: { role: ['supertokyo', 'super'] } }
+    ]
+  },
+  {
+    path: '/analyzes',
+    component: Layout,
+    redirect: '/analyzes/index',
+    name: '统计',
+    icon: 'zujian',
+    children: [
+      { path: 'order', component: orderAnalyze, name: '销售统计', meta: { role: ['supergz', 'supertokyo', 'super'] } },
+      { path: 'purchase', component: purchaseAnalyze, name: '采购统计', meta: { role: ['supergz', 'supertokyo', 'super'] } }
     ]
   },
   { path: '*', redirect: '/404', hidden: true }

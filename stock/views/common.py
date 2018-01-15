@@ -1,4 +1,5 @@
 import django_filters.rest_framework
+from rest_framework.filters import OrderingFilter
 from rest_framework import generics
 
 from stock.filter import (AfterSaleCaseFilter, AfterSaleMetaFilter,
@@ -7,15 +8,17 @@ from stock.filter import (AfterSaleCaseFilter, AfterSaleMetaFilter,
                           StockFilter)
 from stock.models import (
     AfterSaleCase, AfterSaleMeta, BondedProduct, CostRecord, CostType,
-    Inventory, Order, Product, PurchaseOrder, PurchaseOrderItem, Shipping,
-    ShippingDB, Stock, Supplier, TransformDB, IncomeRecord, TransformRecord)
+    IncomeRecord, Inventory, Order, OrderAnalyze, Product, PurchaseAnalyze,
+    PurchaseOrder, PurchaseOrderItem, Shipping, ShippingDB, Stock, Supplier,
+    TransformDB, TransformRecord)
 from stock.serializers import (
     AfterSaleCaseSerializer, AfterSaleMetaSerializer, BondedProductSerializer,
-    CostTypeSerializer, InventorySerializer, OrderSerializer,
-    ProductSerializer, PurchaseOrderItemSerializer, PurchaseOrderSerializer,
-    ShippingDBSerializer, ShippingSerializer, StockSerializer,
-    SupplierSerializer, Token, TokenSerializer, CostRecordSerializer,
-    TransformDBSerializer, IncomeRecordSerializer, TransformRecordSerializer)
+    CostRecordSerializer, CostTypeSerializer, IncomeRecordSerializer,
+    InventorySerializer, OrderAnalyzeSerializer, OrderSerializer,
+    ProductSerializer, PurchaseAnalyzeSerializer, PurchaseOrderItemSerializer,
+    PurchaseOrderSerializer, ShippingDBSerializer, ShippingSerializer,
+    StockSerializer, SupplierSerializer, Token, TokenSerializer,
+    TransformDBSerializer, TransformRecordSerializer)
 
 
 class UserInfo(generics.ListAPIView):
@@ -199,3 +202,17 @@ class TransformRecordList(generics.ListCreateAPIView):
 class TransformRecordDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = TransformRecord.objects.all()
     serializer_class = TransformRecordSerializer
+
+
+class OrderAnalyzeList(generics.ListAPIView):
+    queryset = OrderAnalyze.objects.all()
+    serializer_class = OrderAnalyzeSerializer
+    # filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+    filter_backends = (OrderingFilter, )
+
+
+class PurchaseAnalyzeList(generics.ListAPIView):
+    queryset = PurchaseAnalyze.objects.all()
+    serializer_class = PurchaseAnalyzeSerializer
+    # filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+    filter_backends = (OrderingFilter, )
