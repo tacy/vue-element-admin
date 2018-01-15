@@ -28,7 +28,8 @@ class AnalyzeOrderAndPurchase(views.APIView):
 
         ordsInfo = Order.objects.filter(
             Q(piad_time__range=(start_time, end_time)),
-            ~Q(status='已删除')).values(
+            ~Q(status='已删除'),
+            ~Q(delivery_type='第三方保税')).values(
                 'jancode', 'seller_name').annotate(total=Sum('quantity'))
 
         poisInfo = PurchaseOrderItem.objects.filter(
