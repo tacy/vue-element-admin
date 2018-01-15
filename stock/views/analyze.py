@@ -31,13 +31,14 @@ class AnalyzeOrderAndPurchase(views.APIView):
             Q(piad_time__range=(start_time, end_time)),
             ~Q(status='已删除'),
             ~Q(delivery_type='第三方保税')).values(
-                'jancode', 'seller_name').annotate(total=Sum('quantity'))
+                'jancode',
+                'seller_name').annotate(total=Sum('quantity')).order_by()
 
         poisInfo = PurchaseOrderItem.objects.filter(
             Q(purchaseorder__create_time__range=(start_time, end_time)),
             ~Q(purchaseorder__status='已删除'),
             ~Q(purchaseorder__supplier__in=[12, 18])).values(
-                'product').annotate(total=Sum('quantity'))
+                'product').annotate(total=Sum('quantity')).order_by()
 
         with transaction.atomic():
             for o in ordsInfo:
