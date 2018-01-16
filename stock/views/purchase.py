@@ -454,7 +454,7 @@ class PurchaseOrderAlert(views.APIView):
                 {
                     'key': '补填金额',
                     'value': payment,
-                    'path': p + 'payment__isnull=True',
+                    'path': p + 'payment__isnull=2',
                 },
                 {
                     'key': '待转运单',
