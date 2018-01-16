@@ -45,7 +45,7 @@ class OrderPurchaseList(views.APIView):
                     results[i]['tokyo_stock'] = rt[0] if rt else 0
                 else:
                     results[i]['tokyo_stock'] = 0
-            logger.debug('orderPurchaseList: %s', results)
+            # logger.debug('orderPurchaseList: %s', results)
             data = {
                 'data': results,
                 'queryTime': arrow.now().format('YYYY-MM-DD HH:mm:ss')
@@ -384,7 +384,7 @@ class PurchaseOrderDelete(views.APIView):
             # mark purchaseorder status as '删除'
             poitemObjs.update(status='已删除')
             poObj.status = '已删除'
-            if poObj.payment == None:
+            if poObj.payment is None:
                 poObj.payment = 0
             poObj.save(update_fields=['status', 'payment'])
             return Response(status=status.HTTP_200_OK)
