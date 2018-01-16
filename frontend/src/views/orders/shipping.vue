@@ -21,7 +21,7 @@
 
       <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item"  placeholder="商品规格" v-model="listQuery.sku_properties_name">
       </el-input>
-      <el-select clearable style="width: 105px" class="filter-item" multiple v-model="listQuery.shipping_in" placeholder="发货方式">
+      <el-select clearable style="width: 105px" class="filter-item" multiple v-model="listQuery.shipping" placeholder="发货方式">
         <el-option v-for="item in shippingOptions" :key="item.name" :label="item.name" :value="item.name">
         </el-option>
       </el-select>
@@ -315,6 +315,7 @@
          status: '待处理',
          inventory: undefined,
          channel_name: undefined,
+         shipping: undefined,
          receiver_name: undefined,
          db_number: undefined,
          delivery_no: undefined,
@@ -371,6 +372,9 @@
    methods: {
      getShippingDB() {
        this.listLoading = true;
+       if (this.listQuery.shipping) {
+         this.listQuery.shipping_in = this.listQuery.shipping.join()
+       }
        if (this.listQuery.labelVal !== '1') {
          this.listQuery.db_number = undefined
        }
