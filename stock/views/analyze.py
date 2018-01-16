@@ -137,14 +137,14 @@ class AnalyzeHot(views.APIView):
     def get(self, request, format=None):
         data = request.query_params
         analyze_type = data['analyze_type']
-        st = arrow.get(data['st']).format('YYYY-MM-DD HH:mm:ss')
-        et = arrow.get(data['et']).format('YYYY-MM-DD HH:mm:ss')
+        st = arrow.get(data['st']).format('YYYY-MM-DD')
+        et = arrow.get(data['et']).format('YYYY-MM-DD')
         logger.debug('time range [st:%s, et:%s]', st, et)
         sqls = {
             '热门':
-            'select sellerid,product_id,product_name,addtime, count(sellerid) total from addtime>%s and addtime<%s and country="日本" group by sellerid,productid,productname order by total limit 200',
+            'select sellerid,productid,productname,addtime, count(sellerid) total from sellerorder where addtime>%s and addtime<%s and country="日本" group by sellerid,productid,productname order by total limit 200',
             '关键字':
-            'select sellerid,productid,product_name,addtime, "" total from addtime>%s and addtime<%s and country="日本" and lower(productname) LIKE %s'
+            'select sellerid,productid,product_name,addtime, "" total from sellerorder where addtime>%s and addtime<%s and country="日本" and lower(productname) LIKE %s'
         }
 
         def dictfetchall(cursor):
