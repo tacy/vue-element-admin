@@ -235,23 +235,25 @@
    created() {
      this.getInventory();
      this.getSupplier();
+     if (this.$route.query.status !== undefined) {
+       this.listQuery.status = this.$route.query.status
+     }
+     if (this.$route.query.supplier !== undefined) {
+       this.listQuery.supplier = this.$route.query.supplier
+     }
+     if (this.$route.query.create_time__lt !== undefined) {
+       this.listQuery.create_time__lt = this.$route.query.create_time__lt
+     }
+     if (this.$route.query.payment__isnull !== undefined) {
+       this.listQuery.payment__isnull = this.$route.query.payment__isnull
+     }
      this.getPurchaseOrder();
+     this.listQuery.payment__isnull = undefined
+     this.listQuery.create_time__lt = undefined
    },
    methods: {
      getPurchaseOrder() {
        this.listLoading = true;
-       if (this.$route.query.status !== undefined) {
-         this.listQuery.status = this.$route.query.status
-       }
-       if (this.$route.query.supplier !== undefined) {
-         this.listQuery.supplier = this.$route.query.supplier
-       }
-       if (this.$route.query.create_time__lt !== undefined) {
-         this.listQuery.create_time__lt = this.$route.query.create_time__lt
-       }
-       if (this.$route.query.payment__isnull !== undefined) {
-         this.listQuery.payment__isnull = this.$route.query.payment__isnull
-       }
        fetchPurchaseOrder(this.listQuery).then(response => {
          // this.list = response.data.results;
          this.list = response.data.results.map(v => {

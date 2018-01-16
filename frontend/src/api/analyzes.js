@@ -2,7 +2,7 @@ import fetch from 'utils/fetch';
 
 export function fetchOrderAnalyze(query) {
   return fetch({
-    url: '/analyze/order',
+    url: '/analyze/order/',
     method: 'get',
     params: query
   });
@@ -10,7 +10,7 @@ export function fetchOrderAnalyze(query) {
 
 export function fetchPurchaseAnalyze(query) {
   return fetch({
-    url: '/analyze/purchase',
+    url: '/analyze/purchase/',
     method: 'get',
     params: query
   });

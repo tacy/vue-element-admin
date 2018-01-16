@@ -2,7 +2,7 @@ import fetch from 'utils/fetch';
 
 export function fetchOrder(query) {
   return fetch({
-    url: '/order',
+    url: '/order/',
     method: 'get',
     params: query
   });
@@ -10,7 +10,7 @@ export function fetchOrder(query) {
 
 export function fetchInventory(query) {
   return fetch({
-    url: '/inventory',
+    url: '/inventory/',
     method: 'get',
     params: query
   });
@@ -18,7 +18,7 @@ export function fetchInventory(query) {
 
 export function fetchShippingDB(query) {
   return fetch({
-    url: '/shippingdb',
+    url: '/shippingdb/',
     method: 'get',
     params: query
   });
@@ -27,7 +27,7 @@ export function fetchShippingDB(query) {
 
 export function fetchLogistic(query) {
   return fetch({
-    url: '/xlobo/getlogistic',
+    url: '/xlobo/getlogistic/',
     method: 'get',
     params: query
   });
@@ -35,7 +35,7 @@ export function fetchLogistic(query) {
 
 export function fetchPDF(query) {
   return fetch({
-    url: '/xlobo/getpdf',
+    url: '/xlobo/getpdf/',
     method: 'get',
     params: query
   });
@@ -43,7 +43,7 @@ export function fetchPDF(query) {
 
 export function fetchEMSPDF(query) {
   return fetch({
-    url: '/xlobo/getemspdf',
+    url: '/xlobo/getemspdf/',
     method: 'get',
     params: query
   });
@@ -51,7 +51,7 @@ export function fetchEMSPDF(query) {
 
 export function fetchCategory(query) {
   return fetch({
-    url: '/getcategory',
+    url: '/getcategory/',
     method: 'get',
     params: query
   });
@@ -59,7 +59,7 @@ export function fetchCategory(query) {
 
 export function fetchPurchase(query) {
   return fetch({
-    url: '/order/needpurchase',
+    url: '/order/needpurchase/',
     method: 'get',
     params: query
   });
@@ -67,7 +67,7 @@ export function fetchPurchase(query) {
 
 export function fetchOrderItems(query) {
   return fetch({
-    url: '/order/items',
+    url: '/order/items/',
     method: 'get',
     params: query
   });
@@ -75,7 +75,7 @@ export function fetchOrderItems(query) {
 
 export function fetchSupplier(query) {
   return fetch({
-    url: '/supplier',
+    url: '/supplier/',
     method: 'get',
     params: query
   });
@@ -83,7 +83,7 @@ export function fetchSupplier(query) {
 
 export function fetchStock(query) {
   return fetch({
-    url: '/stock',
+    url: '/stock/',
     method: 'get',
     params: query
   });
@@ -91,7 +91,7 @@ export function fetchStock(query) {
 
 export function fetchShipping(query) {
   return fetch({
-    url: '/shipping',
+    url: '/shipping/',
     method: 'get',
     params: query
   });
@@ -283,7 +283,7 @@ export function fetchAfterSaleMeta(query) {
 
 export function fetchAfterSaleCase(query) {
   return fetch({
-    url: '/aftersale/case',
+    url: '/aftersale/case/',
     method: 'get',
     params: query
   });
@@ -331,7 +331,7 @@ export function afterSaleUpdate(asc, url) {
 
 export function fetchOrderAlert(query) {
   return fetch({
-    url: '/order/alert',
+    url: '/order/alert/',
     method: 'get',
     params: query
   });

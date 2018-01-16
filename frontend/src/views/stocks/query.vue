@@ -181,6 +181,10 @@
      this.getCategory();
      this.getInventory();
      this.getSupplier();
+     if (this.$route.query.alerting !== undefined) {
+       this.listQuery.alerting = this.$route.query.alerting
+       this.listQuery.check_alert = true
+     }
      this.getStock();
    },
    methods: {
@@ -204,9 +208,6 @@
          this.listQuery.quantity__range = this.listQuery.quantity_l + ',' + this.listQuery.quantity_g
        } else {
          this.listQuery.quantity__range = undefined
-       }
-       if (this.$route.query.alerting !== undefined) {
-         this.listQuery.alerting = this.$route.query.alerting
        }
        fetchStock(this.listQuery).then(response => {
          // this.list = response.data.results;
