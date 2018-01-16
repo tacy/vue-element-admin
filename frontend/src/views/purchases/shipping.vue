@@ -117,14 +117,14 @@
      }
    },
    created() {
+     if (this.$route.query.status !== undefined) {
+       this.listQuery.status = this.$route.query.status
+     }
      this.getList();
    },
    methods: {
      getList() {
        this.listLoading = true;
-       if (this.$route.query.status !== undefined) {
-         this.listQuery.status = this.$route.query.status
-       }
        fetchTransformDB(this.listQuery).then(response => {
          this.list = response.data.results;
          this.total = response.data.count;

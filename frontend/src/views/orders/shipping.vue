@@ -21,8 +21,8 @@
 
       <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item"  placeholder="商品规格" v-model="listQuery.sku_properties_name">
       </el-input>
-      <el-select clearable style="width: 105px" class="filter-item" v-model="listQuery.shipping" placeholder="发货方式">
-        <el-option v-for="item in shippingOptions" :key="item.id" :label="item.name" :value="item.id">
+      <el-select clearable style="width: 105px" class="filter-item" multiple v-model="listQuery.shipping_in" placeholder="发货方式">
+        <el-option v-for="item in shippingOptions" :key="item.name" :label="item.name" :value="item.name">
         </el-option>
       </el-select>
 
@@ -314,7 +314,6 @@
          labelVal: '1',
          status: '待处理',
          inventory: undefined,
-         shipping: undefined,
          channel_name: undefined,
          receiver_name: undefined,
          db_number: undefined,
@@ -361,6 +360,12 @@
    created() {
      this.getInventory();
      this.getShipping()
+     if (this.$route.query.status !== undefined) {
+       this.listQuery.status = this.$route.query.status
+       this.listQuery.xlobo_sign = this.$route.query.xlobo_sign
+       this.listQuery.shipping_in = this.$route.query.shipping_in
+       this.listQuery.isXloboSign = true
+     }
      this.getShippingDB();
    },
    methods: {
@@ -395,12 +400,6 @@
          this.listQuery.xlobo_sign = 2
        } else {
          this.listQuery.xlobo_sign = 1
-       }
-       if (this.$route.query.status !== undefined) {
-         this.listQuery.status = this.$route.query.status
-         this.listQuery.xlobo_sign = this.$route.query.xlobo_sign
-         this.listQuery.shipping_in = this.$route.query.shipping_in
-         this.listQuery.isXloboSign = true
        }
        fetchShippingDB(this.listQuery).then(response => {
          this.list = response.data.results;

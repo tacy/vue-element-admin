@@ -513,16 +513,17 @@
    },
    created() {
      this.getInventory();
+     if (this.$route.query.status !== undefined) {
+       this.listQuery.status = this.$route.query.status
+       this.listQuery.piad_time__lt = this.$route.query.piad_time__lt
+     }
      this.getOrder();
+     this.listQuery.piad_time__lt = undefined
      this.getAfterSaleMeta();
    },
    methods: {
      getOrder() {
        this.listLoading = true;
-       if (this.$route.query.status !== undefined) {
-         this.listQuery.status = this.$route.query.status
-         this.listQuery.piad_time__lt = this.$route.query.piad_time__lt
-       }
        if (this.listQuery.labelVal !== '1') {
          this.listQuery.orderid = undefined
        }

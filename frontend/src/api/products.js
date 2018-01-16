@@ -2,7 +2,7 @@ import fetch from 'utils/fetch';
 
 export function fetchProduct(query) {
   return fetch({
-    url: '/product',
+    url: '/product/',
     method: 'get',
     params: query
   });
@@ -34,7 +34,7 @@ export function updateProductJancode(data) {
 
 export function fetchBondedProduct(query) {
   return fetch({
-    url: '/bondedproduct',
+    url: '/bondedproduct/',
     method: 'get',
     params: query
   });

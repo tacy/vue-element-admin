@@ -2,7 +2,7 @@ import fetch from 'utils/fetch';
 
 export function fetchPurchaseOrder(query) {
   return fetch({
-    url: '/purchase',
+    url: '/purchase/',
     method: 'get',
     params: query
   });
@@ -74,7 +74,7 @@ export function createTransformDB(data) {
 
 export function fetchTransformDB(query) {
   return fetch({
-    url: '/transformdb',
+    url: '/transformdb/',
     method: 'get',
     params: query
   });

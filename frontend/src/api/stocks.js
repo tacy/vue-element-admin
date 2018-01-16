@@ -2,7 +2,7 @@ import fetch from 'utils/fetch';
 
 export function fetchStock(query) {
   return fetch({
-    url: '/stock',
+    url: '/stock/',
     method: 'get',
     params: query
   });

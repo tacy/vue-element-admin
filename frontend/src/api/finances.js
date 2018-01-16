@@ -2,7 +2,7 @@ import fetch from 'utils/fetch';
 
 export function fetchCostRecord(query) {
   return fetch({
-    url: '/finance/cost/record',
+    url: '/finance/cost/record/',
     method: 'get',
     params: query
   });
@@ -18,7 +18,7 @@ export function createCostRecord(data) {
 
 export function fetchCostType(query) {
   return fetch({
-    url: '/finance/cost/type',
+    url: '/finance/cost/type/',
     method: 'get',
     params: query
   });
@@ -26,7 +26,7 @@ export function fetchCostType(query) {
 
 export function fetchIncomeRecord(query) {
   return fetch({
-    url: '/finance/income/record',
+    url: '/finance/income/record/',
     method: 'get',
     params: query
   });
