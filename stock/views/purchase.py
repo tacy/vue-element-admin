@@ -160,6 +160,8 @@ def createPO(orderid, inventory, supplier, items, createtime):
         c = int(i['quantity'])
         for o in orders:
             if o.need_purchase > c:
+                o.need_purchase = o.need_purchase - c
+                o.save(update_fields=['need_purchase'])
                 break
             o.purchaseorder = poObj
             o.status = '已采购'

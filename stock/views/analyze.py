@@ -1,7 +1,7 @@
 import logging
 
 import arrow
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.models import F, Q, Sum
 from rest_framework import status, views
 from rest_framework.response import Response
@@ -122,4 +122,43 @@ class AnalyzeOrderAndPurchase(views.APIView):
                     PurchaseAnalyze(**pa).save()
 
             return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class AnalyzeHot(views.APIView):
+    #
+    # postForm: {
+    #   type: undefined,  (热门/关键字)
+    #   st: undefined,
+    #   et: undefined,
+    #   q: undefined,
+    # },
+    #
+    def get(self, request, format=None):
+        data = request.query_params
+        analyze_type = data['analyze_type']
+        st = arrow.get(data['st']).format('YYYY-MM-DD HH:mm:ss')
+        et = arrow.get(data['et']).format('YYYY-MM-DD HH:mm:ss')
+        logger.debug('time range [st:%s, et:%s]', st, et)
+        sqls = {
+            '热门':
+            'select sellerid,product_id,product_name,addtime, count(sellerid) total from addtime>%s and addtime<%s and country="日本" group by sellerid,productid,productname order by total limit 200',
+            '关键字':
+            'select sellerid,productid,product_name,addtime, "" total from addtime>%s and addtime<%s and country="日本" and lower(productname) LIKE %s'
+        }
+
+        def dictfetchall(cursor):
+            "Return all rows from a cursor as a dict"
+            columns = [col[0] for col in cursor.description]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+        with connection.cursor() as c:
+            if analyze_type == '热门':
+                c.execute(sqls[analyze_type], (st, et))
+            elif analyze_type == '关键字':
+                q = data['q']
+                c.execute(sqls[analyze_type], (st, et, q))
+            rsData = dictfetchall(c)
+            return Response(
+                data={'results': rsData}, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
