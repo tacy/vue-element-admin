@@ -2,12 +2,13 @@ import logging
 
 import arrow.arrow
 from django.db import IntegrityError, connection, transaction
-from django.db.models import F, Max
+from django.db.models import F, Sum
 from rest_framework import status, views
 from rest_framework.response import Response
 
-from stock.models import (Inventory, Order, Product, PurchaseOrder, Shipping,
-                          Stock, UexTrack, ShippingDB, IncomeRecord)
+from stock.models import (IncomeRecord, Inventory, Order, Product,
+                          PurchaseOrder, PurchaseOrderItem, Shipping,
+                          ShippingDB, Stock, UexTrack)
 
 logger = logging.getLogger(__name__)
 
@@ -152,11 +153,23 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
                 need_purchase = ord.quantity
             else:
                 need_purchase = ord.quantity - t  # 部分靠采购单满足
-            id = PurchaseOrder.objects.filter(
+            maybePOs = PurchaseOrder.objects.filter(
                 purchaseorderitem__product__jancode=ord.jancode,
                 inventory=ord.inventory,
-                status__in=('在途中', '入库中', '转运中')).aggregate(Max('id'))
-            purchaseorder = PurchaseOrder.objects.get(id=id['id__max'])
+                status__in=('在途中', '入库中', '转运中'))
+            purchaseorder = None
+            for po in maybePOs:
+                poi = PurchaseOrderItem.objects.get(
+                    purchaseorder=po, product__jancode=ord.jancode)
+                np = poi.order.all().aggregate(
+                    Sum(need_purchase))['need_purchase__sum']
+                if poi.quantity - np >= need_purchase:
+                    purchaseorder = po
+                    break
+
+            if purchaseorder is None:
+                logger.error('订单%s关联采购单异常, 库存数据需修复', ord.id)
+                raise IntegrityError()
         else:
             status = '待发货' if ord.shippingdb else '需面单'
     return (status, need_purchase, purchaseorder)
