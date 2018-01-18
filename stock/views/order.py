@@ -166,7 +166,7 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
                     jancode=ord.jancode,
                     status__in=['已采购', '需面单', '待发货', '已发货'],
                 ).aggregate(total=Sum('need_purchase'))['total']
-                if np and poi.quantity - np >= need_purchase:
+                if np is None or poi.quantity - np >= need_purchase:
                     purchaseorder = po
                     break
 
