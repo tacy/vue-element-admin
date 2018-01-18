@@ -5,7 +5,7 @@ import json
 import arrow.arrow
 import aiohttp
 from django.db import IntegrityError, transaction
-from django.db.models import F
+from django.db.models import F, Sum
 from rest_framework import status, views
 from rest_framework.response import Response
 
@@ -288,6 +288,86 @@ class OrderOut(views.APIView):
                     data=results, status=status.HTTP_400_BAD_REQUEST)
 
 
+def doClear(qty, poObj, poiObj, opType):
+    # poi.quantity记录的是采购数量, qty是实际到库数量.
+    # 入库实际到库数量, 扣减inflight数量用采购数量.
+    if poiObj.quantity <= qty:  # 实际到库数量大于等于采购数量
+        ords_need_purchase = poObj.order.filter(
+            status='已采购', jancode=poiObj.product.jancode).aggregate(
+                Sum('need_purchase'))['need_purchase__sum']
+
+        # 是直接入库: 如果订单没有面单, 进入需面单状态, 否则待发货状态, 如果是暂存, 不修改订单状态
+        if opType == 'inStock':
+            poObj.order.filter(
+                status='已采购',
+                jancode=poiObj.product.jancode,
+                shippingdb__isnull=False).update(status='待发货')
+            poObj.order.filter(
+                status='已采购',
+                jancode=poiObj.product.jancode,
+                shippingdb__isnull=True).update(status='需面单')
+
+        # 这里不能直接用qty-poiObj.quantity得到超出的到库, 需要考虑订单被删除的情况
+        # incr = qty - poiObj.quantity
+        incr = qty - ords_need_purchase
+        if incr > 0:
+            wos = Order.objects.filter(
+                status='待采购',
+                jancode=poiObj.product.jancode,
+                inventory=poObj.inventory).order_by('id')
+            for wo in wos:
+                if wo.quantity <= incr:  # 这里不能用need_purchase, 考虑虚关联情况(订单计算need_purchase用了inflight)
+                    if opType == 'inStock':  # 入库, 非暂存, 需修改订单状态
+                        wo.purchaseorder = poObj
+                        wo.status = '待发货' if wo.shippingdb else '需面单'
+                        wo.save()
+                    incr -= wo.quantity
+                else:
+                    wo.need_purchase = wo.quantity - incr
+                    wo.save()
+                    incr = 0
+                    break
+            if incr > 0:  # 不再继续处理已采购, 只是提示
+                logger.warning('入库采购单[%s]:[%s], 发现多采: %d', poObj.orderid,
+                               poiObj.product.jancode, incr)
+
+    elif poiObj.quantity > qty:  # 实际到库小于采购数量, 关联部分订单
+        ords = poObj.order.filter(
+            status='已采购', jancode=poiObj.product.jancode).order_by('id')
+        incr = qty
+        for o in ords:
+            if o.need_purchase <= incr:
+                if opType == 'inStock':  # 入库, 非暂存, 需修改订单状态
+                    o.status = '待发货' if o.shippingdb else '需面单'
+                    o.save()
+                incr -= o.need_purchase
+            else:
+                if incr > 0:
+                    o.need_purchase = F('need_purchase') - incr
+                    incr = 0
+                o.purchaseorder = None
+                o.status = '待采购'
+                o.save()
+                break
+        if incr > 0:  # 关联订单被删除会出现这种情况
+            wos = Order.objects.filter(
+                status='待采购',
+                jancode=poiObj.product.jancode,
+                inventory=poObj.inventory).order_by('id')
+            for wo in wos:
+                if wo.quantity <= incr:  # 这里不能用need_purchase, 考虑虚关联情况(订单计算need_purchase用了inflight)
+                    if opType == 'inStock':  # 入库, 非暂存, 需修改订单状态
+                        wo.purchaseorder = poObj
+                        wo.status = '待发货' if wo.shippingdb else '需面单'
+                        wo.save()
+                    incr -= wo.quantity
+                else:
+                    wo.need_purchase = wo.quantity - incr
+                    wo.save()
+                    incr = 0
+                    break
+
+
 def inStock(poObj, poiObj, qty):
     #  商品入库操作
     #  考虑入库数量, 考虑实际入库数量和采购数量有出入
@@ -304,51 +384,79 @@ def inStock(poObj, poiObj, qty):
     stockObj = Stock.objects.get(
         product=poiObj.product, inventory=poObj.inventory)
 
-    # poi.quantity记录的是采购数量, qty是实际到库数量.
-    # 入库实际到库数量, 扣减inflight数量用采购数量.
-    if poiObj.quantity <= qty:  # 实际到库数量大于等于采购数量
-        # 如果订单没有面单, 进入需面单状态, 否则待发货状态
-        poObj.order.filter(
-            status='已采购',
-            jancode=poiObj.product.jancode,
-            shippingdb__isnull=False).update(status='待发货')
-        poObj.order.filter(
-            status='已采购',
-            jancode=poiObj.product.jancode,
-            shippingdb__isnull=True).update(status='需面单')
-        incr = qty - poiObj.quantity
-        if incr > 0:
-            wos = Order.objects.filter(
-                status='待采购',
-                jancode=poiObj.product.jancode,
-                inventory=poObj.inventory).order_by('id')
-            for wo in wos:
-                if wo.need_purchase <= incr:
-                    wo.purchaseorder = poObj
-                    wo.status = '待发货' if wo.shippingdb else '需面单'
-                    wo.save()
-                    incr -= wo.need_purchase
-                else:
-                    wo.need_purchase = F('need_purchase') - incr
-                    wo.save()
-                    break
-    elif poiObj.quantity > qty:  # 实际到库小于采购数量, 关联部分订单
-        ords = poObj.order.filter(
-            status='已采购', jancode=poiObj.product.jancode).order_by('id')
-        incr = qty
-        for o in ords:
-            if o.need_purchase <= incr:
-                o.status = '待发货' if o.shippingdb else '需面单'
-                o.save()
-                incr -= o.need_purchase
-            else:
-                if incr > 0:
-                    o.need_purchase = F('need_purchase') - incr
-                    incr -= o.need_purchase
-                o.purchaseorder = None
-                o.status = '待采购'
-                o.save()
-                break
+    doClear(qty, poObj, poiObj, 'inStock')
+    # # poi.quantity记录的是采购数量, qty是实际到库数量.
+    # # 入库实际到库数量, 扣减inflight数量用采购数量.
+    # if poiObj.quantity <= qty:  # 实际到库数量大于等于采购数量
+    #     # 如果订单没有面单, 进入需面单状态, 否则待发货状态
+    #     ords_need_purchase = poObj.order.filter(
+    #         status='已采购', jancode=poiObj.product.jancode).aggregate(
+    #             Sum('need_purchase'))['need_purchase__sum']
+    #     poObj.order.filter(
+    #         status='已采购',
+    #         jancode=poiObj.product.jancode,
+    #         shippingdb__isnull=False).update(status='待发货')
+    #     poObj.order.filter(
+    #         status='已采购',
+    #         jancode=poiObj.product.jancode,
+    #         shippingdb__isnull=True).update(status='需面单')
+    #     # 这里不能直接用qty-poiObj.quantity得到超出的到库, 需要考虑订单被删除的情况
+    #     # incr = qty - poiObj.quantity
+    #     incr = qty - ords_need_purchase
+    #     if incr > 0:
+    #         wos = Order.objects.filter(
+    #             status='待采购',
+    #             jancode=poiObj.product.jancode,
+    #             inventory=poObj.inventory).order_by('id')
+    #         for wo in wos:
+    #             if wo.quantity <= incr:  # 这里不能用need_purchase, 考虑虚关联情况(订单计算need_purchase用了inflight)
+    #                 wo.purchaseorder = poObj
+    #                 wo.status = '待发货' if wo.shippingdb else '需面单'
+    #                 wo.save()
+    #                 incr -= wo.quantity
+    #             else:
+    #                 wo.need_purchase = wo.quantity - incr
+    #                 wo.save()
+    #                 incr = 0
+    #                 break
+    #         if incr > 0:  # 不再继续处理已采购, 只是提示
+    #             logger.warning('入库采购单[%s]:[%s], 发现多采: %d', poObj.orderid,
+    #                            poiObj.product.jancode, incr)
+
+    # elif poiObj.quantity > qty:  # 实际到库小于采购数量, 关联部分订单
+    #     ords = poObj.order.filter(
+    #         status='已采购', jancode=poiObj.product.jancode).order_by('id')
+    #     incr = qty
+    #     for o in ords:
+    #         if o.need_purchase <= incr:
+    #             o.status = '待发货' if o.shippingdb else '需面单'
+    #             o.save()
+    #             incr -= o.need_purchase
+    #         else:
+    #             if incr > 0:
+    #                 o.need_purchase = F('need_purchase') - incr
+    #                 incr = 0
+    #             o.purchaseorder = None
+    #             o.status = '待采购'
+    #             o.save()
+    #             break
+    #     if incr > 0:  # 关联订单被删除会出现这种情况
+    #         wos = Order.objects.filter(
+    #             status='待采购',
+    #             jancode=poiObj.product.jancode,
+    #             inventory=poObj.inventory).order_by('id')
+    #         for wo in wos:
+    #             if wo.quantity <= incr:  # 这里不能用need_purchase, 考虑虚关联情况(订单计算need_purchase用了inflight)
+    #                 wo.purchaseorder = poObj
+    #                 wo.status = '待发货' if wo.shippingdb else '需面单'
+    #                 wo.save()
+    #                 incr -= wo.quantity
+    #             else:
+    #                 wo.need_purchase = wo.quantity - incr
+    #                 wo.save()
+    #                 incr = 0
+    #                 break
+    #         pass
 
     # 记录入库操作stockinrecord(采购单入库)
     stockIRObj = StockInRecord(
@@ -454,37 +562,38 @@ def inStockTemp(poObj, poiObj, qty):
     # 2. 多采了, 需要看看是多采的部分, 是否能满足其他待采购订单, 将其置为已采购
     # 另外, 记住, 这里不是最终入库, 所以不能把订单状态置为需面单/待发货, 需要等国内
     # 入库的时候, 采购单才是真正完成, 订单才能置位
-    if poiObj.quantity > qty:  # 少采了
-        ords = poObj.order.filter(
-            status='已采购', jancode=poiObj.product.jancode).order_by('id')
-        incr = qty
-        for o in ords:
-            if o.need_purchase > incr:  # 需要把一些订单打回到待采购
-                o.status = '待采购'
-                if incr > 0:
-                    o.need_purchase = F('need_purchase') - incr
-                    incr -= o.need_purchase
-                o.purchaseorder = None
-                o.save()
+    doClear(qty, poObj, poiObj, 'inStockTemp')
+    # if poiObj.quantity > qty:  # 少采了
+    #     ords = poObj.order.filter(
+    #         status='已采购', jancode=poiObj.product.jancode).order_by('id')
+    #     incr = qty
+    #     for o in ords:
+    #         if o.need_purchase > incr:  # 需要把一些订单打回到待采购
+    #             o.status = '待采购'
+    #             if incr > 0:
+    #                 o.need_purchase = F('need_purchase') - incr
+    #                 incr -= o.need_purchase
+    #             o.purchaseorder = None
+    #             o.save()
 
-            else:
-                incr -= o.need_purchase
-    elif poiObj.quantity < qty:  # 多采
-        incr = qty - poiObj.quantity
-        ords = Order.objects.filter(
-            status='待采购',
-            jancode=poiObj.product.jancode,
-            inventory=poObj.inventory).order_by('id')
-        for wo in ords:  # 看看能不能匹配到跟多待采购订单
-            if wo.need_purchase <= incr:
-                wo.purchaseorder = poObj
-                wo.status = '已采购'
-                wo.save()
-                incr -= wo.need_purchase
-            else:
-                wo.need_purchase = F('need_purchase') - incr
-                wo.save()
-                break
+    #         else:
+    #             incr -= o.need_purchase
+    # elif poiObj.quantity < qty:  # 多采
+    #     incr = qty - poiObj.quantity
+    #     ords = Order.objects.filter(
+    #         status='待采购',
+    #         jancode=poiObj.product.jancode,
+    #         inventory=poObj.inventory).order_by('id')
+    #     for wo in ords:  # 看看能不能匹配到跟多待采购订单
+    #         if wo.need_purchase <= incr:
+    #             wo.purchaseorder = poObj
+    #             wo.status = '已采购'
+    #             wo.save()
+    #             incr -= wo.need_purchase
+    #         else:
+    #             wo.need_purchase = F('need_purchase') - incr
+    #             wo.save()
+    #             break
 
     # 如果采购数量和到库数量不符合, 修正数据
     if poiObj.quantity != qty:
