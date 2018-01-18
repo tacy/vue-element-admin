@@ -295,6 +295,8 @@ def doClear(qty, poObj, poiObj, opType):
         ords_need_purchase = poObj.order.filter(
             status='已采购', jancode=poiObj.product.jancode).aggregate(
                 Sum('need_purchase'))['need_purchase__sum']
+        if ords_need_purchase is None:
+            ords_need_purchase = 0
 
         # 是直接入库: 如果订单没有面单, 进入需面单状态, 否则待发货状态, 如果是暂存, 不修改订单状态
         if opType == 'inStock':
