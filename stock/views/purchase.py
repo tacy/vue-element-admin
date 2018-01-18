@@ -22,7 +22,7 @@ class OrderPurchaseList(views.APIView):
     # 国内的拼邮单, 采购之前需要看看东京仓库是否有货.
     #
     def get(self, request, format=None):
-        sql = "select p.jancode, p.name product_name, p.purchase_link1, p.purchase_link2, p.purchase_link3, p.specification sku_properties_name, min(piad_time) piad_time, max(o.price) product_price, sum(o.need_purchase) qty from stock_product p inner join stock_order o on o.jancode=p.jancode where o.status='待采购' and o.inventory_id=%s group by jancode order by o.id"
+        sql = "select p.jancode, p.name product_name, p.purchase_link1, p.purchase_link2, p.purchase_link3, p.specification sku_properties_name, min(piad_time) piad_time, max(o.price) product_price, sum(o.need_purchase) qty, group_concat(o.id) ords from stock_product p inner join stock_order o on o.jancode=p.jancode where o.status='待采购' and o.inventory_id=%s group by jancode order by o.id"
         sql2 = "select quantity+inflight-preallocation tokyo_stock from stock_stock where inventory_id='4' and product_id=(select id from stock_product where jancode=%s)"
         sql3 = "select jancode from stock_order where seller_name='天狗' and status='待采购' and jancode=%s"
 
@@ -103,17 +103,6 @@ def createPO(orderid, inventory, supplier, items, createtime):
                 'errtype': 'InputError',
                 'errmsg': '商品库中无该商品%s, 请先创建产品资料' % (i['jancode'], )
             }
-
-        # 下面这段代码不需要, 直接抛出异常, 让用户知道
-        # if poObj.purchaseorderitem.filter(
-        #         product=Product.objects.get(jancode=i['jancode'])).count():
-        #     logger.warning(
-        #         'createPurchaseOrder: [%s], jancode:[%s]重复保存, 数量: %s',
-        #         orderid,
-        #         i['jancode'],
-        #         i['quantity'],
-        #     )
-        #     continue  # 之前已经保存过了
 
         poitemObj = PurchaseOrderItem(
             product=productObj,
@@ -207,6 +196,14 @@ class OrderPurchase(views.APIView):
                                 i['jancode'])
                         }
                         raise InputError(None, None)
+                    ords = i['ords'].split(',')
+                    for o in ords:
+                        if Order.objects.get(id=o).status != '待采购':
+                            results = {
+                                'errmsg':
+                                '请检查商品{}对应订单, 存在重复采购行为)'.format(i['jancode'])
+                            }
+                            raise InputError(None, None)
                     item = {
                         'jancode': i['jancode'],
                         'quantity': i['quantity'],
@@ -218,18 +215,11 @@ class OrderPurchase(views.APIView):
                         pos[po_id] = {
                             'inventory': inventory,
                             'supplier': i['supplier'],
-                            'items': [
-                                item,
-                            ]
+                            'items': [item]
                         }
                 for k, v in pos.items():
-                    results = createPO(
-                        k,
-                        v['inventory'],
-                        v['supplier'],
-                        v['items'],
-                        createtime,
-                    )
+                    results = createPO(k, v['inventory'], v['supplier'],
+                                       v['items'], createtime)
                     if results:
                         raise InputError(None, None)
         except (IntegrityError, InputError) as e:
@@ -315,7 +305,6 @@ class NoOrderPurchase(views.APIView):
 # 删除采购单
 class PurchaseOrderDelete(views.APIView):
     # TODO: 增加是否需要重新采购的选项给用户
-    #
     # 流程:
     #   1. 标记采购单状态: 删除.
     #   2. 修改关联库存记录, 回滚在途库存.
@@ -323,8 +312,8 @@ class PurchaseOrderDelete(views.APIView):
     #      a. 需要走类似派单判断订单状态流程, 如果现有库存不满足, 置为需采购
     #         记得需要计算need_purchase
     #      b. 如果库存满足, 需要判断是否是在途库存满足还是在库库存满足(quantity)
-    #         如果在库库存满足, 直接标记订单需面单或待发货(看看是否有面单)
-    #         如果在途库存满足, 关联采购单, 标记订单状态已采购
+    #           如果在库库存满足, 直接标记订单需面单或待发货(看看是否有面单)
+    #           如果在途库存满足, 关联采购单, 标记订单状态已采购
     #
     #   request param: id
     def put(self, request, format=None):
@@ -359,28 +348,111 @@ class PurchaseOrderDelete(views.APIView):
                     status='已采购')
                 totalQuantity = ordObjs.aggregate(
                     Sum('quantity'))['quantity__sum']
-                if not totalQuantity:
-                    continue
+                needQuantity = ordObjs.aggregate(
+                    Sum('need_purchase'))['need_purchase__sum']
+                if needQuantity is None and totalQuantity is None:
+                    needQuantity = 0
+                    totalQuantity = 0
+
+                # 如果采购数量超出了关联订单需采购数量, 那么, 除了需要处理关联订单,
+                # 还需要处理其他订单, 这些订单虽然没有挂靠在这个采购单,
+                # 但是在计算need_purchase的时候, 可能依赖这个订单的inflight
+                ordObjs_needPurchase = None
+                ordObjs_purchased = None
+                if poi.quantity > needQuantity:
+                    ordObjs_needPurchase = Order.objects.filter(
+                        jancode=poi.product.jancode,
+                        status='待采购',
+                        quantity__gt=F('need_purchase')).order_by('-id')
+                    # 进入需面单和待发货的订单, 不予修正(需采购数量依赖于采购单, 但是不足, 被其他采购单满足, 而且其他采购单已经到库了)
+                    ordObjs_purchased = Order.objects.filter(
+                        jancode=poi.product.jancode,
+                        status='已采购',
+                        quantity__gt=F('need_purchase')).order_by('-id')
+
+                # 处理正常的挂靠订单
                 stockPreallocation = stockObj.preallocation - totalQuantity  # 伪回滚占用
                 stockQuantity = stockObj.quantity
                 stockInflight = stockObj.inflight
-                for o in ordObjs:
-                    stockPreallocation += o.quantity
-                    purchaseQuantity = stockPreallocation - (
-                        stockQuantity + stockInflight)
+                otherQuantity = poi.quantity  # 如果关联订单的need_purchase少于poi.quatity,多余的记录在这里
+                if totalQuantity:
+                    for o in ordObjs:
+                        otherQuantity = otherQuantity - o.need_purchase
+                        stockPreallocation += o.quantity
+                        purchaseQuantity = stockPreallocation - (
+                            stockQuantity + stockInflight)
 
-                    (
-                        o.status,
-                        o.need_purchase,
-                        o.purchaseorder,
-                    ) = computeOrderStatus(
-                        purchaseQuantity,
-                        o,
-                        stockPreallocation,
-                        stockQuantity,
-                    )
-                    o.save()
+                        (
+                            o.status,
+                            o.need_purchase,
+                            o.purchaseorder,
+                        ) = computeOrderStatus(
+                            purchaseQuantity,
+                            o,
+                            stockPreallocation,
+                            stockQuantity,
+                        )
+                        o.save()
 
+                if otherQuantity <= 0:  # 无需处理其他
+                    continue
+
+                if not ordObjs_needPurchase and not ordObjs_purchased:  # 无需处理
+                    continue
+
+                pq = ordObjs_needPurchase.aggregate(
+                    Sum('need_purchase'))['need_purchase__sum']
+                if pq is None:
+                    pq = 0
+                count = stockPreallocation - pq - (
+                    stockInflight + stockQuantity)
+                if otherQuantity != count:
+                    logger.warning(
+                        '删除采购单异常:[%s]:[%s], 超出关联订单部分:%d和系统实际计算需采购值不匹配:%d',
+                        poObj.orderid, poi.product.jancode, otherQuantity,
+                        count)
+
+                # 采购单多出来的被其他订单使用(派单的时候, 计算need_purchase会把inflight当成库存)
+                # 注意, 如果无需采购, 已采购订单也不能修正need_purchase,否则如果该订单关联的采购单
+                # 也删除, 会导致计算错误
+                if count > 0:
+                    for ot in ordObjs_needPurchase:
+                        np = ot.need_purchase + otherQuantity
+                        if np > ot.quantity:
+                            ot.need_purchase = ot.quantity
+                            otherQuantity = np - ot.quantity
+                        else:
+                            ot.need_purchase = np
+                            otherQuantity = 0
+                        ot.save()
+                        logger.info(
+                            '删除采购单%s:[%s], 超出关联订单部分:%d, 虚关联订单:%s, 修正需采购:%d',
+                            poObj.orderid, ot.jancode, otherQuantity, ot.id,
+                            ot.need_purchase)
+                        if otherQuantity == 0:
+                            break
+
+                    if otherQuantity > 0:
+                        for pt in ordObjs_purchased:
+                            nt = pt.quantity - pt.need_purchase
+                            if nt < otherQuantity:
+                                pt.need_purchase = otherQuantity
+                                otherQuantity = 0
+                            else:
+                                pt.need_purchase = nt
+                                otherQuantity = otherQuantity - nt
+                            pt.status = '待采购'
+                            pt.purchaseorder = None  # 取消关联采购单
+                            pt.save()
+                            logger.info('删除采购单%s:[%s], 虚关联订单:%s, 修正状态为待采购',
+                                        poObj.orderid, pt.jancode, pt.id)
+                            if otherQuantity == 0:
+                                break
+
+                    if otherQuantity > 0:
+                        logger.warning(
+                            '删除采购单%s:[%s], 由于依赖于该采购单inflight的订单已经进入(面单/发货), 需补采: %d',
+                            poObj.orderid, pt.jancode, otherQuantity)
             # mark purchaseorder status as '删除'
             poitemObjs.update(status='已删除')
             poObj.status = '已删除'

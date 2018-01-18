@@ -418,7 +418,8 @@
         },
         itemData: [],
         rollbackOrderData: {
-          orderid: undefined
+          orderid: undefined,
+          id: undefined
         }
       }
     },
@@ -680,22 +681,18 @@
       },
       handleRollbackToPreprocess(row) {
         this.rollbackOrderData.orderid = row.orderid;
+        this.rollbackOrderData.id = row.id;
         this.dialogRollbackToPreprocessVisible = true;
         this.disableSubmit = false;
       },
       rollbackToPreprocess() {
         this.disableSubmit = true;
         orderRollback(this.rollbackOrderData).then(() => {
-          const process_orderid = this.rollbackOrderData.orderid.split('-')[0]
-          const inds = []
           for (const v of this.list) {
-            if (v.orderid.includes(process_orderid)) {
+            if (v.id === this.rollbackOrderData.id) {
               const index = this.list.indexOf(v);
-              inds.push(index);
+              this.list.splice(index, 1)
             }
-          }
-          for (let i = inds.length - 1; i >= 0; i--) {
-            this.list.splice(inds[i], 1);
           }
           this.dialogRollbackToPreprocessVisible = false;
           this.$notify({

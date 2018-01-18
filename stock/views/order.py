@@ -2,12 +2,13 @@ import logging
 
 import arrow.arrow
 from django.db import IntegrityError, connection, transaction
-from django.db.models import F, Max
+from django.db.models import F, Sum
 from rest_framework import status, views
 from rest_framework.response import Response
 
-from stock.models import (Inventory, Order, Product, PurchaseOrder, Shipping,
-                          Stock, UexTrack, ShippingDB, IncomeRecord)
+from stock.models import (IncomeRecord, Inventory, Order, Product,
+                          PurchaseOrder, PurchaseOrderItem, Shipping,
+                          ShippingDB, Stock, UexTrack)
 
 logger = logging.getLogger(__name__)
 
@@ -152,11 +153,24 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
                 need_purchase = ord.quantity
             else:
                 need_purchase = ord.quantity - t  # 部分靠采购单满足
-            id = PurchaseOrder.objects.filter(
+            maybePOs = PurchaseOrder.objects.filter(
                 purchaseorderitem__product__jancode=ord.jancode,
                 inventory=ord.inventory,
-                status__in=('在途中', '入库中', '转运中')).aggregate(Max('id'))
-            purchaseorder = PurchaseOrder.objects.get(id=id['id__max'])
+                status__in=('在途中', '入库中', '转运中'))
+            purchaseorder = None
+            for po in maybePOs:
+                poi = PurchaseOrderItem.objects.get(
+                    purchaseorder=po, product__jancode=ord.jancode)
+                np = poi.order.all().aggregate(
+                    Sum(need_purchase))['need_purchase__sum']
+                if poi.quantity - np >= need_purchase:
+                    purchaseorder = po
+                    break
+
+            if purchaseorder is None:
+                logger.error('订单%s关联采购单异常, 库存数据需修复',
+                             ord.id)  # 有一种变态可能, 多个采购单满足
+                raise IntegrityError()
         else:
             status = '待发货' if ord.shippingdb else '需面单'
     return (status, need_purchase, purchaseorder)
@@ -397,52 +411,6 @@ class OrderAllocateUpdate(views.APIView):
         return Response(status=status.HTTP_200_OK)
 
 
-# 把订单拽会到预处理, 回滚派单占用库存(需要考虑购物车订单)
-# 1. 根据提交的订单号, 查询所有满足条件的订单(天狗购物车会拆成id-1,id-2),
-# 2. 订单状态需要在处理中的状态
-# 3. 回滚所有占用的库存
-# 4. 不考虑关联采购单,直接设置为空, 保留了订单派单时间
-# 5. 设置正确的订单状态
-class OrderRollbackToPreprocess(views.APIView):
-    def post(self, request, format=None):
-        orderid = request.data['orderid']
-        dbOrderObjs = Order.objects.filter(
-            orderid__contains=orderid,
-            status__in=[
-                '待处理',
-                '待采购',
-                '已采购',
-                '需介入',
-                '需面单',
-            ],
-        )
-        with transaction.atomic():
-            for dbOrderObj in dbOrderObjs:
-                productObj = Product.objects.get(jancode=dbOrderObj.jancode)
-                try:
-                    stockObj = Stock.objects.get(
-                        product=productObj, inventory=dbOrderObj.inventory)
-                    stockObj.preallocation = F(
-                        'preallocation') - dbOrderObj.quantity
-                    stockObj.save()
-                except Stock.DoesNotExist:
-                    continue
-                if dbOrderObj.purchaseorder:
-                    if dbOrderObj.purchaseorder.memo:
-                        dbOrderObj.purchaseorder.memo = dbOrderObj.purchaseorder.memo + ',' + dbOrderObj.orderid
-                    else:
-                        dbOrderObj.purchaseorder.memo = dbOrderObj.orderid
-                    dbOrderObj.purchaseorder.save()
-                dbOrderObj.status = '待处理'
-                dbOrderObj.need_purchase = None
-                dbOrderObj.shipping = None
-                dbOrderObj.inventory = None
-                dbOrderObj.purchaseorder = None
-                dbOrderObj.save()
-
-        return Response(status=status.HTTP_200_OK)
-
-
 # 采购标记订单疑难
 class OrderMarkConflict(views.APIView):
     # TODO: 分页
@@ -479,6 +447,8 @@ class OrderMarkConflict(views.APIView):
 # 需介入处理(协调退换货)
 # 退款: 设置订单状态:已删除, 释放占用的库存. 换货: 释放占用的库存, 重新占用新库存.
 # 注意: 换货意味着重新派单, 需要设置派单时间
+#
+# 忽略上面所有注释, 新版本不允许在需介入中更换条码, 如需更换条码, 直接打回再更换
 class OrderConflict(views.APIView):
     def put(self, request, format=None):
         data = request.data
@@ -560,6 +530,78 @@ class OrderConflict(views.APIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+def revokeStock(orderObj, stockObj):
+    # 占用的库存需要释放
+    ordsObj = Order.objects.filter(
+        status='待采购', inventory=orderObj.inventory,
+        jancode=orderObj.jancode).order_by('id')
+    preallo = ordsObj.aggregate(Sum('quantity'))['quantity__sum']
+    print('*' * 100, preallo)
+    if preallo:
+        stockPreallocation = stockObj.preallocation - preallo  # 伪回滚
+        for o in ordsObj:
+            stockPreallocation += o.quantity
+            purchaseQuantity = stockPreallocation - (
+                stockObj.quantity + stockObj.inflight)
+
+            (
+                o.status,
+                o.need_purchase,
+                o.purchaseorder,
+            ) = computeOrderStatus(
+                purchaseQuantity,
+                o,
+                stockPreallocation,
+                stockObj.quantity,
+            )
+            o.save()
+
+
+# 把订单拽会到预处理, 回滚派单占用库存(需要考虑购物车订单)
+# 1. 根据提交的订单号, 查询所有满足条件的订单(天狗购物车会拆成id-1,id-2),
+# 2. 订单状态需要在处理中的状态
+# 3. 回滚所有占用的库存
+# 4. 不考虑关联采购单,直接设置为空, 保留了订单派单时间
+# 5. 设置正确的订单状态
+#
+# * 注意: 这个操作其实类似订单删除, 上面操作简化, 只弹回该订单, 关联订单不弹回
+class OrderRollbackToPreprocess(views.APIView):
+    def post(self, request, format=None):
+        id = request.data['id']
+        conflict_feedback = request.data.get('conflict_feedback')
+        dbOrderObj = Order.objects.get(id=id, )
+        with transaction.atomic():
+            productObj = Product.objects.get(jancode=dbOrderObj.jancode)
+            try:
+                stockObj = Stock.objects.get(
+                    product=productObj, inventory=dbOrderObj.inventory)
+                stockObj.preallocation = F(
+                    'preallocation') - dbOrderObj.quantity
+                stockObj.save()
+                stockObj.refresh_from_db()
+            except Stock.DoesNotExist:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+            revokeStock(dbOrderObj, stockObj)
+
+            if dbOrderObj.purchaseorder:
+                if dbOrderObj.purchaseorder.memo:
+                    dbOrderObj.purchaseorder.memo = dbOrderObj.purchaseorder.memo + ',' + dbOrderObj.orderid
+                else:
+                    dbOrderObj.purchaseorder.memo = dbOrderObj.orderid
+                dbOrderObj.purchaseorder.save()
+            if conflict_feedback:
+                dbOrderObj.conflict_feedback = conflict_feedback
+            dbOrderObj.status = '待处理'
+            dbOrderObj.need_purchase = None
+            dbOrderObj.shipping = None
+            dbOrderObj.inventory = None
+            dbOrderObj.purchaseorder = None
+            dbOrderObj.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
 # 订单删除流程:
 #   if status == '预分配' then mark status=已删除
 #   elif status == '待发货'|'需介入'|'已采购'|'待采购' then
@@ -583,16 +625,47 @@ class OrderDelete(views.APIView):
                     '需介入',
                     '已采购',
                     '待采购',
-            ] or ('待发货' in orderObj.status
-                  and orderObj.shipping.name in ['拼邮', '轨迹']):  # 清除占用的库存
+            ] or ('待发货' in orderObj.status and orderObj.shipping.name in [
+                    '拼邮',
+                    '轨迹',
+            ]):  # 清除占用的库存
                 stockObj = Stock.objects.get(
                     inventory=orderObj.inventory,
                     product__jancode=orderObj.jancode)
                 stockObj.preallocation = F('preallocation') - orderObj.quantity
                 stockObj.save()
+                stockObj.refresh_from_db()
+
                 orderObj.status = '已删除'
                 orderObj.conflict_feedback = data['conflict_feedback']
                 orderObj.save()
+
+                revokeStock(orderObj, stockObj)
+                # # 占用的库存需要释放
+                # ordsObj = Order.objects.filter(
+                #     status='待采购',
+                #     inventory=orderObj.inventory,
+                #     jancode=orderObj.jancode).order_by('id')
+                # preallo = ordsObj.aggregate(Sum('quantity'))['quantity__sum']
+                # if preallo:
+                #     stockPreallocation = stockObj.preallocation - preallo  # 伪回滚
+                #     for o in ordsObj:
+                #         stockPreallocation += o.quantity
+                #         purchaseQuantity = stockPreallocation - (
+                #             stockObj.quantity + stockObj.inflight)
+
+                #         (
+                #             o.status,
+                #             o.need_purchase,
+                #             o.purchaseorder,
+                #         ) = computeOrderStatus(
+                #             purchaseQuantity,
+                #             o,
+                #             stockPreallocation,
+                #             stockObj.quantity,
+                #         )
+                #         o.save()
+
             elif '已删除' in orderObj.status:
                 pass
             else:  # 不可删除, 已经分配DB单号, 需要先删除DB单号, 或者已经发货, 无法删除

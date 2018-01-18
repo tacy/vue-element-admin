@@ -37,11 +37,11 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="操作" width="158">
+      <el-table-column align="center" label="操作" width="165">
         <template scope="scope">
-          <el-button :disabled="scope.row.status !== '需介入'? true:false" size="small" type="success" @click="handleUpdate(scope.row)">更 换
+          <el-button :disabled="scope.row.status !== '需介入'? true:false" size="small" type="success" @click="handleRollback(scope.row)">弹回重派
           </el-button>
-          <el-button :disabled="scope.row.status !== '需介入'? true:false" size="small" type="danger" @click="handleDelete(scope.row)">退 款
+          <el-button :disabled="scope.row.status !== '需介入'? true:false" size="small" type="danger" @click="handleDelete(scope.row)">删单
           </el-button>
         </template>
       </el-table-column>
@@ -53,29 +53,19 @@
       </el-pagination>
     </div>
 
-    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
+    <el-dialog title="弹回重派" :visible.sync="dialogFormVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
-        <el-form-item label="商品编码">
-          <el-input v-model.trim="temp.jancode"></el-input>
+        <el-form-item label="反馈">
+          <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="temp.conflict_feedback"></el-input>
         </el-form-item>
-        <el-form-item label="商品名称">
-          <el-input v-model.trim="temp.product_title"></el-input>
-        </el-form-item>
-        <el-form-item label="商品规格">
-          <el-input v-model.trim="temp.sku_properties_name"></el-input>
-        </el-form-item>
-	<el-form-item label="反馈">
-	  <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="temp.conflict_feedback"></el-input>
-	</el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
-        <el-button v-if="dialogStatus=='create'" type="primary" @click="create">确 定</el-button>
-        <el-button v-else type="primary" @click="conflict">确 定</el-button>
+        <el-button @click="dialogFormVisible=false">取 消</el-button>
+        <el-button type="primary" @click="rollbackOrder()">确 定</el-button>
       </div>
     </el-dialog>
 
-    <el-dialog title="退款" :visible.sync="dialogDeleteVisible">
+    <el-dialog title="删单" :visible.sync="dialogDeleteVisible">
       <el-form class="small-space" :model="temp" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
         <el-form-item label="反馈">
           <el-input type="textarea" :autosize="{minRows: 2, maxRows: 4}" v-model.trim="temp.conflict_feedback"></el-input>
@@ -83,15 +73,14 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogDeleteVisible=false">取 消</el-button>
-        <el-button type="primary" @click="conflict()">确 定</el-button>
+        <el-button type="primary" @click="deleteOrder()">确 定</el-button>
       </div>
     </el-dialog>
-
   </div>
 </template>
 
 <script>
-  import { fetchOrder, orderConflict } from 'api/orders';
+  import { fetchOrder, orderRollback, orderDelete } from 'api/orders';
 
   export default {
     name: 'conflict',
@@ -108,11 +97,8 @@
         },
         temp: {
           id: undefined,
-          conflict_feedback: undefined,
-          inventory: undefined,
-          shipping: undefined,
-          jancode: undefined,
-          status: undefined
+          status: undefined,
+          conflict_feedback: undefined
         },
         dialogFormVisible: false,
         dialogDeleteVisible: false,
@@ -148,39 +134,49 @@
         this.listQuery.page = val;
         this.getList();
       },
-      handleUpdate(row) {
-        this.temp = Object.assign({}, row);
-        this.dialogStatus = 'update';
-        this.dialogFormVisible = true;
-      },
       handleDelete(row) {
         this.temp = Object.assign({}, row);
-        this.temp.status = '已删除'
         this.dialogDeleteVisible = true;
       },
-      conflict() {
-        this.temp.jancode = this.temp.jancode.trim();
-        this.temp.receiver_name = this.temp.receiver_name.trim();
-        this.temp.receiver_mobile = this.temp.receiver_mobile.trim();
-        this.temp.receiver_address = this.temp.receiver_address.trim();
-        orderConflict(this.temp).then(response => {
-          // 刷新列表数据
+      handleRollback(row) {
+        this.temp = Object.assign({}, row);
+        this.dialogFormVisible = true;
+      },
+      rollbackOrder() {
+        this.temp.status = '待处理'
+        orderRollback(this.temp).then(() => {
           for (const v of this.list) {
             if (v.id === this.temp.id) {
               const index = this.list.indexOf(v);
-              this.list.splice(index, 1);
-              break;
+              this.list.splice(index, 1)
             }
           }
-
           this.dialogFormVisible = false;
-          this.dialogDeleteVisible = false;
           this.$notify({
             title: '成功',
-            message: '操作成功',
+            message: '弹回成功, 请到预处理重新派单',
             type: 'success',
             duration: 2000
           });
+        })
+      },
+      deleteOrder() {
+        orderDelete(this.temp).then(() => {
+          this.temp.status = '已删除';
+          for (const v of this.list) {
+            if (v.id === this.temp.id) {
+              const index = this.list.indexOf(v);
+              this.list.splice(index, 1, this.temp);
+              break;
+            }
+          }
+          this.$notify({
+            title: '成功',
+            message: '订单删除成功',
+            type: 'success',
+            duration: 2000
+          });
+          this.dialogDeleteVisible = false
         })
       }
     }
