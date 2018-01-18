@@ -161,6 +161,7 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
             for po in maybePOs:
                 poi = PurchaseOrderItem.objects.get(
                     purchaseorder=po, product__jancode=ord.jancode)
+                # 所有关联订单的need_purchase有多少, 看是否有多余的满足当前的订单
                 np = po.order.filter(
                     jancode=ord.jancode,
                     status__in=['已采购', '需面单', '待发货', '已发货'],
@@ -532,13 +533,8 @@ class OrderConflict(views.APIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-def revokeStock(orderObj, stockObj):
-    # 占用的库存需要释放
-    ordsObj = Order.objects.filter(
-        status='待采购', inventory=orderObj.inventory,
-        jancode=orderObj.jancode).order_by('id')
+def revokeStock(ordsObj, stockObj):
     preallo = ordsObj.aggregate(Sum('quantity'))['quantity__sum']
-    print('*' * 100, preallo)
     if preallo:
         stockPreallocation = stockObj.preallocation - preallo  # 伪回滚
         for o in ordsObj:
@@ -584,7 +580,12 @@ class OrderRollbackToPreprocess(views.APIView):
             except Stock.DoesNotExist:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
 
-            revokeStock(dbOrderObj, stockObj)
+            # 占用的库存需要释放
+            ordsObj = Order.objects.filter(
+                status='待采购',
+                inventory=dbOrderObj.inventory,
+                jancode=dbOrderObj.jancode).order_by('id')
+            revokeStock(ordsObj, stockObj)
 
             if dbOrderObj.purchaseorder:
                 if dbOrderObj.purchaseorder.memo:
@@ -642,12 +643,13 @@ class OrderDelete(views.APIView):
                 orderObj.conflict_feedback = data['conflict_feedback']
                 orderObj.save()
 
-                revokeStock(orderObj, stockObj)
-                # # 占用的库存需要释放
-                # ordsObj = Order.objects.filter(
-                #     status='待采购',
-                #     inventory=orderObj.inventory,
-                #     jancode=orderObj.jancode).order_by('id')
+                # 占用的库存需要释放
+                ordsObj = Order.objects.filter(
+                    status='待采购',
+                    inventory=orderObj.inventory,
+                    jancode=orderObj.jancode).order_by('id')
+                revokeStock(ordsObj, stockObj)
+
                 # preallo = ordsObj.aggregate(Sum('quantity'))['quantity__sum']
                 # if preallo:
                 #     stockPreallocation = stockObj.preallocation - preallo  # 伪回滚

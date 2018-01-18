@@ -13,6 +13,8 @@ from stock.exceptions import InputError
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
                           PurchaseOrderItem, Shipping, ShippingDB, Stock,
                           StockInRecord, StockOutRecord, PurchaseDivergence)
+
+from .order import revokeStock
 from ymatou import uex, utils
 
 uex_user = '2830020@qq.com'
@@ -312,26 +314,29 @@ def doClear(qty, poObj, poiObj, opType):
         # 这里不能直接用qty-poiObj.quantity得到超出的到库, 需要考虑订单被删除的情况
         # incr = qty - poiObj.quantity
         incr = qty - ords_need_purchase
-        if incr > 0:
+        if incr > 0:  # 超出的部分, 等于一次新建采购单操作, 主动去关联待采购订单
             wos = Order.objects.filter(
                 status='待采购',
                 jancode=poiObj.product.jancode,
                 inventory=poObj.inventory).order_by('id')
-            for wo in wos:
-                if wo.quantity <= incr:  # 这里不能用need_purchase, 考虑虚关联情况(订单计算need_purchase用了inflight)
-                    if opType == 'inStock':  # 入库, 非暂存, 需修改订单状态
-                        wo.purchaseorder = poObj
-                        wo.status = '待发货' if wo.shippingdb else '需面单'
-                        wo.save()
-                    incr -= wo.quantity
-                else:
-                    wo.need_purchase = wo.quantity - incr
-                    wo.save()
-                    incr = 0
-                    break
-            if incr > 0:  # 不再继续处理已采购, 只是提示
-                logger.warning('入库采购单[%s]:[%s], 发现多采: %d', poObj.orderid,
-                               poiObj.product.jancode, incr)
+            stockObj = Stock.objects.get(
+                product=poiObj.product, inventory=poObj.inventory)
+            revokeStock(wos, stockObj)
+            # for wo in wos:
+            #     if wo.quantity <= incr:  # 这里不能用need_purchase, 考虑虚关联情况(订单计算need_purchase用了inflight)
+            #         if opType == 'inStock':  # 入库, 非暂存, 需修改订单状态
+            #             wo.purchaseorder = poObj
+            #             wo.status = '待发货' if wo.shippingdb else '需面单'
+            #             wo.save()
+            #         incr -= wo.quantity
+            #     else:
+            #         wo.need_purchase = wo.quantity - incr
+            #         wo.save()
+            #         incr = 0
+            #         break
+            # if incr > 0:  # 不再继续处理已采购, 只是提示
+            #     logger.warning('入库采购单[%s]:[%s], 发现多采: %d', poObj.orderid,
+            #                    poiObj.product.jancode, incr)
 
     elif poiObj.quantity > qty:  # 实际到库小于采购数量, 关联部分订单
         ords = poObj.order.filter(
@@ -350,24 +355,28 @@ def doClear(qty, poObj, poiObj, opType):
                 o.purchaseorder = None
                 o.status = '待采购'
                 o.save()
-                break
-        if incr > 0:  # 关联订单被删除会出现这种情况
-            wos = Order.objects.filter(
-                status='待采购',
-                jancode=poiObj.product.jancode,
-                inventory=poObj.inventory).order_by('id')
-            for wo in wos:
-                if wo.quantity <= incr:  # 这里不能用need_purchase, 考虑虚关联情况(订单计算need_purchase用了inflight)
-                    if opType == 'inStock':  # 入库, 非暂存, 需修改订单状态
-                        wo.purchaseorder = poObj
-                        wo.status = '待发货' if wo.shippingdb else '需面单'
-                        wo.save()
-                    incr -= wo.quantity
-                else:
-                    wo.need_purchase = wo.quantity - incr
-                    wo.save()
-                    incr = 0
-                    break
+
+        # 由于库存可能变化, 现在要重新计算所有待采购订单状态
+        wos = Order.objects.filter(
+            status='待采购',
+            jancode=poiObj.product.jancode,
+            inventory=poObj.inventory).order_by('id')
+
+        stockObj = Stock.objects.get(
+            product=poiObj.product, inventory=poObj.inventory)
+        revokeStock(wos, stockObj)
+        # for wo in wos:
+        #     if wo.quantity <= incr:  # 这里不能用need_purchase, 考虑虚关联情况(订单计算need_purchase用了inflight)
+        #         if opType == 'inStock':  # 入库, 非暂存, 需修改订单状态
+        #             wo.purchaseorder = poObj
+        #             wo.status = '待发货' if wo.shippingdb else '需面单'
+        #             wo.save()
+        #         incr -= wo.quantity
+        #     else:
+        #         wo.need_purchase = wo.quantity - incr
+        #         wo.save()
+        #         incr = 0
+        #         break
 
 
 def inStock(poObj, poiObj, qty):
@@ -385,6 +394,24 @@ def inStock(poObj, poiObj, qty):
 
     stockObj = Stock.objects.get(
         product=poiObj.product, inventory=poObj.inventory)
+    # 记录入库操作stockinrecord(采购单入库)
+    stockIRObj = StockInRecord(
+        orderid=poObj.orderid,
+        inventory=poObj.inventory,
+        quantity=qty,
+        in_date=poiObj.stockin_date,
+        product=poiObj.product,
+        before_stock_quantity=stockObj.quantity,
+        before_stock_inflight=stockObj.inflight,
+        before_stock_preallocation=stockObj.preallocation,
+        purchase_quantity=poiObj.quantity,
+    )
+    stockIRObj.save()
+
+    # 入库
+    stockObj.quantity = F('quantity') + qty
+    stockObj.inflight = F('inflight') - poiObj.quantity
+    stockObj.save()
 
     doClear(qty, poObj, poiObj, 'inStock')
     # # poi.quantity记录的是采购数量, qty是实际到库数量.
@@ -459,25 +486,6 @@ def inStock(poObj, poiObj, qty):
     #                 incr = 0
     #                 break
     #         pass
-
-    # 记录入库操作stockinrecord(采购单入库)
-    stockIRObj = StockInRecord(
-        orderid=poObj.orderid,
-        inventory=poObj.inventory,
-        quantity=qty,
-        in_date=poiObj.stockin_date,
-        product=poiObj.product,
-        before_stock_quantity=stockObj.quantity,
-        before_stock_inflight=stockObj.inflight,
-        before_stock_preallocation=stockObj.preallocation,
-        purchase_quantity=poiObj.quantity,
-    )
-    stockIRObj.save()
-
-    # 入库
-    stockObj.quantity = F('quantity') + qty
-    stockObj.inflight = F('inflight') - poiObj.quantity
-    stockObj.save()
 
     # 如果目标仓库是广州, 因为之前到东京仓的时候, 已经入库了东京仓和预分配了库存,
     # 所以这里要对东京仓做出库操作
@@ -559,6 +567,14 @@ def inStockTemp(poObj, poiObj, qty):
             purchase_quantity=poiObj.quantity)
         stockIRObj.save()
 
+    stockObj = Stock.objects.get(
+        inventory=poObj.inventory,
+        product=poiObj.product,
+    )
+    if poiObj.quantity != qty:
+        stockObj.inflight = F('inflight') - poiObj.quantity + qty
+        stockObj.save()
+        stockObj.refresh_from_db()
     # 看看实际到库数量是否和采购数量一致, 这里要非常小心
     # 1. 少采了, 需要让关联到这个采购项的订单, 一部分打回待采购状态, 采购重新补采
     # 2. 多采了, 需要看看是多采的部分, 是否能满足其他待采购订单, 将其置为已采购
@@ -608,12 +624,6 @@ def inStockTemp(poObj, poiObj, qty):
         logger.warning(
             'PurchaseOrderClear: 采购单[%s], 商品[%s]的采购数量[%d]和实际到库数量[%d]不符',
             poObj.orderid, poiObj.product.jancode, poiObj.quantity, qty)
-        stockObj = Stock.objects.get(
-            inventory=poObj.inventory,
-            product=poiObj.product,
-        )
-        stockObj.inflight = F('inflight') - poiObj.quantity + qty
-        stockObj.save()
         if poObj.supplier.name == '东京仓':
             stockTokyoObj = Stock.objects.get(
                 inventory=Inventory.objects.get(name='东京'),
