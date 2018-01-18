@@ -28,6 +28,10 @@ select p.jancode, s.product_id, s.inventory_id, s.inflight, a.cinflight from sto
 # 判断需采购数据异常
 select * from (select a.jancode, a.inventory_id,  a.quantity, a.inflight, a.preallocation, b.oquantity, a.preallocation-a.quantity-a.inflight r, b.nquantity from (select p.jancode, s.quantity, s.inflight, s.preallocation, s.inventory_id from stock_stock s inner join stock_product p on p.id=s.product_id) as a inner join (select jancode, inventory_id, sum(quantity) oquantity, sum(need_purchase) nquantity from stock_order where status in ('待发货','待采购', '已采购', '需介入') group by jancode, inventory_id) as b on a.jancode=b.jancode and a.inventory_id=b.inventory_id) as v where v.r>0 and v.r<>v.nquantity;
 
+#******** 判断order的need_purchase是否准确, 通过比较:stock.quantity-stock.preallocation和sum(stock.need_purchase)
+select * from (select a.jancode, a.inventory_id,  a.quantity, a.inflight, a.preallocation, b.oquantity, a.preallocation-a.quantity r, b.nquantity from (select p.jancode, s.quantity, s.inflight, s.preallocation, s.inventory_id from stock_stock s inner join stock_product p on p.id=s.product_id) as a inner join (select jancode, inventory_id, sum(quantity) oquantity, sum(need_purchase) nquantity from stock_order where status in ('待发货','待采购', '已采购', '需介入') group by jancode, inventory_id) as b on a.jancode=b.jancode and a.inventory_id=b.inventory_id) as v where v.r>0 and v.r<>v.nquantity;
+
+
 # 查入库异常记录
 select poi.*, po.create_time, po.orderid from stock_purchaseorderitem poi inner join stock_purchaseorder po on poi.purchaseorder_id=po.id where po.status='入库' and poi.status is null order by po.create_time ;
 
