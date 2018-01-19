@@ -135,6 +135,9 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
     need_purchase = None
     status = None
     purchaseorder = None
+    logger.info('订单[%s]:[%s]状态计算, 当前库存[%d],预分配[%d],计算差值[%d]', ord.orderid,
+                ord.jancode, stockQuantity, stockPreallocation,
+                purchaseQuantity)
     if purchaseQuantity > 0:  # 订单需采购
         if purchaseQuantity < ord.quantity:
             need_purchase = purchaseQuantity
@@ -534,6 +537,8 @@ class OrderConflict(views.APIView):
 
 
 def revokeStock(ordsObj, stockObj):
+    # import pdb
+    # pdb.set_trace()
     preallo = ordsObj.aggregate(Sum('quantity'))['quantity__sum']
     if preallo:
         stockPreallocation = stockObj.preallocation - preallo  # 伪回滚
