@@ -43,6 +43,7 @@ class SyncStock(views.APIView):
         syncer = utils.GoogleSpread()
         syncer.open_google_doc(gsp)
         stocks = syncer.read_google_doc_by_range(wks, 'A2:C', all_rows=True)
+        now = arrow.now().format('YYYY-MM-DD HH:mm:ss')
         with transaction.atomic():
             for i in list(syncer.chunks(stocks, 3)):
                 if not i[2]:
@@ -71,6 +72,20 @@ class SyncStock(views.APIView):
                             jancode=i[0], inventory=inventoryObj,
                             status='待采购').order_by('id')
                         revokeStock(ords, stockObj)
+
+                        # 类似入库, 需要记录
+                        stockIRObj = StockInRecord(
+                            orderid='syncstock',
+                            inventory=inventoryObj,
+                            quantity=incr,
+                            in_date=now,
+                            product=Product.objects.get(jancode=i[0]),
+                            before_stock_quantity=stockObj.quantity,
+                            before_stock_inflight=stockObj.inflight,
+                            before_stock_preallocation=stockObj.preallocation,
+                            purchase_quantity=0,
+                        )
+                        stockIRObj.save()
                         # for od in ords:
                         #     if od.need_purchase > incr:
                         #         od.need_purchase = F('need_purchase') - incr
@@ -101,6 +116,19 @@ class SyncStock(views.APIView):
                             revokeStock(needPurchaseOrds, stockObj)
                         if otherOrds:
                             revokeStock(otherOrds, stockObj)
+
+                        # 类似出库, 需要记录
+                        stockORObj = StockOutRecord(
+                            orderid='syncstock',
+                            quantity=-incr,
+                            inventory=inventoryObj,
+                            product=Product.objects.get(jancode=i[0]),
+                            out_date=now,
+                            before_stock_quantity=stockObj.quantity,
+                            before_stock_inflight=stockObj.inflight,
+                            before_stock_preallocation=stockObj.preallocation,
+                        )
+                        stockORObj.save()
                     else:
                         continue
 
