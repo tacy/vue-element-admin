@@ -9,12 +9,11 @@ from django.db.models import F, Sum
 from rest_framework import status, views
 from rest_framework.response import Response
 
-from stock.exceptions import InputError
-from stock.models import (Inventory, Order, Product, PurchaseOrder,
-                          PurchaseOrderItem, Shipping, ShippingDB, Stock,
-                          StockInRecord, StockOutRecord, PurchaseDivergence)
-
 from .order import revokeStock
+from stock.exceptions import InputError
+from stock.models import (Inventory, Order, Product, PurchaseDivergence,
+                          PurchaseOrder, PurchaseOrderItem, Shipping,
+                          ShippingDB, Stock, StockInRecord, StockOutRecord)
 from ymatou import uex, utils
 
 uex_user = '2830020@qq.com'
@@ -71,33 +70,39 @@ class SyncStock(views.APIView):
                         ords = Order.objects.filter(
                             jancode=i[0], inventory=inventoryObj,
                             status='待采购').order_by('id')
-                        for od in ords:
-                            if od.need_purchase > incr:
-                                od.need_purchase = F('need_purchase') - incr
-                                od.save()
-                                break
-                            incr = incr - od.need_purchase
-                            od.need_purchase = None
-                            if not od.shippingdb:
-                                od.status = '需面单'
-                            else:
-                                od.status = '待发货'
-                            od.save()
-                            if incr == 0: break
-                    else:  # 实际库存小于系统在库库存
-                        ords = Order.objects.filter(
-                            jancode=i[0], inventory=inventoryObj,
-                            status='待发货').order_by('id')
-                        incr = stockObj.quantity
-                        for od in ords:
-                            if od.quantity > incr:
-                                od.need_purchase = od.quantity - incr
-                                od.status = '待采购'
-                                od.save()
-                                incr = 0
-                                continue
-                            else:
-                                incr = incr - od.quantity
+                        revokeStock(ords, stockObj)
+                        # for od in ords:
+                        #     if od.need_purchase > incr:
+                        #         od.need_purchase = F('need_purchase') - incr
+                        #         od.save()
+                        #         break
+                        #     incr = incr - od.need_purchase
+                        #     od.need_purchase = None
+                        #     if not od.shippingdb:
+                        #         od.status = '需面单'
+                        #     else:
+                        #         od.status = '待发货'
+                        #     od.save()
+                        #     if incr == 0: break
+                    elif incr < 0:  # 实际库存小于系统在库库存
+                        # 这些订单依赖实际库存(计算need_purchase的时候, 可能依赖quantity或inflight)
+                        needPurchaseOrds = Order.objects.filter(
+                            jancode=i[0],
+                            inventory=inventoryObj,
+                            status__in=['待采购', '需介入', '已采购'],
+                            quantity__gt=F('need_purchase'))
+                        otherOrds = Order.objects.filter(
+                            jancode=i[0],
+                            inventory=inventoryObj,
+                            status__in=['需面单', '待发货'])
+
+                        # 很诡异, 这里不能用union合并两个queryset, 否则在对合并结果集做Sum操作的时候,会出现让你崩溃的结果
+                        if needPurchaseOrds:
+                            revokeStock(needPurchaseOrds, stockObj)
+                        if otherOrds:
+                            revokeStock(otherOrds, stockObj)
+                    else:
+                        continue
 
                 except Stock.DoesNotExist:
                     stockObj = Stock(
