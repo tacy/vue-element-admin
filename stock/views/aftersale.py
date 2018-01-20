@@ -79,7 +79,7 @@ class ProcessAfterSale(views.APIView):
                     except Stock.DoesNotExist:
                         stockRetentionObj = Stock(
                             product=prodObj,
-                            inventory=ordObj.inentory,
+                            inventory=ordObj.inventory,
                             quantity=data['retention_quantity'],
                             inflight=0,
                             preallocation=0)
