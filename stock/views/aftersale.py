@@ -73,10 +73,19 @@ class ProcessAfterSale(views.APIView):
                     correctStock(ordObj, ordObj.quantity, now)  # 订单产品库存修正
 
                     # 错发产品库存出库
-                    stockRetentionObj = Stock.objects.get(
-                        inventory=ordObj.inventory, product=prodObj)
+                    try:
+                        stockRetentionObj = Stock.objects.get(
+                            inventory=ordObj.inventory, product=prodObj)
+                    except Stock.DoesNotExist:
+                        stockRetentionObj = Stock(
+                            product=prodObj,
+                            inventory=ordObj.inentory,
+                            quantity=data['retention_quantity'],
+                            inflight=0,
+                            preallocation=0)
+                        stockRetentionObj.save()
                     # 记录错误发出的产品, 出库操作stockoutrecord
-                    stockIRObj = StockOutRecord(
+                    stockORObj = StockOutRecord(
                         orderid=ordObj.orderid,
                         inventory=ordObj.inventory,
                         quantity=data['retention_quantity'],
@@ -87,7 +96,7 @@ class ProcessAfterSale(views.APIView):
                         before_stock_preallocation=stockRetentionObj.
                         preallocation,
                     )
-                    stockIRObj.save()
+                    stockORObj.save()
                     # 出库
                     stockRetentionObj.quantity = F(
                         'quantity') - data['retention_quantity']
