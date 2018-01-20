@@ -587,7 +587,7 @@ class OrderRollbackToPreprocess(views.APIView):
 
             # 占用的库存需要释放
             ordsObj = Order.objects.filter(
-                status='待采购',
+                status__in=['待采购', '需介入'],
                 inventory=dbOrderObj.inventory,
                 jancode=dbOrderObj.jancode).order_by('id')
             revokeStock(ordsObj, stockObj)
@@ -650,7 +650,7 @@ class OrderDelete(views.APIView):
 
                 # 占用的库存需要释放
                 ordsObj = Order.objects.filter(
-                    status='待采购',
+                    status__in=['待采购', '需介入'],
                     inventory=orderObj.inventory,
                     jancode=orderObj.jancode).order_by('id')
                 revokeStock(ordsObj, stockObj)
