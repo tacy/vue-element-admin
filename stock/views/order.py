@@ -135,9 +135,7 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
     need_purchase = None
     status = None
     purchaseorder = None
-    logger.info('订单[%s]:[%s]状态计算, 当前库存[%d],预分配[%d],计算差值[%d]', ord.orderid,
-                ord.jancode, stockQuantity, stockPreallocation,
-                purchaseQuantity)
+
     if purchaseQuantity > 0:  # 订单需采购
         if purchaseQuantity < ord.quantity:
             need_purchase = purchaseQuantity
@@ -179,6 +177,10 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
                 raise IntegrityError()
         else:
             status = '待发货' if ord.shippingdb else '需面单'
+    logger.info('订单[%s]:[%s]状态计算, 当前库存[%d],预分配[%d],计算差值[%d]; 返回结果[%s][%d][%s]',
+                ord.orderid, ord.jancode, stockQuantity, stockPreallocation,
+                purchaseQuantity, status, need_purchase, purchaseorder.orderid
+                if purchaseorder else '')
     return (status, need_purchase, purchaseorder)
 
 
