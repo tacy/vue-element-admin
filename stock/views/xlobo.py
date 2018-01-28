@@ -525,7 +525,7 @@ class ManualAllocateDBNumber(views.APIView):
                                 data=errmsg,
                                 status=status.HTTP_400_BAD_REQUEST)
                         c = shippingdbObj.order.count()
-                        if c > 200:
+                        if c > 50:
                             errmsg = {'errmsg': '该国际单号被重复使用次数过多, 请换新单号发货'}
                             return Response(
                                 data=errmsg,
