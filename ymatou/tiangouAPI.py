@@ -121,6 +121,7 @@ class TiangouOpenAPI():
         timestamp = str(arrow.now().timestamp * 1000)
         r = await self.getToken()
         if not r:
+            logger.error("无法获取到token, 不能进行订单导出")
             return
         token = r['data']['token']
         signStr = [timeGE, timeLT, token, 'payTime', timestamp, state]
@@ -147,6 +148,9 @@ class TiangouOpenAPI():
         }
         timestamp = str(arrow.now().timestamp * 1000)
         r = await self.getToken()
+        if not r:
+            logger.error("无法获取到token, 不能进行发货处理")
+            return
         token = r['data']['token']
         signStr = [token, timestamp, json.dumps(payload)]
         sign = self.getSign(signStr)
