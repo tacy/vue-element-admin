@@ -587,13 +587,6 @@ class OrderRollbackToPreprocess(views.APIView):
             except Stock.DoesNotExist:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
 
-            # 占用的库存需要释放
-            ordsObj = Order.objects.filter(
-                status__in=['待采购', '需介入'],
-                inventory=dbOrderObj.inventory,
-                jancode=dbOrderObj.jancode).order_by('id')
-            revokeStock(ordsObj, stockObj)
-
             if dbOrderObj.purchaseorder:
                 if dbOrderObj.purchaseorder.memo:
                     dbOrderObj.purchaseorder.memo = dbOrderObj.purchaseorder.memo + ',' + dbOrderObj.orderid
@@ -608,6 +601,13 @@ class OrderRollbackToPreprocess(views.APIView):
             dbOrderObj.inventory = None
             dbOrderObj.purchaseorder = None
             dbOrderObj.save()
+
+            # 占用的库存需要释放
+            ordsObj = Order.objects.filter(
+                status__in=['待采购', '需介入'],
+                inventory=dbOrderObj.inventory,
+                jancode=dbOrderObj.jancode).order_by('id')
+            revokeStock(ordsObj, stockObj)
 
         return Response(status=status.HTTP_200_OK)
 
