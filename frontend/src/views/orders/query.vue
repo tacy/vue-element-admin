@@ -518,7 +518,6 @@
        this.listQuery.piad_time__lt = this.$route.query.piad_time__lt
      }
      this.getOrder();
-     this.listQuery.piad_time__lt = undefined
      this.getAfterSaleMeta();
    },
    methods: {
@@ -558,6 +557,7 @@
      },
      handleFilter() {
        this.listQuery.page = 1;
+       this.listQuery.piad_time__lt = undefined
        this.getOrder();
      },
      handleSizeChange(val) {

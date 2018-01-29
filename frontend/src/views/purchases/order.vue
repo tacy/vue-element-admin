@@ -23,7 +23,7 @@
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 100px" class="filter-item" v-model="listQuery.status" placeholder="状态">
+      <el-select clearable style="width: 100px" class="filter-item" v-model="listQuery.status" v-on:change="resetRouteParam()" placeholder="状态">
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
@@ -248,8 +248,6 @@
        this.listQuery.payment__isnull = this.$route.query.payment__isnull
      }
      this.getPurchaseOrder();
-     this.listQuery.payment__isnull = undefined
-     this.listQuery.create_time__lt = undefined
    },
    methods: {
      getPurchaseOrder() {
@@ -299,6 +297,8 @@
        })
      },
      handleFilter() {
+       this.listQuery.payment__isnull = undefined
+       this.listQuery.create_time__lt = undefined
        this.listQuery.page = 1;
        this.getPurchaseOrder();
      },
