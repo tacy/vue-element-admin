@@ -98,7 +98,8 @@ class TiangouOpenAPI():
                     async with self.session.post(
                             url, params=params, json=payload) as response:
                         return await response.json()
-        except asyncio.TimeoutError as e:
+        except (asyncio.TimeoutError,
+                aiohttp.client_exceptions.ClientResponseError) as e:
             logger.exception(url, payload)
             return None
 
@@ -119,6 +120,8 @@ class TiangouOpenAPI():
         method = 'get'
         timestamp = str(arrow.now().timestamp * 1000)
         r = await self.getToken()
+        if not r:
+            return
         token = r['data']['token']
         signStr = [timeGE, timeLT, token, 'payTime', timestamp, state]
         sign = self.getSign(signStr)
