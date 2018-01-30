@@ -69,7 +69,10 @@ def createPO(orderid, inventory, supplier, items, createtime):
             }
     try:
         poObj = PurchaseOrder.objects.get(
-            orderid=orderid, supplier=supplierObj, inventory=inventoryObj)
+            orderid=orderid,
+            supplier=supplierObj,
+            inventory=inventoryObj,
+            status__in=['在途中', '入库中', '已入库', '转运中'])
         if '在途中' not in poObj.status:
             return {
                 'errtype': 'InputError',
@@ -459,6 +462,7 @@ class PurchaseOrderDelete(views.APIView):
             if poObj.payment is None:
                 poObj.payment = 0
             poObj.save(update_fields=['status', 'payment'])
+            logger.info('采购单[%s]:[%s]删除成功', poObj.id, poObj.orderid)
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
