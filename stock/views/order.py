@@ -416,6 +416,7 @@ class OrderAllocateUpdate(views.APIView):
                 dbOrderObj.shipping = None
                 dbOrderObj.inventory = None
                 dbOrderObj.save()
+
         return Response(status=status.HTTP_200_OK)
 
 
@@ -609,6 +610,7 @@ class OrderRollbackToPreprocess(views.APIView):
                 jancode=dbOrderObj.jancode).order_by('id')
             revokeStock(ordsObj, stockObj)
 
+        logger.info('订单[%s]:[%s]弹回成功', dbOrderObj.id, dbOrderObj.jancode)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -684,6 +686,7 @@ class OrderDelete(views.APIView):
                 return Response(
                     data=errmsg, status=status.HTTP_400_BAD_REQUEST)
 
+            logger.info('订单[%s]:[%s]删除成功', orderObj.id, orderObj.jancode)
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
