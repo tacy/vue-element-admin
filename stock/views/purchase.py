@@ -461,7 +461,8 @@ class PurchaseOrderDelete(views.APIView):
             poObj.status = '已删除'
             if poObj.payment is None:
                 poObj.payment = 0
-            poObj.save(update_fields=['status', 'payment'])
+            poObj.orderid = poObj.orderid + '_' + arrow.now().format('MMDDHHmm')
+            poObj.save(update_fields=['status', 'payment', 'orderid'])
             logger.info('采购单[%s]:[%s]删除成功', poObj.id, poObj.orderid)
             return Response(status=status.HTTP_200_OK)
 
