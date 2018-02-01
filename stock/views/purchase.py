@@ -365,7 +365,7 @@ class PurchaseOrderDelete(views.APIView):
                 if poi.quantity > needQuantity:
                     ordObjs_needPurchase = Order.objects.filter(
                         jancode=poi.product.jancode,
-                        status='待采购',
+                        status__in=['待采购', '需介入'],
                         quantity__gt=F('need_purchase')).order_by('-id')
                     # 进入需面单和待发货的订单, 不予修正(需采购数量依赖于采购单, 但是不足, 被其他采购单满足, 而且其他采购单已经到库了)
                     ordObjs_purchased = Order.objects.filter(
