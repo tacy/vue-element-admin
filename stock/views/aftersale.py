@@ -126,12 +126,16 @@ class ProcessAfterSale(views.APIView):
                 ordObj.status = '待处理'
 
                 # 退货重发, 是用户购买的产品不喜欢, 需要换别的
-                if ascObj.case_type.name == '退换':
-                    prodObj2 = Product.objects.get(
-                        jancode=data['resend_jancode'])
-                    ordObj.jancode = data['resend_jancode']
-                    ordObj.product_title = prodObj2.name
-                    ordObj.sku_properties_name = prodObj2.specification
+                # if ascObj.case_type.name == '退换':
+                #     prodObj2 = Product.objects.get(
+                #         jancode=data['resend_jancode'])
+                #     ordObj.jancode = data['resend_jancode']
+                #     ordObj.product_title = prodObj2.name
+                #     ordObj.sku_properties_name = prodObj2.specification
+                prodObj2 = Product.objects.get(jancode=data['resend_jancode'])
+                ordObj.jancode = data['resend_jancode']
+                ordObj.product_title = prodObj2.name
+                ordObj.sku_properties_name = prodObj2.specification
                 ordObj.save()
 
                 # 售后单需要关联补发订单
