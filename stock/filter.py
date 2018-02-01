@@ -1,6 +1,7 @@
 from django.db.models import F, Q
 from django_filters import (BaseInFilter, BooleanFilter, CharFilter, FilterSet,
                             NumberFilter)
+from django_filters.filters import DateTimeFromToRangeFilter
 
 from stock.models import (AfterSaleCase, AfterSaleMeta, CostRecord, Order,
                           Product, PurchaseOrder, PurchaseOrderItem,
@@ -176,7 +177,10 @@ class AfterSaleCaseFilter(FilterSet):
 
 class CostRecordFilter(FilterSet):
     inventory_in = CharInFilter(name='inventory', lookup_expr='in')
+    pay_time = DateTimeFromToRangeFilter()
 
     class Meta:
         model = CostRecord
-        fields = []
+        fields = [
+            'costtype',
+        ]

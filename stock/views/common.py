@@ -1,11 +1,11 @@
 import django_filters.rest_framework
-from rest_framework.filters import OrderingFilter
 from rest_framework import generics
+from rest_framework.filters import OrderingFilter
 
 from stock.filter import (AfterSaleCaseFilter, AfterSaleMetaFilter,
-                          OrderFilter, ProductFilter, PurchaseOrderFilter,
-                          PurchaseOrderItemFilter, ShippingDBFilter,
-                          StockFilter)
+                          CostRecordFilter, OrderFilter, ProductFilter,
+                          PurchaseOrderFilter, PurchaseOrderItemFilter,
+                          ShippingDBFilter, StockFilter)
 from stock.models import (
     AfterSaleCase, AfterSaleMeta, BondedProduct, CostRecord, CostType,
     IncomeRecord, Inventory, Order, OrderAnalyze, Product, PurchaseAnalyze,
@@ -185,6 +185,7 @@ class CostRecordList(generics.ListCreateAPIView):
     queryset = CostRecord.objects.all()
     serializer_class = CostRecordSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend, )
+    filter_class = CostRecordFilter
 
 
 class IncomeRecordList(generics.ListCreateAPIView):
