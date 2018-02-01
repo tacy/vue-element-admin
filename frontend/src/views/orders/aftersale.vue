@@ -288,8 +288,8 @@
           if (this.temp.process_method_name === '重发') {
             this.ascData.needResend = true
             this.ascData.needReturn = true
-            this.ascData.resend_jancode = this.temp.jancode
-            this.ascData.resend_quantity = this.temp.quantity
+            /* this.ascData.resend_jancode = this.temp.jancode
+	     * this.ascData.resend_quantity = this.temp.quantity*/
           } else if (this.temp.process_method_name === '退款') {  // 退款退运
             this.ascData.isRefund = true
             this.ascData.needReturn = true
