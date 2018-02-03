@@ -99,6 +99,10 @@ def checkInputOrder(ords):
     return None
 
 
+def getXloboAPI(sess):
+    return ymatouapi.XloboAPI(sess, access_token, client_secret, client_id)
+
+
 def getJapanEMSStorageLocal():
     return settings.EMS_STORAGE_DIR
 
@@ -184,8 +188,7 @@ class XloboCreateNoVerification(views.APIView):
         data['BillSupplyInfo'] = billSupplyInfo
         data['BillCategoryList'] = billCategoryList
 
-        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
-                                      client_id)
+        xloboapi = getXloboAPI(sess)
         result = loop.run_until_complete(xloboapi.createNoVerification(data))
         logger.debug('XloboCreateNoVerification: %s', result)
         if result['ErrorCount'] > 0:
@@ -304,8 +307,7 @@ class XloboCreateFBXBill(views.APIView):
         data['BillSupplyInfo'] = billSupplyInfo
         data['GoodsSkuInfos'] = billCategoryList
 
-        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
-                                      client_id)
+        xloboapi = getXloboAPI(sess)
         result = loop.run_until_complete(xloboapi.createFBXBill(data))
         logger.debug('XloboCreateFBXBill: %s', result)
         if result['ErrorCount'] > 0:
@@ -583,8 +585,7 @@ class XloboDeleteDBNumber(views.APIView):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             sess = aiohttp.ClientSession(loop=loop)
-            xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
-                                          client_id)
+            xloboapi = getXloboAPI(sess)
             result = loop.run_until_complete(xloboapi.deleteDBNumber(msg))
             loop.close()
             logger.debug('XloboDeleteDBNumber: %s', result)
@@ -668,8 +669,7 @@ class XloboGetPDF(views.APIView):
         # }
 
         sess = aiohttp.ClientSession(loop=loop)
-        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
-                                      client_id)
+        xloboapi = getXloboAPI(sess)
         result = loop.run_until_complete(xloboapi.getPDF(data))
         loop.close()
         logger.debug('XloboGetPDF: %s, User input: %s: ',
@@ -749,8 +749,7 @@ class LogisticGet(views.APIView):
         loop = asyncio.get_event_loop()
 
         sess = aiohttp.ClientSession(loop=loop)
-        xloboapi = ymatouapi.XloboAPI(sess, access_token, client_secret,
-                                      client_id)
+        xloboapi = getXloboAPI(sess)
         result = loop.run_until_complete(xloboapi.getLogistic())
         loop.close()
         data = [{
