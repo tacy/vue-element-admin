@@ -10,6 +10,7 @@ from rest_framework import status, views
 from rest_framework.response import Response
 
 from .order import revokeStock
+from .xlobo import getXloboAPI
 from stock.exceptions import InputError
 from stock.models import (Inventory, Order, Product, PurchaseDivergence,
                           PurchaseOrder, PurchaseOrderItem, Shipping,
@@ -215,68 +216,85 @@ class StockOut(views.APIView):
         dbs = request.data['db_numbers'].split('\n')
         logger.debug('出库调试, 用户输入:%s', dbs)
         results = None
-        try:
-            with transaction.atomic():
-                for db in dbs:
-                    try:
-                        shippingdbObj = ShippingDB.objects.get(db_number=db)
-                        if '已出库' in shippingdbObj.status:
-                            results = {
-                                'errmsg':
-                                '面单:{} 已出库, 运单号:{}, 请确认订单是否已发货'.format(
-                                    db, shippingdbObj.delivery_no)
-                            }
-                            if shippingdbObj.delivery_no == delivery_no:
-                                results = {
-                                    'errmsg': '面单:{} 重复录入或重复打包, 请检查'.format(db)
-                                }
-                            logger.debug('出库调试-异常, Errmsg: %s',
-                                         results['errmsg'])
-                            raise IntegrityError
-                    except ShippingDB.DoesNotExist:
-                        results = {'errmsg': '面单:{} 不存在, 请检查录入面单号'.format(db)}
-                        logger.debug('出库调试-异常, Errmsg: %s', results['errmsg'])
-                        raise IntegrityError
-                    shippingdbObj.status = '已出库'
-                    shippingdbObj.delivery_no = delivery_no
-                    shippingdbObj.delivery_time = arrow.now().format(
-                        'YYYY-MM-DD HH:mm:ss')
-                    shippingdbObj.save(update_fields=[
-                        'status', 'delivery_no', 'delivery_time'
-                    ])
-                    for o in shippingdbObj.order.filter(
-                            status__in=['待发货', '已采购']):
-                        if '已采购' in o.status:
-                            results = {
-                                'errmsg':
-                                '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
-                                    db, o.orderid, o.purchaseorder.orderid)
-                            }
-                            logger.debug('出库调试-异常-2, Errmsg: %s',
-                                         results['errmsg'])
-                            raise IntegrityError
-                        o.status = '已发货'
-                        o.save(update_fields=['status'])
-                        stockObj = Stock.objects.get(
-                            product__jancode=o.jancode, inventory=o.inventory)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop = asyncio.get_event_loop()
+        sess = aiohttp.ClientSession(loop=loop)
+        xloboapi = getXloboAPI(sess)
+        for db in dbs:
+            try:
+                shippingdbObj = ShippingDB.objects.get(db_number=db)
+                if '已出库' in shippingdbObj.status:
+                    results = {
+                        'errmsg':
+                        '面单:{} 已出库, 运单号:{}, 请确认订单是否已发货'.format(
+                            db, shippingdbObj.delivery_no)
+                    }
+                    if shippingdbObj.delivery_no == delivery_no:
+                        results = {'errmsg': '面单:{} 重复录入或重复打包, 请检查'.format(db)}
+                    logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
+                    return Response(
+                        data=results, status=status.HTTP_400_BAD_REQUEST)
+                elif 'DB' in db:  # 如果是贝海, 检查是否忘记出库了(贝海已经签收,忘了在系统操作出库)
+                    msg_param = {'BillCodes': [db]}
+                    result = loop.run_until_complete(
+                        xloboapi.getStatus(msg_param))
+                    results = None
+                    if not result:
+                        results = {'errmsg': '面单:{} 状态查询失败, 请稍后重试'.format(db)}
+                    if result['ErrorCount'] != 0:
+                        results = {
+                            'errmsg': '面单:{} 状态查询失败, 查询结果: {}'.format(
+                                db, result)
+                        }
+                    if len(result['Result'][0]['BillStatusList']) >= 2:
+                        results = {'errmsg': '面单:{} 贝海显示已签收'.format(db)}
+                    if results:
+                        logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
+                        return Response(
+                            data=results, status=status.HTTP_400_BAD_REQUEST)
+            except ShippingDB.DoesNotExist:
+                results = {'errmsg': '面单:{} 不存在, 请检查录入面单号'.format(db)}
+                logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
+                return Response(
+                    data=results, status=status.HTTP_400_BAD_REQUEST)
 
-                        stockORObj = StockOutRecord(
-                            orderid=o.orderid,
-                            quantity=o.quantity,
-                            inventory=o.inventory,
-                            product=stockObj.product,
-                            out_date=shippingdbObj.delivery_time,
-                            before_stock_quantity=stockObj.quantity,
-                            before_stock_inflight=stockObj.inflight,
-                            before_stock_preallocation=stockObj.preallocation,
-                        )
-                        stockORObj.save()
+        for db in dbs:
+            shippingdbObj.status = '已出库'
+            shippingdbObj.delivery_no = delivery_no
+            shippingdbObj.delivery_time = arrow.now().format(
+                'YYYY-MM-DD HH:mm:ss')
+            shippingdbObj.save(
+                update_fields=['status', 'delivery_no', 'delivery_time'])
+            for o in shippingdbObj.order.filter(status__in=['待发货', '已采购']):
+                if '已采购' in o.status:
+                    results = {
+                        'errmsg':
+                        '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
+                            db, o.orderid, o.purchaseorder.orderid)
+                    }
+                    logger.debug('出库调试-异常-2, Errmsg: %s', results['errmsg'])
+                    raise IntegrityError
+                o.status = '已发货'
+                o.save(update_fields=['status'])
+                stockObj = Stock.objects.get(
+                    product__jancode=o.jancode, inventory=o.inventory)
 
-                        stockObj.quantity = F('quantity') - o.quantity
-                        stockObj.preallocation = F('preallocation') - o.quantity
-                        stockObj.save()
-        except IntegrityError:
-            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
+                stockORObj = StockOutRecord(
+                    orderid=o.orderid,
+                    quantity=o.quantity,
+                    inventory=o.inventory,
+                    product=stockObj.product,
+                    out_date=shippingdbObj.delivery_time,
+                    before_stock_quantity=stockObj.quantity,
+                    before_stock_inflight=stockObj.inflight,
+                    before_stock_preallocation=stockObj.preallocation,
+                )
+                stockORObj.save()
+
+                stockObj.quantity = F('quantity') - o.quantity
+                stockObj.preallocation = F('preallocation') - o.quantity
+                stockObj.save()
 
         return Response(status=status.HTTP_200_OK)
 
