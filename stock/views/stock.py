@@ -221,6 +221,7 @@ class StockOut(views.APIView):
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
         xloboapi = getXloboAPI(sess)
+        results = None
         for db in dbs:
             try:
                 shippingdbObj = ShippingDB.objects.get(db_number=db)
@@ -258,45 +259,58 @@ class StockOut(views.APIView):
                 logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
                 return Response(
                     data=results, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            with transaction.atomic():
+                for db in dbs:
+                    shippingdbObj = ShippingDB.objects.get(db_number=db)
+                    shippingdbObj.status = '已出库'
+                    shippingdbObj.delivery_no = delivery_no
+                    shippingdbObj.delivery_time = arrow.now().format(
+                        'YYYY-MM-DD HH:mm:ss')
+                    shippingdbObj.save(update_fields=[
+                        'status', 'delivery_no', 'delivery_time'
+                    ])
+                    for o in shippingdbObj.order.filter(
+                            status__in=['待发货', '已采购']):
+                        if '已采购' in o.status:
+                            results = {
+                                'errmsg':
+                                '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
+                                    db, o.orderid, o.purchaseorder.orderid)
+                            }
+                            logger.debug('出库调试-异常-2, Errmsg: %s',
+                                         results['errmsg'])
+                            raise IntegrityError
+                        o.status = '已发货'
+                        o.save(update_fields=['status'])
+                        stockObj = Stock.objects.get(
+                            product__jancode=o.jancode, inventory=o.inventory)
 
-        for db in dbs:
-            shippingdbObj.status = '已出库'
-            shippingdbObj.delivery_no = delivery_no
-            shippingdbObj.delivery_time = arrow.now().format(
-                'YYYY-MM-DD HH:mm:ss')
-            shippingdbObj.save(
-                update_fields=['status', 'delivery_no', 'delivery_time'])
-            for o in shippingdbObj.order.filter(status__in=['待发货', '已采购']):
-                if '已采购' in o.status:
-                    results = {
-                        'errmsg':
-                        '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
-                            db, o.orderid, o.purchaseorder.orderid)
-                    }
-                    logger.debug('出库调试-异常-2, Errmsg: %s', results['errmsg'])
-                    raise IntegrityError
-                o.status = '已发货'
-                o.save(update_fields=['status'])
-                stockObj = Stock.objects.get(
-                    product__jancode=o.jancode, inventory=o.inventory)
+                        stockORObj = StockOutRecord(
+                            orderid=o.orderid,
+                            quantity=o.quantity,
+                            inventory=o.inventory,
+                            product=stockObj.product,
+                            out_date=shippingdbObj.delivery_time,
+                            before_stock_quantity=stockObj.quantity,
+                            before_stock_inflight=stockObj.inflight,
+                            before_stock_preallocation=stockObj.preallocation,
+                        )
+                        stockORObj.save()
 
-                stockORObj = StockOutRecord(
-                    orderid=o.orderid,
-                    quantity=o.quantity,
-                    inventory=o.inventory,
-                    product=stockObj.product,
-                    out_date=shippingdbObj.delivery_time,
-                    before_stock_quantity=stockObj.quantity,
-                    before_stock_inflight=stockObj.inflight,
-                    before_stock_preallocation=stockObj.preallocation,
-                )
-                stockORObj.save()
-
-                stockObj.quantity = F('quantity') - o.quantity
-                stockObj.preallocation = F('preallocation') - o.quantity
-                stockObj.save()
-
-        return Response(status=status.HTTP_200_OK)
+                        stockObj.quantity = F('quantity') - o.quantity
+                        stockObj.preallocation = F('preallocation') - o.quantity
+                        stockObj.save()
+                        stockObj.refresh_from_db()
+                        logger.info(
+                            '面单[%s]=>Order:[%s]出库成功, 出库商品:[%s], 数量:[%d]. 出库完成后库存情况Q[%d]:I[%d]:P[%d]',
+                            db, o.orderid, o.jancode, o.quantity,
+                            stockObj.quantity, stockObj.inflight,
+                            stockObj.preallocation)
+            return Response(status=status.HTTP_200_OK)
+        except Exception:
+            logger.exception('出库异常')
+            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 拼邮订单和第三方保税订单出库操作
