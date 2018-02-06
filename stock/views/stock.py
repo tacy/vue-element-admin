@@ -214,6 +214,7 @@ class StockOut(views.APIView):
     def post(self, request, format=None):
         delivery_no = request.data['delivery_no']
         dbs = request.data['db_numbers'].split('\n')
+        dbstatus_uncheck = request.data['dbstatus_uncheck']
         logger.debug('出库调试, 用户输入:%s', dbs)
         results = None
         loop = asyncio.new_event_loop()
@@ -236,7 +237,7 @@ class StockOut(views.APIView):
                     logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
                     return Response(
                         data=results, status=status.HTTP_400_BAD_REQUEST)
-                elif 'DB' in db:  # 如果是贝海, 检查是否忘记出库了(贝海已经签收,忘了在系统操作出库)
+                elif 'DB' in db and not dbstatus_uncheck:  # 如果是贝海, 检查是否忘记出库了(贝海已经签收,忘了在系统操作出库)
                     msg_param = {'BillCodes': [db]}
                     result = loop.run_until_complete(
                         xloboapi.getStatus(msg_param))
@@ -249,7 +250,10 @@ class StockOut(views.APIView):
                                 db, result)
                         }
                     if len(result['Result'][0]['BillStatusList']) >= 2:
-                        results = {'errmsg': '面单:{} 贝海显示已签收'.format(db)}
+                        t = result['Result'][0]['BillStatusList'][1][
+                            'StartTime']
+                        if arrow.now().format('YYYY-MM-DD') > t[:10]:
+                            results = {'errmsg': '面单:{} 贝海显示已签收'.format(db)}
                     if results:
                         logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
                         return Response(

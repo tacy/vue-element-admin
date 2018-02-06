@@ -24,7 +24,7 @@ const ordersConflict = _import('orders/conflict');
 const ordersCreateDB = _import('orders/createdb');
 const ordersShipping = _import('orders/shipping');
 const ordersNeedExport = _import('orders/needexport');
-const ordersUexTrack = _import('orders/uextrack');
+// const ordersUexTrack = _import('orders/uextrack');
 const afterSale = _import('orders/aftersale');
 
 /* purchase */
@@ -155,12 +155,12 @@ export const asyncRouterMap = [
         name: '拼邮&保税',
         meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
       },
-      {
-        path: 'uextrack',
-        component: ordersUexTrack,
-        name: '轨迹单',
-        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
-      },
+      // {
+      //   path: 'uextrack',
+      //   component: ordersUexTrack,
+      //   name: '轨迹单',
+      //   meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
+      // },
       { path: 'aftersale', component: afterSale, name: '售后单' }
     ]
   },
