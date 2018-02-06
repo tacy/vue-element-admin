@@ -181,6 +181,9 @@
         <el-form-item label="面单号:">
           <el-input type="textarea" :autosize="{minRows: 8, maxRows: 12}" v-model.trim="stockOutData.db_numbers"></el-input>
         </el-form-item>
+        <el-form-item label="补出库:">
+	  <el-checkbox clearable v-model="stockOutData.dbstatus_uncheck">是</el-checkbox>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogStockOutVisible=false">取 消</el-button>
@@ -335,7 +338,8 @@
        },
        stockOutData: {
          delivery_no: undefined,
-         db_numbers: undefined
+         db_numbers: undefined,
+         dbstatus_uncheck: false
        },
        xloboData: {
          BillCodes: [],
@@ -483,7 +487,8 @@
      handleStockOut() {
        this.stockOutData = {
          delivery_no: undefined,
-         db_numbers: undefined
+         db_numbers: undefined,
+         dbstatus_uncheck: false
        }
        this.disableSubmit = false
        this.dialogStockOutVisible = true;
