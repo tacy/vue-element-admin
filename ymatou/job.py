@@ -475,7 +475,7 @@ async def deliveryYmtBondedOrder(ymtapi, pool):
             await cur.execute(sql)
             rs = await cur.fetchall()
             for i in rs:
-                r = await ymtapi.deliver(i[0], i[1], i[2], domestic=True)
+                r = await ymtapi.deliver(i[0], i[1], i[2])
                 if not r:
                     continue
                 if '0000' in r.get('code') and r.get('content'):
