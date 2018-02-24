@@ -1,23 +1,27 @@
 <template>
   <div class="app-container calendar-list-container">
     <div class="filter-container">
-      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
+      <el-input @keyup.enter.native="handleFilter" style="width: 80px;" class="filter-item" placeholder="订单号" v-model="listQuery.orderid">
       </el-input>
 
-      <el-input @keyup.enter.native="handleFilter" style="width: 100px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
+      <el-input @keyup.enter.native="handleFilter" style="width: 80px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 80px;" class="filter-item" placeholder="条码" v-model="listQuery.jancode">
+      </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 80px;" class="filter-item" placeholder="产品名" v-model="listQuery.product_title">
       </el-input>
 
-      <el-select style="width: 120px" class="filter-item" v-model="orderType" placeholder="选择订单类型">
+      <el-select style="width: 100px" class="filter-item" v-model="orderType" placeholder="选择订单类型">
         <el-option v-for="item in orderTypeOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
 
-      <el-select style="width: 120px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
+      <el-select style="width: 100px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
         <el-option v-for="item in channelOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
 
-      <el-select clearable style="width: 120px" class="filter-item" v-model="listQuery.status" placeholder="状态">
+      <el-select clearable style="width: 100px" class="filter-item" v-model="listQuery.status" placeholder="状态">
         <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item">
         </el-option>
       </el-select>
@@ -142,7 +146,6 @@
 </template>
 
 <script>
-  import { parseTime } from 'utils';
   import { fetchOrder, exportDomesticOrder, outOrder, exportBondedOrder } from 'api/orders';
 
   export default {
@@ -172,6 +175,8 @@
           inventory: undefined,
           shipping: undefined,
           channel_name: undefined,
+          jancode: undefined,
+          product_title: undefined,
           receiver_name: undefined,
           orderid: undefined,
           export_status: undefined,
