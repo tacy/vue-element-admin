@@ -318,7 +318,11 @@
        this.listShippingQuery.inventory = this.temp.inventory;
        fetchShipping(this.listShippingQuery).then(response => {
          this.shippingOptions = response.data.results;
-         this.temp.shipping = response.data.results[0].id
+         if (this.temp.delivery_type === '直邮' && this.temp.inventory === 4) {
+           this.temp.shipping = 9
+         } else {
+           this.temp.shipping = response.data.results[0].id
+         }
        })
      },
      handleFilter() {
