@@ -109,6 +109,7 @@ class ShippingDBFilter(FilterSet):
             'delivery_time',
             'tax_included_channel',
             'print_status',
+            'print_ts',
         ]
 
 
