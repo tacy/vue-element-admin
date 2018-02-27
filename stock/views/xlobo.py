@@ -698,10 +698,12 @@ class XloboGetPDF(views.APIView):
         # update shippingdb/transformdb print_status
         if db_type != 'transform':
             ShippingDB.objects.filter(db_number__in=data['BillCodes']).update(
-                print_status='已打印')
+                print_status='已打印',
+                print_ts=arrow.now().format('YYYYMMDDHHmmss'))
         else:
             TransformDB.objects.filter(db_number__in=data['BillCodes']).update(
-                print_status='已打印')
+                print_status='已打印',
+                print_ts=arrow.now().format('YYYYMMDDHHmmss'))
 
         return Response(data=r, status=status.HTTP_200_OK)
         # response = HttpResponse(content_type='application/pdf')
@@ -734,10 +736,12 @@ class JapanEMSPDF(views.APIView):
         # update shippingdb/transformdb print_status
         if db_type != 'transform':
             ShippingDB.objects.filter(db_number__in=data).update(
-                print_status='已打印')
+                print_status='已打印',
+                print_ts=arrow.now().format('YYYYMMDDHHmmss'))
         else:
             TransformDB.objects.filter(db_number__in=data).update(
-                print_status='已打印')
+                print_status='已打印',
+                print_ts=arrow.now().format('YYYYMMDDHHmmss'))
 
         return Response(data=r, status=status.HTTP_200_OK)
 

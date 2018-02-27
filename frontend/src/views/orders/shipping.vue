@@ -18,8 +18,10 @@
       </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 130px;" class="filter-item"  placeholder="输入收件人" v-model="listQuery.receiver_name" v-show="listQuery.labelVal == '5'">
       </el-input>
+      <el-input @keyup.enter.native="handleFilter" style="width: 130px;" class="filter-item"  placeholder="输入打印戳" v-model="listQuery.print_ts" v-show="listQuery.labelVal == '6'">
+      </el-input>
 
-      <el-input @keyup.enter.native="handleFilter" style="width: 120px;" class="filter-item"  placeholder="商品规格" v-model="listQuery.sku_properties_name">
+      <el-input @keyup.enter.native="handleFilter" style="width: 80px;" class="filter-item"  placeholder="商品规格" v-model="listQuery.sku_properties_name">
       </el-input>
       <el-select clearable style="width: 105px" class="filter-item" multiple v-model="listQuery.shipping" placeholder="发货方式">
         <el-option v-for="item in shippingOptions" :key="item.name" :label="item.name" :value="item.name">
@@ -98,7 +100,7 @@
           <span>{{scope.row.id}}</span>
         </template>
       </el-table-column-->
-      <el-table-column align="center" label="DB单号" width="150px">
+      <el-table-column align="center" label="DB单号" width="140px">
         <template scope="scope">
           <span>{{scope.row.db_number}}</span>
         </template>
@@ -108,7 +110,7 @@
           <span>{{scope.row.channel_name}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="仓库" width='80px'>
+      <el-table-column align="center" label="仓库" width='65px'>
         <template scope="scope">
           <span>{{scope.row.inventory_name}}</span>
         </template>
@@ -118,12 +120,12 @@
           <span>{{scope.row.shipping_name}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="订单时间" width="130px">
+      <el-table-column align="center" label="订单时间" width="125px">
         <template scope="scope">
           <span>{{scope.row.order_piad_time|fmDate}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="库存" width="100px">
+      <el-table-column align="center" label="库存" width="85px">
         <template scope="scope">
           <el-tag :type="scope.row.stockStatus | stockStatusFilter" hit>{{scope.row.stockStatus}}</el-tag>
         </template>
@@ -139,12 +141,17 @@
           <span>{{scope.row.print_status}}</span>
         </template>
       </el-table-column>
+      <el-table-column align="center" label="打印戳" width="100px">
+        <template scope="scope">
+          <span>{{scope.row.print_ts}}</span>
+        </template>
+      </el-table-column>
       <el-table-column align="center" label="运单号">
         <template scope="scope">
           <span>{{scope.row.delivery_no}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="签收" width="80px">
+      <el-table-column align="center" label="签收" width="65px">
         <template scope="scope">
           <span>{{scope.row.xlobo_sign}}</span>
         </template>
@@ -310,6 +317,9 @@
        }, {
          value: '5',
          label: '收件人'
+       }, {
+         value: '6',
+         label: '打印戳'
        }],
        listQuery: {
          page: 1,
@@ -331,7 +341,8 @@
          xlobo_sign: undefined,
          tax_included_channel: undefined,
          print_status__ne: undefined,
-         shipping_in: undefined
+         shipping_in: undefined,
+         print_ts: undefined
        },
        queryOrderItems: {
          shippingdb_id: undefined
@@ -393,6 +404,9 @@
        }
        if (this.listQuery.labelVal !== '5') {
          this.listQuery.receiver_name = undefined
+       }
+       if (this.listQuery.labelVal !== '6') {
+         this.listQuery.print_ts = undefined
        }
        if (this.listQuery.isTaxIncluded) {
          this.listQuery.tax_included_channel = '是'
