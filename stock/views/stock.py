@@ -108,8 +108,11 @@ class SyncStock(views.APIView):
                             status__in=['待采购', '需介入', '已采购'],
                             quantity__gt=F('need_purchase'))
                         otherOrds = Order.objects.filter(
-                            jancode=i[0], inventory=inventoryObj,
-                            status='需面单')  # 不能重新计算待发货, 可能会出现出现发货漏单
+                            jancode=i[0],
+                            inventory=inventoryObj,
+                            status__in=[
+                                '需面单', '待发货'
+                            ])  # 不能重新计算待发货, 可能会出现出现发货漏单 /*无需考虑, 页面已经控制了*/
 
                         # 很诡异, 这里不能用union合并两个queryset, 否则在对合并结果集做Sum操作的时候,会出现让你崩溃的结果
                         if needPurchaseOrds:
