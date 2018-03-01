@@ -68,13 +68,13 @@ class SyncStock(views.APIView):
                     stockObj.save(update_fields=['quantity'])
                     stockObj.refresh_from_db()
                     incr = stockObj.quantity - oldQuantity
-                    if incr > 0:  # 检查是否有待采购, 如果有待采购, 标记成待发货
-                        ords = Order.objects.filter(
-                            jancode=i[0],
-                            inventory=inventoryObj,
-                            status__in=['待采购', '已采购', '需介入']).order_by('id')
-                        revokeStock(ords, stockObj)
+                    ords = Order.objects.filter(
+                        jancode=i[0],
+                        inventory=inventoryObj,
+                        status__in=['待采购', '需介入', '已采购', '需面单', '待发货'])
+                    revokeStock(ords, stockObj)
 
+                    if incr > 0:  # 检查是否有待采购, 如果有待采购, 标记成待发货
                         # 类似入库, 需要记录
                         stockIRObj = StockInRecord(
                             orderid='syncstock',
@@ -103,23 +103,23 @@ class SyncStock(views.APIView):
                         #     if incr == 0: break
                     elif incr < 0:  # 实际库存小于系统在库库存
                         # 这些订单依赖实际库存(计算need_purchase的时候, 可能依赖quantity或inflight)
-                        needPurchaseOrds = Order.objects.filter(
-                            jancode=i[0],
-                            inventory=inventoryObj,
-                            status__in=['待采购', '需介入', '已采购'],
-                            quantity__gt=F('need_purchase'))
-                        otherOrds = Order.objects.filter(
-                            jancode=i[0],
-                            inventory=inventoryObj,
-                            status__in=[
-                                '需面单', '待发货'
-                            ])  # 不能重新计算待发货, 可能会出现出现发货漏单 /*无需考虑, 页面已经控制了*/
+                        # needPurchaseOrds = Order.objects.filter(
+                        #     jancode=i[0],
+                        #     inventory=inventoryObj,
+                        #     status__in=['待采购', '需介入', '已采购'],
+                        #     quantity__gt=F('need_purchase'))
+                        # otherOrds = Order.objects.filter(
+                        #     jancode=i[0],
+                        #     inventory=inventoryObj,
+                        #     status__in=[
+                        #         '需面单', '待发货'
+                        #     ])  # 不能重新计算待发货, 可能会出现出现发货漏单 /*无需考虑, 页面已经控制了*/
 
-                        # 很诡异, 这里不能用union合并两个queryset, 否则在对合并结果集做Sum操作的时候,会出现让你崩溃的结果
-                        if needPurchaseOrds:
-                            revokeStock(needPurchaseOrds, stockObj)
-                        if otherOrds:
-                            revokeStock(otherOrds, stockObj)
+                        # # 很诡异, 这里不能用union合并两个queryset, 否则在对合并结果集做Sum操作的时候,会出现让你崩溃的结果
+                        # if needPurchaseOrds:
+                        #     revokeStock(needPurchaseOrds, stockObj)
+                        # if otherOrds:
+                        #     revokeStock(otherOrds, stockObj)
 
                         # 类似出库, 需要记录
                         stockORObj = StockOutRecord(
@@ -484,8 +484,17 @@ def inStock(poObj, poiObj, qty):
     stockObj.quantity = F('quantity') + qty
     stockObj.inflight = F('inflight') - poiObj.quantity
     stockObj.save()
+    stockObj.refresh_from_db()
 
-    doClear(qty, poObj, poiObj, 'inStock')
+    # doClear(qty, poObj, poiObj, 'inStock')
+
+    # 重新计算所有相关订单状态, 不再做复杂计算
+    ordObjs = Order.objects.filter(
+        jancode=poiObj.product.jancode,
+        status__in=['待采购', '需介入', '已采购', '需面单', '待发货'],
+        inventory=poObj.inventory).order_by('id')
+    revokeStock(ordObjs, stockObj)
+
     # # poi.quantity记录的是采购数量, qty是实际到库数量.
     # # 入库实际到库数量, 扣减inflight数量用采购数量.
     # if poiObj.quantity <= qty:  # 实际到库数量大于等于采购数量
