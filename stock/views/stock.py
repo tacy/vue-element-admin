@@ -70,8 +70,9 @@ class SyncStock(views.APIView):
                     incr = stockObj.quantity - oldQuantity
                     if incr > 0:  # 检查是否有待采购, 如果有待采购, 标记成待发货
                         ords = Order.objects.filter(
-                            jancode=i[0], inventory=inventoryObj,
-                            status='待采购').order_by('id')
+                            jancode=i[0],
+                            inventory=inventoryObj,
+                            status__in=['待采购', '已采购', '需介入']).order_by('id')
                         revokeStock(ords, stockObj)
 
                         # 类似入库, 需要记录
