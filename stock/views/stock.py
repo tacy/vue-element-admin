@@ -35,8 +35,8 @@ class SyncStock(views.APIView):
         impInventory = data['inventory_name']
         inv_dict = {
             '贝海': ['virtualstock-products', 'stock'],
-            '广州': [u'国内库存出入库流水.xls', u'库存表'],
-            '东京': ['tokyo_stock.xlsx', 'new'],
+            '广州': ['tokyo_stock.xlsx', 'guangzhou'],
+            '东京': ['tokyo_stock.xlsx', 'tokyo'],
         }
         gsp = inv_dict[impInventory][0]
         wks = inv_dict[impInventory][1]
