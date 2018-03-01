@@ -388,7 +388,7 @@ def doClear(qty, poObj, poiObj, opType):
         incr = qty - ords_need_purchase
         if incr > 0:  # 超出的部分, 等于一次新建采购单操作, 主动去关联待采购订单
             wos = Order.objects.filter(
-                status__in=['待采购', '需介入'],
+                status__in=['待采购', '需介入', '已采购'],
                 jancode=poiObj.product.jancode,
                 inventory=poObj.inventory).order_by('id')
             stockObj = Stock.objects.get(
@@ -430,7 +430,7 @@ def doClear(qty, poObj, poiObj, opType):
 
         # 由于库存可能变化, 现在要重新计算所有待采购订单状态
         wos = Order.objects.filter(
-            status__in=['待采购', '需介入'],
+            status__in=['待采购', '需介入', '已采购'],
             jancode=poiObj.product.jancode,
             inventory=poObj.inventory).order_by('id')
 
