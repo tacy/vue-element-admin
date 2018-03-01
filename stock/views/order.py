@@ -161,11 +161,13 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
             purchaseorder = None
             for po in maybePOs:
                 poi = PurchaseOrderItem.objects.get(
-                    purchaseorder=po, product__jancode=ord.jancode)
+                    purchaseorder=po,
+                    product__jancode=ord.jancode,
+                    status__in=['转运中', '东京仓', '在途中'])
                 # 所有关联订单的need_purchase有多少, 看是否有多余的满足当前的订单
                 np = po.order.filter(
                     jancode=ord.jancode,
-                    status__in=['已采购', '需面单', '待发货', '已发货'],
+                    status__in=['已采购', '需面单'],
                 ).aggregate(total=Sum('need_purchase'))['total']
                 if np is None or poi.quantity - np >= need_purchase:
                     purchaseorder = po
@@ -605,7 +607,7 @@ class OrderRollbackToPreprocess(views.APIView):
 
             # 占用的库存需要释放
             ordsObj = Order.objects.filter(
-                status__in=['待采购', '需介入'],
+                status__in=['待采购', '需介入', '已采购', '需面单', '待发货'],
                 inventory=dbOrderObj.inventory,
                 jancode=dbOrderObj.jancode).order_by('id')
             revokeStock(ordsObj, stockObj)
@@ -654,7 +656,7 @@ class OrderDelete(views.APIView):
 
                 # 占用的库存需要释放
                 ordsObj = Order.objects.filter(
-                    status__in=['待采购', '需介入'],
+                    status__in=['待采购', '需介入', '已采购', '需面单', '待发货'],
                     inventory=orderObj.inventory,
                     jancode=orderObj.jancode).order_by('id')
                 revokeStock(ordsObj, stockObj)
