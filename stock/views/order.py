@@ -153,7 +153,7 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
         if not realAllocate:
             realAllocate = 0
         # if stockPreallocation > stockQuantity:
-        if ord.quantity > realAllocate - stockQuantity:
+        if realAllocate >= stockQuantity or ord.quantity > stockQuantity - realAllocate:
             status = '已采购'
             # 找到最新的采购单
             t = stockPreallocation - stockQuantity
