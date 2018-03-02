@@ -146,7 +146,14 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
     else:
         # 到这里, 虽然订单不需要采购, 但是如果在库不能满足发货需求, 该订单需要和
         # 在途的采购单绑定, 同时标记状态为已采购
-        if stockPreallocation > stockQuantity:
+        realAllocate = Order.objects.filter(
+            jancode=ord.jancode,
+            status__in=['待发货', '需面单'],
+            inventory=ord.inventory).aggregate(total=Sum('quantity'))['total']
+        if not realAllocate:
+            realAllocate = 0
+        # if stockPreallocation > stockQuantity:
+        if realAllocate > stockQuantity:
             status = '已采购'
             # 找到最新的采购单
             t = stockPreallocation - stockQuantity
@@ -160,18 +167,21 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
                 status__in=('在途中', '入库中', '转运中'))
             purchaseorder = None
             for po in maybePOs:
-                poi = PurchaseOrderItem.objects.get(
-                    purchaseorder=po,
-                    product__jancode=ord.jancode,
-                    status__in=['转运中', '东京仓', '在途中'])
-                # 所有关联订单的need_purchase有多少, 看是否有多余的满足当前的订单
-                np = po.order.filter(
-                    jancode=ord.jancode,
-                    status__in=['已采购', '需面单'],
-                ).aggregate(total=Sum('need_purchase'))['total']
-                if np is None or poi.quantity - np >= need_purchase:
-                    purchaseorder = po
-                    break
+                try:
+                    poi = PurchaseOrderItem.objects.get(
+                        purchaseorder=po,
+                        product__jancode=ord.jancode,
+                        status__in=['转运中', '东京仓', '在途中'])
+                    # 所有关联订单的need_purchase有多少, 看是否有多余的满足当前的订单
+                    np = po.order.filter(
+                        jancode=ord.jancode,
+                        status__in=['已采购', '需面单'],
+                    ).aggregate(total=Sum('need_purchase'))['total']
+                    if np is None or poi.quantity - np >= need_purchase:
+                        purchaseorder = po
+                        break
+                except PurchaseOrderItem.DoesNotExist:
+                    continue
 
             if purchaseorder is None:
                 logger.error('订单%s关联采购单异常, 库存数据需修复',
@@ -545,6 +555,9 @@ def revokeStock(ordsObj, stockObj):
     # import pdb
     # pdb.set_trace()
     preallo = ordsObj.aggregate(Sum('quantity'))['quantity__sum']
+    ordsObj.update(
+        purchaseorder=None,
+        need_purchase=None)  # 需要做类似派单的订单状态计算, 所有这些订单的采购信息都需要清除
     if preallo:
         stockPreallocation = stockObj.preallocation - preallo  # 伪回滚
         for o in ordsObj:
