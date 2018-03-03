@@ -557,7 +557,7 @@ def revokeStock(ordsObj, stockObj):
     preallo = ordsObj.aggregate(Sum('quantity'))['quantity__sum']
     ordsObj.update(
         purchaseorder=None, need_purchase=None,
-        status='需采购')  # 需要做类似派单的订单状态计算, 所有这些订单的采购信息都需要清除, 状态也需要清除掉
+        status='待采购')  # 需要做类似派单的订单状态计算, 所有这些订单的采购信息都需要清除, 状态也需要清除掉
     if preallo:
         stockPreallocation = stockObj.preallocation - preallo  # 伪回滚
         for o in ordsObj:
