@@ -190,9 +190,10 @@ async def syncTGOrder(tgapi, sellerName, pool):
             # if i:
             #     orderid = str(orderid) + '-' + str(i)
             js = oi['barcode'].split('+')
-            for k, j in enumerate(js):
-                if k:
-                    orderid = str(orderid) + '-' + str(k)
+            # for k, j in enumerate(js):
+            #     if k:
+            #         orderid = str(orderid) + '-' + str(k)
+            for j in js:
                 jinfo = j.split('*')
                 jancode = jinfo[0][2:]  # remove JH
                 num = oi['quantity']
