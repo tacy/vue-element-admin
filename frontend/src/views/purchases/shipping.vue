@@ -78,7 +78,7 @@
 
 <script>
  import { fetchPDF, fetchEMSPDF } from 'api/orders';
- import { fetchTransformDB, updateTransformDB } from 'api/purchases';
+ import { fetchTransformDB, updateTransformDB, transformdbDelete } from 'api/purchases';
  export default {
    data() {
      return {
@@ -172,8 +172,15 @@
          this.dialogTransformOutVisible = false
        })
      },
-     handleDelete() {
-       return
+     handleDelete(row) {
+       transformdbDelete(row).then(() => {
+         this.$notify({
+           title: '成功',
+           message: '删除成功',
+           type: 'success',
+           duration: 2000
+         });
+       })
      },
      handleDBPrint(row) {
        this.xloboData.BillCodes = [row.db_number]
