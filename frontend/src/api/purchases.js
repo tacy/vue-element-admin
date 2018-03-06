@@ -32,6 +32,14 @@ export function purchaseOrderTransform(data) {
   });
 }
 
+export function transformdbDelete(data) {
+  return fetch({
+    url: '/purchase/transform/delete/',
+    method: 'post',
+    data
+  });
+}
+
 export function PurchaseOrderItemStockIn(data) {
   return fetch({
     url: '/purchase/itemstockin/',

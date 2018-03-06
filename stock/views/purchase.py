@@ -492,6 +492,19 @@ class PurchaseOrderTransform(views.APIView):
         return Response(status=status.HTTP_200_OK)
 
 
+class TransformDBDelete(views.APIView):
+    # 标记purchaseorderitem状态, 记录转运单号
+    def post(self, request, format=None):
+        data = request.data
+        logger.debug('TransformDBDelete debug: %s', data)
+        tdbObj = TransformDB.objects.get(id=data['id'])
+        with transaction.atomic():
+            tdbObj.purchaseorderitem.filter(status='转运中').update(status='东京仓')
+            tdbObj.status = '已删除'
+            tdbObj.save()
+        return Response(status=status.HTTP_200_OK)
+
+
 class PurchaseOrderAlert(views.APIView):
     def get(self, request, format=None):
         now = arrow.now()

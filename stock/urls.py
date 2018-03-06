@@ -20,7 +20,8 @@ from .views import (
     CreateCostRecord, TransformDBList, TransformDBDetail, CreateTransformDB,
     IncomeRecordList, CreateIncomeRecord, TransformRecordList,
     TransformRecordDetail, OrderAlert, PurchaseOrderAlert,
-    AnalyzeOrderAndPurchase, OrderAnalyzeList, PurchaseAnalyzeList,AnalyzeHot)
+    AnalyzeOrderAndPurchase, OrderAnalyzeList, PurchaseAnalyzeList, AnalyzeHot,
+    TransformDBDelete)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -128,6 +129,9 @@ urlpatterns = {
     url(r'^purchase/transform/$',
         PurchaseOrderTransform.as_view(),
         name="purchaseOrderTransform"),
+    url(r'^purchase/transform/delete/$',
+        TransformDBDelete.as_view(),
+        name="transformDBDelete"),
     url(r'^purchase/itemstockin/$',
         PurchaseOrderItemStockIn.as_view(),
         name="domesticStockIn"),
@@ -177,9 +181,7 @@ urlpatterns = {
     url(r'^analyze/purchase/$',
         PurchaseAnalyzeList.as_view(),
         name="analyzePurchase"),
-    url(r'^analyze/hot/$',
-        AnalyzeHot.as_view(),
-        name="analyzeHot"),
+    url(r'^analyze/hot/$', AnalyzeHot.as_view(), name="analyzeHot"),
 }
 
 urlpatterns = format_suffix_patterns(urlpatterns)
