@@ -138,6 +138,29 @@ class TiangouOpenAPI():
         r = await self.callAPI(method, action, payload)
         return r
 
+    async def getSupplierOrderList(self, timeGE, timeLT, state):
+        action = 'api/order/forSupplier'
+        method = 'get'
+        timestamp = str(arrow.now().timestamp * 1000)
+        r = await self.getToken()
+        if not r:
+            logger.error("无法获取到token, 不能进行订单导出")
+            return
+        token = r['data']['token']
+        signStr = [timeGE, timeLT, token, 'payTime', timestamp, state]
+        sign = self.getSign(signStr)
+        payload = (
+            ('timeGE', timeGE),
+            ('timeLT', timeLT),
+            ('stateList', state),
+            ('timeType', 'payTime'),
+            ('token', token),
+            ('sign', sign),
+            ('timestamp', timestamp),
+        )
+        r = await self.callAPI(method, action, payload)
+        return r
+
     async def shippingOrder(self, orderId, deliveryId, trackingNo):
         action = 'api/order/orderShip'
         method = 'post'
@@ -167,8 +190,8 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     with aiohttp.ClientSession(loop=loop) as sess:
         tgOApi = TiangouOpenAPI(sess)
-        ct = '2018-01-03 22:10:14'
-        et = '2018-01-03 22:47:10'
+        ct = '2018-02-26 00:00:00'
+        et = '2018-02-27 00:00:00'
         state = 'Shipping,Processing'
         r = loop.run_until_complete(tgOApi.getOrderList(ct, et, state))
         print(r)

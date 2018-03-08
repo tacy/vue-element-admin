@@ -67,7 +67,7 @@ def createJapanEMS(orderInfo,
     addrSplit = orderInfo['receiver_address'].split(',')
 
     # epack赔付最高6000日元, ems包裹赔付20000日元
-    price = random.randint(19000, 20000)
+    price = random.randint(14000, 15000)
     if sendType == 4:
         price = random.randint(5500, 6000)
 
