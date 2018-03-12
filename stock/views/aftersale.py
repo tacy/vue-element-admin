@@ -1,6 +1,6 @@
 import arrow
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, IntegrityError
 from rest_framework import status, views
 from rest_framework.response import Response
 
@@ -107,8 +107,10 @@ class ProcessAfterSale(views.APIView):
             # 补发/重发需要新建订单. (注意, 补发需要调整库存)
             if data['needResend']:
                 if pmName == '补发':  # 发生在漏发的时候, 漏发库存已经扣减了, 实际并没有出库, 需要修正
-                    qty = ordObj.quantity - data['resend_quantity']
-                    correctStock(ordObj, qty, now)
+                    if ordObj.quantity < data['resend_quantity']:
+                        raise IntegrityError()
+                    # qty = ordObj.quantity - data['resend_quantity']
+                    correctStock(ordObj, data['resend_quantity'], now)
                 ordObj.id = None
                 ordObj.inventory = None
                 ordObj.shipping = None
