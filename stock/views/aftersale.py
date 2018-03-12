@@ -1,6 +1,6 @@
 import arrow
-from django.db import transaction
-from django.db.models import F, IntegrityError
+from django.db import transaction, IntegrityError
+from django.db.models import F
 from rest_framework import status, views
 from rest_framework.response import Response
 
