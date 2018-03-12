@@ -615,7 +615,9 @@ async def main(loop):
 
     # sync YMT order & delivery ymatou order
     sessYmt = aiohttp.ClientSession(
-        loop=loop, headers={
+        loop=loop,
+        connector=aiohttp.TCPConnector(verify_ssl=False),
+        headers={
             'Content-Type': 'application/json'
         })
     for k, v in YMTKEY.items():

@@ -123,7 +123,8 @@ class XloboCreateNoVerification(views.APIView):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
-        sess = aiohttp.ClientSession(loop=loop)
+        sess = aiohttp.ClientSession(
+            loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False))
 
         checkResult = checkInputOrder(ords)
         if checkResult:
@@ -240,7 +241,8 @@ class XloboCreateFBXBill(views.APIView):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
-        sess = aiohttp.ClientSession(loop=loop)
+        sess = aiohttp.ClientSession(
+            loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False))
 
         totalAmount = sum(
             [float(i['price']) * float(i['quantity']) for i in ords])
@@ -477,7 +479,8 @@ class ManualAllocateDBNumber(views.APIView):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
-        sess = aiohttp.ClientSession(loop=loop)
+        sess = aiohttp.ClientSession(
+            loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False))
 
         checkResult = checkInputOrder(ords)
         if checkResult:
@@ -774,7 +777,8 @@ class YmatouStockUpdate(views.APIView):
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        sess = aiohttp.ClientSession(loop=loop)
+        sess = aiohttp.ClientSession(
+            loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False))
         skey = YMTKEY[seller_name]
         ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'], skey['appsecret'],
                                      skey['authcode'])
