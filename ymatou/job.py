@@ -441,12 +441,13 @@ async def getUbayBondedOrderStatus(ubayapi, pool):
 
             for i in rs:
                 r = await ubayapi.getDeliveryNo(i)
-                logger.debug('getBondedOrderDeliveryNo Result: %s', r)
+                logger.debug('getBondedOrderDeliveryNo OrderID %s Result: %s',
+                             i, r)
                 if not r:
                     continue
                 msg = r['Message']
                 if 'T' in msg['Result']:
-                    if msg['Status'] in ['00', '01']:
+                    if msg['Status'] in ['00', '01', '99']:
                         continue
                     ec = ''
                     for j, k in expressCompany.items():
