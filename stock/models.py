@@ -151,7 +151,8 @@ class TransformDB(models.Model):
     create_time = models.DateTimeField(null=True)
     delivery_time = models.DateTimeField(null=True)
     print_status = models.CharField(max_length=8, null=True, blank=True)  # 已打印
-    print_ts = models.CharField(max_length=16, null=True, default='')
+    print_ts = models.CharField(
+        max_length=16, null=True, default='', blank=True)
     inventory = models.ForeignKey(
         Inventory, related_name='transformdb', blank=True)
     memo = models.CharField(max_length=128, null=True)
