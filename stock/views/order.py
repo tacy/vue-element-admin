@@ -454,6 +454,8 @@ class OrderMarkConflict(views.APIView):
                 i.pop('purchaseorder_orderid')
                 i.pop('shippingdb_delivery_time')
                 # i.pop('shippingdb')
+                if i['shippingdb']:
+                    i['shippingdb'] = ShippingDB.objects.get(id=i['shippingdb'])
                 i['status'] = '需介入'
                 i['shipping'] = shipping
                 i['inventory'] = inventory
