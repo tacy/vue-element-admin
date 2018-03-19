@@ -618,9 +618,9 @@ def getInvoiceInfo(db_type, result):
     pdftool = utils.PDFTool()
     sqls = {
         'shipping':
-        'select p.name, p.specification, o.jancode, o.quantity, s.location, o.seller_memo from stock_order o inner join stock_product p on o.jancode=p.jancode inner join stock_stock s on s.product_id=p.id where o.shippingdb_id=%s and s.inventory_id=%s',
+        'select p.name, p.specification, o.jancode, o.quantity, s.location, o.seller_memo, o.real_price*o.quantity pay from stock_order o inner join stock_product p on o.jancode=p.jancode inner join stock_stock s on s.product_id=p.id where o.shippingdb_id=%s and s.inventory_id=%s',
         'transform':
-        'select p.name,p.specification, p.jancode, poi.quantity,s.location,"" from stock_purchaseorderitem poi inner join stock_product p on poi.product_id=p.id inner join stock_stock s on s.product_id=p.id where poi.status="转运中" and poi.transformdb_id=%s and s.inventory_id=%s',
+        'select p.name,p.specification, p.jancode, poi.quantity,s.location,"",o.real_price*o.quantity pay from stock_purchaseorderitem poi inner join stock_product p on poi.product_id=p.id inner join stock_stock s on s.product_id=p.id where poi.status="转运中" and poi.transformdb_id=%s and s.inventory_id=%s',
     }
     ptype = 'xlobo' if 'DB' in result[0]['BillCode'].upper() else 'ems'
     for i, b in enumerate(result):
