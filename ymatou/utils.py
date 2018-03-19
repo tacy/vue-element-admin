@@ -60,9 +60,10 @@ class PDFTool:
             # ],
         ]
         for o in orders:
-            prodname = '<font name="wqy">{}/{}</font>'.format(
+            prodname = '<font name="wqy">{}/{}{}</font>'.format(
                 o[0].replace(' ', ','), o[5]
-                if not o[5] else o[5].replace(' ', ','))
+                if not o[5] else o[5].replace(' ', ','), '/【**贵重商品**】'
+                if o[6] >= 600 else '')
             sku_properties_name = '<font name="wqy">{}/{}</font>'.format(
                 o[1].replace(' ', ','), o[2])
             location = '<font name="wqy">{}</font>'.format(o[4])
