@@ -76,6 +76,21 @@ def checkOrderStatus(loop, sess, ords, disable_checkOrderDelivery=False):
         return None
 
 
+def deliveryYMTOrder(loop, sess, ord, db_number):
+    skey = YMTKEY[ord['seller_name']]
+    ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'], skey['appsecret'],
+                                 skey['authcode'])
+    shipObj = Shipping.objects.get(id=ord['shipping'])
+    r = loop.run_until_complete(
+        ymtapi.deliver(ord['orderid'], db_number, shipObj.delivery_company))
+    if '0000' in r.get('code') and r.get('content'):
+        info = r['content']['results']
+        if not info or info[0]['exec_success']:
+            return None
+        else:
+            return info[0]['msg']
+
+
 def checkUserOtherOrder(ords):
     # 如果need_check, 需要先查一下该用户是否有其他订单没有一并提交, 如果有, 返回
     # 异常
@@ -505,6 +520,20 @@ class ManualAllocateDBNumber(views.APIView):
         channel_name = ords[0]['channel_name']
         order_piad_time = ords[0]['piad_time']
         # delivery_type = ords[0]['delivery_type']
+
+        # 如果洋码头订单, 先用回填面单发货
+        delivery_status = None
+        if disable_channel_delivery:
+            delivery_status = '已发货'
+        elif ords[0]['channel_name'] == '洋码头':
+            result = deliveryYMTOrder(loop, sess, ords[0], db_number)
+            if result:
+                errmsg = {'errmsg': result}
+                return Response(
+                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                delivery_status = '已发货'
+
         with transaction.atomic():
             orderStatus = None
             shippingdbObj = None
@@ -553,6 +582,7 @@ class ManualAllocateDBNumber(views.APIView):
                     shipping=shippingObj,
                     inventory=inventoryObj)
                 shippingdbObj.save()
+
             for o in ords:
                 orderObj = Order.objects.get(id=o['id'])
                 orderObj.shippingdb = shippingdbObj
@@ -566,8 +596,10 @@ class ManualAllocateDBNumber(views.APIView):
                     stockObj.preallocation = F(
                         'preallocation') - orderObj.quantity
                     stockObj.save()
-                if disable_channel_delivery:
-                    orderObj.channel_delivery_status = '已发货'
+                # if disable_channel_delivery:
+                #     orderObj.channel_delivery_status = '已发货'
+                if delivery_status:
+                    orderObj.channel_delivery_status = delivery_status
                 if orderObj.status == '需面单':
                     orderObj.status = '待发货'
                 orderObj.save(update_fields=[
