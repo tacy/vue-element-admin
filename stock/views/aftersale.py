@@ -111,6 +111,8 @@ class ProcessAfterSale(views.APIView):
                         raise IntegrityError()
                     # qty = ordObj.quantity - data['resend_quantity']
                     correctStock(ordObj, data['resend_quantity'], now)
+                if pmName == '重发':  # 发生在错发的时候, 重发时, 需要调整库存
+                    correctStock(ordObj, ordObj.quantity, now)
                 ordObj.id = None
                 ordObj.inventory = None
                 ordObj.shipping = None
