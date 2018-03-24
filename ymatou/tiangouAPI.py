@@ -190,8 +190,8 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     with aiohttp.ClientSession(loop=loop) as sess:
         tgOApi = TiangouOpenAPI(sess)
-        ct = '2018-02-26 00:00:00'
-        et = '2018-02-27 00:00:00'
+        ct = '2018-03-20 00:00:00'
+        et = '2018-03-22 00:00:00'
         state = 'Shipping,Processing'
         r = loop.run_until_complete(tgOApi.getOrderList(ct, et, state))
         print(r)
