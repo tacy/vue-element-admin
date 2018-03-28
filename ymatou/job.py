@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 import tiangouAPI
 import ubay
 import ymatouapi
+import utils
 
 REQUEST_TIMEOUT = 60
 access_token = 'AESaZpmFNNcLRbNFmWK38S2ELvpzwjHkRjkpJkNmaaRIpEJ7T+FYBfVvoekui/2k1g=='
@@ -550,6 +551,17 @@ async def getXloboDeliveryStatus(xloboapi, pool):
                             result, r[1]))
 
 
+async def alertStock(sender, pool):
+    sql = 'select p.jancode,p.name,s.inventory_id,s.quantity+s.inflight-s.preallocation, s.stock_alert from stock_stock s inner join stock_product p on p.id=s.product_id where s.stock_alert>0 and s.quantity+s.inflight-s.preallocation<s.stock_alert'
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(sql)
+            rs = await cur.fetchall()
+            if rs:
+                msg = '\n'.join(['\t'.join(map(str, i)) for i in rs])
+                await sender.send(msg)
+
+
 # https://stackoverflow.com/questions/37512182/how-can-i-periodically-execute-a-function-with-asyncio
 class Periodic:
     def __init__(self):
@@ -672,6 +684,13 @@ async def main(loop):
             periodic.start(getUbayBondedOrderStatus, interval['getdeliveryno'],
                            ubayapi, pool)))
 
+    # send stock alert mail
+    sender = utils.mailSuite()
+    task.append(
+        asyncio.ensure_future(
+            periodic.start(alertStock, interval['alertStock'], sender, pool)))
+
+    # monitor task change
     task.append(
         asyncio.ensure_future(
             checkTaskChange(periodic, hash(json.dumps(r)), pool)))
