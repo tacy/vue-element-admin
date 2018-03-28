@@ -191,10 +191,11 @@ class mailSuite:
         pass
 
     async def send(self, msgStr):
+        logging.info('send alert mail for stock')
         msg = MIMEText(msgStr)
         msg['Subject'] = '库存警戒提醒'
         msg['From'] = 'tacy.lee@joyjoyhouse.co.jp'
-        msg['To'] = '2830020@qq.com'
+        msg['To'] = '2830020@qq.com,14392116@qq.com,kennethshining@yahoo.co.jp'
         s = smtplib.SMTP(host='smtp-relay.gmail.com', port=587)
         s.send_message(msg)
         s.quit()
