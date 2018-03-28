@@ -1,9 +1,11 @@
 import os
 import logging
 from io import BytesIO
+import smtplib
 
 import eventlet
 import gspread
+from email.mime.text import MIMEText
 from oauth2client.service_account import ServiceAccountCredentials
 from reportlab.graphics.barcode import createBarcodeDrawing
 from reportlab.lib import colors
@@ -182,3 +184,17 @@ class GoogleSpread:
 #         stocks = gsp.read_google_doc_by_range(
 #             ss, '最新表入库', 'A2:C', all_rows=True)
 #         return stocks
+
+
+class mailSuite:
+    def __init__(self):
+        pass
+
+    async def send(self, msgStr):
+        msg = MIMEText(msgStr)
+        msg['Subject'] = '库存警戒提醒'
+        msg['From'] = 'tacy.lee@joyjoyhouse.co.jp'
+        msg['To'] = '2830020@qq.com'
+        s = smtplib.SMTP(host='smtp-relay.gmail.com', port=587)
+        s.send_message(msg)
+        s.quit()
