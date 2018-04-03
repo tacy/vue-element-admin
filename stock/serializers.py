@@ -125,6 +125,8 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only=False, required=False, allow_null=True, allow_blank=True)
     seller_memo = serializers.CharField(
         read_only=False, required=False, allow_null=True, allow_blank=True)
+    pre_sale = serializers.CharField(
+        read_only=False, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         """Meta class to map serializer's fields with the model fields."""

@@ -248,8 +248,8 @@ if __name__ == '__main__':
     authcode = 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk'
     with aiohttp.ClientSession(loop=loop) as sess:
         api = YmatouAPI(sess, appid, appsecret, authcode)
-        ct = '2018-03-24 21:00:00'
-        et = '2018-03-24 22:00:00'
+        ct = '2018-04-03 10:00:00'
+        et = '2018-04-03 11:00:00'
         state = 'Shipping,Processing'
         r = loop.run_until_complete(api.getOrderList(ct, et))
         print(r)

@@ -136,6 +136,11 @@
           <!--el-tag :type="scope.row.status">{{scope.row.status}}</el-tag-->
         </template>
       </el-table-column>
+      <el-table-column align="center" label="类型" width="80px">
+        <template scope="scope">
+          <span>{{scope.row.pre_sale}}</span>
+        </template>
+      </el-table-column>
       <el-table-column align="center" label="打印" width="80px">
         <template scope="scope">
           <span>{{scope.row.print_status}}</span>
