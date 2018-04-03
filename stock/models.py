@@ -138,6 +138,7 @@ class ShippingDB(models.Model):
     print_status = models.CharField(max_length=8, null=True, default='')  # 已打印
     print_ts = models.CharField(max_length=16, null=True, default='')
     xlobo_sign = models.CharField(max_length=8, null=True)  # 已签收
+    pre_sale = models.CharField(max_length=4, null=True, default='现货')
 
     class Meta:
         ordering = ['order_piad_time']
@@ -269,6 +270,7 @@ class Order(models.Model):
     conflict_memo = models.CharField(max_length=128, null=True)
     conflict_feedback = models.CharField(max_length=128, null=True)
     shippingdb = models.ForeignKey(ShippingDB, related_name='order', null=True)
+    pre_sale = models.CharField(max_length=4, null=True, default='现货')  # 是否预售
 
     class Meta:
         # unique_together = ('channel_name', 'orderid', 'jancode')

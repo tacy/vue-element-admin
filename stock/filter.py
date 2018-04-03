@@ -42,6 +42,7 @@ class OrderFilter(FilterSet):
             'sku_properties_name',
             'export_status',
             'delivery_type',
+            'pre_sale',
         ]
 
 

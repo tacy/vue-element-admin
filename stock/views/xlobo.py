@@ -221,6 +221,7 @@ class XloboCreateNoVerification(views.APIView):
             shippingdbObj = ShippingDB(
                 db_number=result['Result']['BillCode'],
                 status='待处理',
+                pre_sale=ords[0]['pre_sale'],
                 order_piad_time=order_piad_time,
                 channel_name=channel_name,
                 shipping=shippingObj,
@@ -341,6 +342,7 @@ class XloboCreateFBXBill(views.APIView):
             shippingdbObj = ShippingDB(
                 db_number=result['Result']['BillCode'],
                 status='已出库',
+                pre_sale=ords[0]['pre_sale'],
                 order_piad_time=order_piad_time,
                 channel_name=channel_name,
                 shipping=shippingObj,
@@ -416,6 +418,7 @@ class CreateJapanEMS(views.APIView):
                 channel_name=ords[0]['channel_name'],
                 tax_included_channel=taxIncluded,
                 shipping=shippingObj,
+                pre_sale=ords[0]['pre_sale'],
                 inventory=inventoryObj)
             shippingdbObj.save()
             for o in ords:

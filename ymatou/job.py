@@ -111,7 +111,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
                       o['receiver_mobile'], receiver_idcard, o['seller_memo'],
                       o['buyer_remark'], jancode, num, price, payment, dt,
                       o['paid_time'], oi['product_title'], sku_properties_name,
-                      '待处理', '', oi['product_id'], price)
+                      '待处理', '', oi['product_id'], price, '预售'
+                      if o['pre_sale'] else '现货')
                 if not oi['product_id']:
                     logger.warning('导入订单丢失product_id: %s', oi)
                 ords.append(it)
@@ -120,8 +121,8 @@ async def syncYMTOrder(ymtapi, sellerName, pool):
         '(seller_name, channel_name, orderid, receiver_name, receiver_address, '
         'receiver_zip, receiver_mobile, receiver_idcard, seller_memo, buyer_remark, jancode, '
         'quantity, price, payment, delivery_type, piad_time, product_title, '
-        'sku_properties_name, status, channel_delivery_status, product_id, real_price) '
-        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        'sku_properties_name, status, channel_delivery_status, product_id, real_price, pre_sale) '
+        'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
     )
     insertExportOrderLog = 'INSERT INTO stock_exportorderlog (sellername, start_time, export_time, count) values (%s, %s, %s, %s)'
 

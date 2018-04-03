@@ -10,6 +10,10 @@
       </el-input>
       <el-input @keyup.enter.native="handleFilter" style="width: 140px;" class="filter-item" placeholder="收件人" v-model="listQuery.receiver_name">
       </el-input>
+      <el-select clearable style="width: 90px" class="filter-item" v-model="listQuery.pre_sale" placeholder="售卖方式">
+        <el-option v-for="item in preSaleOptions" :key="item" :label="item" :value="item">
+        </el-option>
+      </el-select>
       <el-select clearable style="width: 90px" class="filter-item" v-model="listQuery.channel_name" placeholder="渠道">
         <el-option v-for="item in channelnameOptions" :key="item" :label="item" :value="item">
         </el-option>
@@ -236,6 +240,7 @@
          jancode: undefined,
          status: '待处理',
          delivery_type_exclude: '第三方保税',
+         pre_sale: undefined,
          sort: '+id'
        },
        temp: {
@@ -272,6 +277,7 @@
        shippingOptions: [],
        categoryOptions: [],
        sortOptions: [{ label: '按ID升序列', key: '+id' }, { label: '按ID降序', key: '-id' }],
+       preSaleOptions: ['现货', '预售'],
        dialogFormVisible: false,
        dialogProductVisible: false,
        dialogBatchAllocateVisible: false,
