@@ -10,6 +10,7 @@ import sys
 import aiohttp
 import arrow
 import async_timeout
+from bs4 import BeautifulSoup
 
 REQUEST_TIMEOUT = 30
 logger = logging.getLogger(__name__)
@@ -241,17 +242,55 @@ class XloboAPI():
         return result
 
 
+class XloboWebAPI():
+    def __init__(self, session):
+        self.session = session
+
+    async def login(self):
+        url = 'http://www.xlobo.com/public/login.aspx'
+        with async_timeout.timeout(REQUEST_TIMEOUT):
+            async with self.session.get(url) as response:
+                r = await response.text()
+                soup = BeautifulSoup(r, 'html.parser')
+                VIEWSTATE = soup.find(id="__VIEWSTATE")['value']
+                VIEWSTATEGENERATOR = soup.find(
+                    id="__VIEWSTATEGENERATOR")['value']
+                # PUBKEY = soup.find(id="publicKey")['value']
+        pd = {
+            '__EVENTTARGET':
+            'ctl00$MainContent$LoginButton',
+            '__EVENTARGUMENT':
+            '',
+            '__VIEWSTATE':
+            VIEWSTATE,
+            'ctl00$MainContent$RememberMe':
+            'on',
+            '__VIEWSTATEGENERATOR':
+            VIEWSTATEGENERATOR,
+            'ctl00$MainContent$LoginButton':
+            '登录',
+            'ctl00$MainContent$UserName':
+            '东京彩虹桥',
+            # 'ctl00$MainContent$Password': 'beihai*2016$riben'
+            'rsaPwd':
+            'xPSxLHRxWTQOKKa8z8iMxZRqEJnkz1Y4BEGZ64YTt+HEPGbatzTiRbl8y11chfgj68mmlTK04PNs5mbLllBPyh3BiIN7PDdZ7JVx7feA9I0QJAfq2LmxLzEUPA4w6NX09DDJoyZb+0E6vu2yf1mN1t6XSrILNGUXIKC/Y5zbw4M='
+        }
+        with async_timeout.timeout(REQUEST_TIMEOUT):
+            async with self.session.post(url, data=pd) as response:
+                return await response.text()
+
+
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     appid = 'llzlHWWDTkEsUUjwKf'
     appsecret = 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox'
     authcode = 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk'
     with aiohttp.ClientSession(loop=loop) as sess:
-        api = YmatouAPI(sess, appid, appsecret, authcode)
-        ct = '2018-04-03 10:00:00'
-        et = '2018-04-03 11:00:00'
-        state = 'Shipping,Processing'
-        r = loop.run_until_complete(api.getOrderList(ct, et))
+        api = XloboWebAPI(sess)
+        # ct = '2018-04-03 10:00:00'
+        # et = '2018-04-03 11:00:00'
+        # state = 'Shipping,Processing'
+        r = loop.run_until_complete(api.login())
         print(r)
         # r = loop.run_until_complete(tgOApi.shippingOrder('1', '1', '1'))
         # print(r)
