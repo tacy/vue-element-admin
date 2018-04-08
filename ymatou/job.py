@@ -238,61 +238,61 @@ async def syncTGOrder(tgapi, sellerName, pool):
 
 
 # 同步码头订单进入贝海, 贝海未提供接口, 模拟OMS导入订单操作实现
-async def syncYmtOrdToXlobo(session):
-    now = arrow.now().to('local')
-    et = now.format('YYYY-MM-DD')
-    st = now.replace(days=(-1)).format('YYYY-MM-DD')
+# async def syncYmtOrdToXlobo(session):
+#     now = arrow.now().to('local')
+#     et = now.format('YYYY-MM-DD')
+#     st = now.replace(days=(-1)).format('YYYY-MM-DD')
 
-    # url = 'http://www.xlobo.com/public/login.aspx'
-    # # xlobo login?
-    # if not session.cookie_jar.filter_cookies('http://www.xlobo.com'):
-    #     VIEWSTATE = None
-    #     with async_timeout.timeout(REQUEST_TIMEOUT):
-    #         async with session.get(url) as response:
-    #             r = await response.text()
-    #             soup = BeautifulSoup(r, 'html.parser')
-    #             VIEWSTATE = soup.find(id="__VIEWSTATE")['value']
-    #             VIEWSTATEGENERATOR = soup.find(
-    #                 id="__VIEWSTATEGENERATOR")['value']
-    #             # PUBKEY = soup.find(id="publicKey")['value']
-    #     pd = {
-    #         '__EVENTTARGET':
-    #         'ctl00$MainContent$LoginButton',
-    #         '__EVENTARGUMENT':
-    #         '',
-    #         '__VIEWSTATE':
-    #         VIEWSTATE,
-    #         'ctl00$MainContent$RememberMe':
-    #         'on',
-    #         '__VIEWSTATEGENERATOR':
-    #         VIEWSTATEGENERATOR,
-    #         'ctl00$MainContent$LoginButton':
-    #         '登录',
-    #         'ctl00$MainContent$UserName':
-    #         '东京彩虹桥',
-    #         # 'ctl00$MainContent$Password': 'beihai*2016$riben'
-    #         'rsaPwd':
-    #         'xPSxLHRxWTQOKKa8z8iMxZRqEJnkz1Y4BEGZ64YTt+HEPGbatzTiRbl8y11chfgj68mmlTK04PNs5mbLllBPyh3BiIN7PDdZ7JVx7feA9I0QJAfq2LmxLzEUPA4w6NX09DDJoyZb+0E6vu2yf1mN1t6XSrILNGUXIKC/Y5zbw4M='
-    #     }
+#     # url = 'http://www.xlobo.com/public/login.aspx'
+#     # # xlobo login?
+#     # if not session.cookie_jar.filter_cookies('http://www.xlobo.com'):
+#     #     VIEWSTATE = None
+#     #     with async_timeout.timeout(REQUEST_TIMEOUT):
+#     #         async with session.get(url) as response:
+#     #             r = await response.text()
+#     #             soup = BeautifulSoup(r, 'html.parser')
+#     #             VIEWSTATE = soup.find(id="__VIEWSTATE")['value']
+#     #             VIEWSTATEGENERATOR = soup.find(
+#     #                 id="__VIEWSTATEGENERATOR")['value']
+#     #             # PUBKEY = soup.find(id="publicKey")['value']
+#     #     pd = {
+#     #         '__EVENTTARGET':
+#     #         'ctl00$MainContent$LoginButton',
+#     #         '__EVENTARGUMENT':
+#     #         '',
+#     #         '__VIEWSTATE':
+#     #         VIEWSTATE,
+#     #         'ctl00$MainContent$RememberMe':
+#     #         'on',
+#     #         '__VIEWSTATEGENERATOR':
+#     #         VIEWSTATEGENERATOR,
+#     #         'ctl00$MainContent$LoginButton':
+#     #         '登录',
+#     #         'ctl00$MainContent$UserName':
+#     #         '东京彩虹桥',
+#     #         # 'ctl00$MainContent$Password': 'beihai*2016$riben'
+#     #         'rsaPwd':
+#     #         'xPSxLHRxWTQOKKa8z8iMxZRqEJnkz1Y4BEGZ64YTt+HEPGbatzTiRbl8y11chfgj68mmlTK04PNs5mbLllBPyh3BiIN7PDdZ7JVx7feA9I0QJAfq2LmxLzEUPA4w6NX09DDJoyZb+0E6vu2yf1mN1t6XSrILNGUXIKC/Y5zbw4M='
+#     #     }
 
-    #     with async_timeout.timeout(REQUEST_TIMEOUT):
-    #         async with session.post(url, data=pd) as response:
-    #             await response.text()
+#     #     with async_timeout.timeout(REQUEST_TIMEOUT):
+#     #         async with session.post(url, data=pd) as response:
+#     #             await response.text()
 
-    h = {'Content-Type': 'application/json; charset=utf-8'}
-    url = 'http://www.xlobo.com/bill/api/oms/createimportbatch'
-    payload = {
-        "channel": 2,
-        "importType": 1,
-        "OrderType": [2, 8, 3, 6],
-        "syncTime": [st, et],
-    }
-    try:
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with session.post(url, json=payload, headers=h) as response:
-                await response.text()
-    except asyncio.TimeoutError as e:
-        logger.exception("syncYMTOrderToXlobo")
+#     h = {'Content-Type': 'application/json; charset=utf-8'}
+#     url = 'http://www.xlobo.com/bill/api/oms/createimportbatch'
+#     payload = {
+#         "channel": 2,
+#         "importType": 1,
+#         "OrderType": [2, 8, 3, 6],
+#         "syncTime": [st, et],
+#     }
+#     try:
+#         with async_timeout.timeout(REQUEST_TIMEOUT):
+#             async with session.post(url, json=payload, headers=h) as response:
+#                 await response.text()
+#     except asyncio.TimeoutError as e:
+#         logger.exception("syncYMTOrderToXlobo")
 
 
 # 扫描订单表, 同步第三方订单到贝海.
@@ -664,10 +664,9 @@ async def main(loop):
     # sync ymtorder to xlobo
     sessXloboWeb = aiohttp.ClientSession(loop=loop)
     xlobowebapi = ymatouapi.XloboWebAPI(sessXloboWeb)
-    xlobowebapi.login()
     task.append(
         asyncio.ensure_future(
-            periodic.start(syncYmtOrdToXlobo, interval['impordtoxlobo'],
+            periodic.start(xlobowebapi.syncOrder, interval['impordtoxlobo'],
                            sessXloboWeb)))
 
     # sync third party to xlobo

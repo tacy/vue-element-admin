@@ -279,6 +279,29 @@ class XloboWebAPI():
             async with self.session.post(url, data=pd) as response:
                 return await response.text()
 
+    async def syncOrder(self):
+        if not self.session.cookie_jar.filter_cookies('http://www.xlobo.com'):
+            await self.login()
+        now = arrow.now().to('local')
+        et = now.format('YYYY-MM-DD')
+        st = now.replace(days=(-1)).format('YYYY-MM-DD')
+
+        h = {'Content-Type': 'application/json; charset=utf-8'}
+        url = 'http://www.xlobo.com/bill/api/oms/createimportbatch'
+        payload = {
+            "channel": 2,
+            "importType": 1,
+            "OrderType": [2, 8, 3, 6],
+            "syncTime": [st, et],
+        }
+        try:
+            with async_timeout.timeout(REQUEST_TIMEOUT):
+                async with self.session.post(
+                        url, json=payload, headers=h) as response:
+                    await response.text()
+        except asyncio.TimeoutError as e:
+            logger.exception("syncYMTOrderToXlobo")
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
@@ -290,7 +313,7 @@ if __name__ == '__main__':
         # ct = '2018-04-03 10:00:00'
         # et = '2018-04-03 11:00:00'
         # state = 'Shipping,Processing'
-        r = loop.run_until_complete(api.login())
+        r = loop.run_until_complete(api.syncOrder())
         print(r)
         # r = loop.run_until_complete(tgOApi.shippingOrder('1', '1', '1'))
         # print(r)
