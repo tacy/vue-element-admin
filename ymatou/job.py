@@ -296,7 +296,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
         "b.weight, b.brand, b.specification, a.jancode from stock_order as a "
         "inner join stock_product as b on a.jancode=b.jancode "
         "inner join stock_category as c on b.category_id=c.id "
-        "where a.channel_name<>'洋码头' and a.shipping_id in (1,2,6) and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购')"
+        "where a.shipping_id in (1,2,6) and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购')"
     )
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
@@ -326,7 +326,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                 try:
                     msg_param = {
                         # 'ChannelName': r[1],
-                        'ChannelName': '京东',  # 目前只能用JD
+                        'ChannelName': r[1] if r[1] == '洋码头' else '京东',
                         'OrderCode': r[2],
                         'ReceiverName': r[3],
                         'ReceiverProvince': ai[0].strip(),

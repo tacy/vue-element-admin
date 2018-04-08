@@ -40,8 +40,8 @@ class OrderPurchaseList(views.APIView):
                 isTiangou = c.fetchall()
                 results[i]['isTiangou'] = '是' if isTiangou else '否'
                 # 是否现货
-                oO = Order.objects.get(jancode=r['jancode'], status='待采购')
-                results[i]['pre_sale'] = oO.pre_sale
+                oO = Order.objects.filter(jancode=r['jancode'], status='待采购')
+                results[i]['pre_sale'] = oO[0].pre_sale
                 if int(inventory) == 3:  # 需要查东京库存
                     c.execute(sql2, [r['jancode']])
                     rt = c.fetchone()
