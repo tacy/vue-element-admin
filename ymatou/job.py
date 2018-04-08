@@ -9,7 +9,6 @@ import aiohttp
 import aiomysql
 import arrow
 import async_timeout
-from bs4 import BeautifulSoup
 
 import tiangouAPI
 import ubay
@@ -240,46 +239,58 @@ async def syncTGOrder(tgapi, sellerName, pool):
 
 # 同步码头订单进入贝海, 贝海未提供接口, 模拟OMS导入订单操作实现
 async def syncYmtOrdToXlobo(session):
-    url = 'http://www.xlobo.com/public/login.aspx'
     now = arrow.now().to('local')
     et = now.format('YYYY-MM-DD')
     st = now.replace(days=(-1)).format('YYYY-MM-DD')
 
-    # xlobo login?
-    if not session.cookie_jar.filter_cookies('http://www.xlobo.com'):
-        VIEWSTATE = None
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with session.get(url) as response:
-                r = await response.text()
-                soup = BeautifulSoup(r, 'html.parser')
-                VIEWSTATE = soup.find(id="__VIEWSTATE")['value']
-        pd = {
-            '__EVENTTARGET': 'ctl00$MainContent$LoginButton',
-            '__EVENTARGUMENT': '',
-            '__VIEWSTATE': VIEWSTATE,
-            'ctl00$MainContent$UserName': '东京彩虹桥',
-            'ctl00$MainContent$Password': 'beihai*2016$riben'
-        }
+    # url = 'http://www.xlobo.com/public/login.aspx'
+    # # xlobo login?
+    # if not session.cookie_jar.filter_cookies('http://www.xlobo.com'):
+    #     VIEWSTATE = None
+    #     with async_timeout.timeout(REQUEST_TIMEOUT):
+    #         async with session.get(url) as response:
+    #             r = await response.text()
+    #             soup = BeautifulSoup(r, 'html.parser')
+    #             VIEWSTATE = soup.find(id="__VIEWSTATE")['value']
+    #             VIEWSTATEGENERATOR = soup.find(
+    #                 id="__VIEWSTATEGENERATOR")['value']
+    #             # PUBKEY = soup.find(id="publicKey")['value']
+    #     pd = {
+    #         '__EVENTTARGET':
+    #         'ctl00$MainContent$LoginButton',
+    #         '__EVENTARGUMENT':
+    #         '',
+    #         '__VIEWSTATE':
+    #         VIEWSTATE,
+    #         'ctl00$MainContent$RememberMe':
+    #         'on',
+    #         '__VIEWSTATEGENERATOR':
+    #         VIEWSTATEGENERATOR,
+    #         'ctl00$MainContent$LoginButton':
+    #         '登录',
+    #         'ctl00$MainContent$UserName':
+    #         '东京彩虹桥',
+    #         # 'ctl00$MainContent$Password': 'beihai*2016$riben'
+    #         'rsaPwd':
+    #         'xPSxLHRxWTQOKKa8z8iMxZRqEJnkz1Y4BEGZ64YTt+HEPGbatzTiRbl8y11chfgj68mmlTK04PNs5mbLllBPyh3BiIN7PDdZ7JVx7feA9I0QJAfq2LmxLzEUPA4w6NX09DDJoyZb+0E6vu2yf1mN1t6XSrILNGUXIKC/Y5zbw4M='
+    #     }
 
-        with async_timeout.timeout(REQUEST_TIMEOUT):
-            async with session.post(url, data=pd) as response:
-                await response.text()
+    #     with async_timeout.timeout(REQUEST_TIMEOUT):
+    #         async with session.post(url, data=pd) as response:
+    #             await response.text()
 
     h = {'Content-Type': 'application/json; charset=utf-8'}
-    url = 'http://www.xlobo.com/Api/OrderImportApi/CreateImportBatch'
+    url = 'http://www.xlobo.com/bill/api/oms/createimportbatch'
     payload = {
-        "ImportStartTime": st,
-        "Importendtime": et,
-        "Channel": 2,
-        "OrderNos": "",
-        "OrderType": "2,8,3,6,",
-        "OrderStatus": "17",
-        "BatchType": 1
+        "channel": 2,
+        "importType": 1,
+        "OrderType": [2, 8, 3, 6],
+        "syncTime": [st, et],
     }
     try:
         with async_timeout.timeout(REQUEST_TIMEOUT):
             async with session.post(url, json=payload, headers=h) as response:
-                r = await response.text()
+                await response.text()
     except asyncio.TimeoutError as e:
         logger.exception("syncYMTOrderToXlobo")
 
@@ -296,7 +307,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
         "b.weight, b.brand, b.specification, a.jancode from stock_order as a "
         "inner join stock_product as b on a.jancode=b.jancode "
         "inner join stock_category as c on b.category_id=c.id "
-        "where a.shipping_id in (1,2,6) and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购')"
+        "where a.channel_name<>'洋码头' and a.shipping_id in (1,2,6) and inventory_id<>3 and a.importstatus is null and a.status in ('待采购', '需面单', '已采购')"
     )
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
@@ -326,7 +337,7 @@ async def syncTpoOrdToXlobo(xloboapi, pool):
                 try:
                     msg_param = {
                         # 'ChannelName': r[1],
-                        'ChannelName': r[1] if r[1] == '洋码头' else '京东',
+                        'ChannelName': '京东',  # 目前只能用JD
                         'OrderCode': r[2],
                         'ReceiverName': r[3],
                         'ReceiverProvince': ai[0].strip(),
@@ -651,11 +662,13 @@ async def main(loop):
                                interval['deliveryymtorder'], ymtapi, pool)))
 
     # sync ymtorder to xlobo
-    sessXlobo = aiohttp.ClientSession(loop=loop)
+    sessXloboWeb = aiohttp.ClientSession(loop=loop)
+    xlobowebapi = ymatouapi.XloboWebAPI(sessXloboWeb)
+    xlobowebapi.login()
     task.append(
         asyncio.ensure_future(
             periodic.start(syncYmtOrdToXlobo, interval['impordtoxlobo'],
-                           sessXlobo)))
+                           sessXloboWeb)))
 
     # sync third party to xlobo
     sessTpo = aiohttp.ClientSession(loop=loop)
