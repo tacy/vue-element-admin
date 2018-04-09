@@ -72,9 +72,14 @@ def createPO(orderid, inventory, supplier, items, createtime):
     try:
         poObj = PurchaseOrder.objects.get(
             orderid=orderid,
-            supplier=supplierObj,
-            inventory=inventoryObj,
+            # supplier=supplierObj,
+            # inventory=inventoryObj,
             status__in=['在途中', '入库中', '已入库', '转运中'])
+        if poObj.inventory.id != inventoryObj.id or poObj.supplier.id != supplierObj.id:
+            raise APIException({
+                'errmsg':
+                '注文编号{}已经存在, 且仓库/供应商不一致. 请仔细检查'.format(orderid),
+            })
         if '在途中' not in poObj.status:
             raise APIException({
                 'errmsg':
@@ -260,7 +265,6 @@ class NoOrderPurchase(views.APIView):
         logger.debug('新建采购单调试:%s', data)
         inventory = data['inventory']
         supplier = data['supplier']
-        results = {}
         if Supplier.objects.get(id=supplier).name == '东京仓':
             for i in data['items']:
                 try:
