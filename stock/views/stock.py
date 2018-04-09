@@ -319,36 +319,32 @@ class OrderOut(views.APIView):
     def post(self, request, format=None):
         ord = request.data
         with transaction.atomic():
-            ordObj = Order.objects.get(id=ord['id'])
-            if '已发货' not in ordObj.status:
-                ordObj.status = '已发货'
-                ordObj.domestic_delivery_no = ord['domestic_delivery_no']
-                ordObj.domestic_delivery_company = ord[
-                    'domestic_delivery_company']
-                ordObj.save(update_fields=[
-                    'status', 'domestic_delivery_no',
-                    'domestic_delivery_company'
-                ])
-                productObj = Product.objects.get(jancode=ordObj.jancode)
-                stockObj = Stock.objects.get(
-                    product=productObj, inventory=ordObj.inventory)
-                stockORObj = StockOutRecord(
-                    orderid=ordObj.orderid,
-                    quantity=ordObj.quantity,
-                    inventory=ordObj.inventory,
-                    product=stockObj.product,
-                    out_date=arrow.now().format('YYYY-MM-DD HH:mm:ss'),
-                    before_stock_quantity=stockObj.quantity,
-                    before_stock_inflight=stockObj.inflight,
-                    before_stock_preallocation=stockObj.preallocation,
-                )
-                stockORObj.save()
-                stockObj.preallocation = F('preallocation') - ordObj.quantity
-                stockObj.quantity = F('quantity') - ordObj.quantity
-                stockObj.save()
-                return Response(status=status.HTTP_200_OK)
-            else:
-                raise APIException({'errmsg': '订单已发货'})
+            ordObj = Order.objects.get(
+                id=ord['id'], status='待发货')  # 防止重复提交, 带上status查询条件
+            ordObj.status = '已发货'
+            ordObj.domestic_delivery_no = ord['domestic_delivery_no']
+            ordObj.domestic_delivery_company = ord['domestic_delivery_company']
+            ordObj.save(update_fields=[
+                'status', 'domestic_delivery_no', 'domestic_delivery_company'
+            ])
+            productObj = Product.objects.get(jancode=ordObj.jancode)
+            stockObj = Stock.objects.get(
+                product=productObj, inventory=ordObj.inventory)
+            stockORObj = StockOutRecord(
+                orderid=ordObj.orderid,
+                quantity=ordObj.quantity,
+                inventory=ordObj.inventory,
+                product=stockObj.product,
+                out_date=arrow.now().format('YYYY-MM-DD HH:mm:ss'),
+                before_stock_quantity=stockObj.quantity,
+                before_stock_inflight=stockObj.inflight,
+                before_stock_preallocation=stockObj.preallocation,
+            )
+            stockORObj.save()
+            stockObj.preallocation = F('preallocation') - ordObj.quantity
+            stockObj.quantity = F('quantity') - ordObj.quantity
+            stockObj.save()
+            return Response(status=status.HTTP_200_OK)
 
 
 def doClear(qty, poObj, poiObj, opType):
