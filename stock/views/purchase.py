@@ -315,7 +315,8 @@ class PurchaseOrderDelete(views.APIView):
     #   request param: id
     def put(self, request, format=None):
         id = request.data.get('id')
-        poObj = PurchaseOrder.objects.get(id=id)  # 采购单
+        poObj = PurchaseOrder.objects.get(
+            id=id, status='在途中')  # 采购单, 带上status, 防止重复提交
         poitemObjs = poObj.purchaseorderitem.all()  # 关联采购商品
         # orderObjs = poObj.order.filter(status='已采购')  # 关联订单, 状态为已采购
 
