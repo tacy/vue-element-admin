@@ -1,12 +1,13 @@
-import logging
 import asyncio
 import json
+import logging
 
-import arrow.arrow
 import aiohttp
-from django.db import IntegrityError, transaction
+import arrow.arrow
+from django.db import transaction
 from django.db.models import F, Sum
 from rest_framework import status, views
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
 from .order import revokeStock
@@ -184,8 +185,7 @@ class UexStockOut(views.APIView):
         logger.debug('UexStockOut: %s', result)
         result = json.loads(result)
         if not result['code']:
-            errmsg = {'errmsg': result['msg']}
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            raise APIException({'errmsg': result['msg']})
         with transaction.atomic():
             shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
             inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
@@ -239,86 +239,77 @@ class StockOut(views.APIView):
                     if shippingdbObj.delivery_no == delivery_no:
                         results = {'errmsg': '面单:{} 重复录入或重复打包, 请检查'.format(db)}
                     logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
-                    return Response(
-                        data=results, status=status.HTTP_400_BAD_REQUEST)
                 elif 'DB' in db and not dbstatus_uncheck:  # 如果是贝海, 检查是否忘记出库了(贝海已经签收,忘了在系统操作出库)
                     msg_param = {'BillCodes': [db]}
                     result = loop.run_until_complete(
                         xloboapi.getStatus(msg_param))
-                    results = None
                     if not result:
                         results = {'errmsg': '面单:{} 状态查询失败, 请稍后重试'.format(db)}
-                    if result['ErrorCount'] != 0:
+                    elif result['ErrorCount'] != 0:
                         results = {
                             'errmsg': '面单:{} 状态查询失败, 查询结果: {}'.format(
                                 db, result)
                         }
-                    if len(result['Result'][0]['BillStatusList']) >= 2:
+                    elif len(result['Result'][0]['BillStatusList']) >= 2:
                         t = result['Result'][0]['BillStatusList'][1][
                             'StartTime']
                         if arrow.now().format('YYYY-MM-DD') > t[:10]:
                             results = {'errmsg': '面单:{} 贝海显示已签收'.format(db)}
                     if results:
                         logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
-                        return Response(
-                            data=results, status=status.HTTP_400_BAD_REQUEST)
             except ShippingDB.DoesNotExist:
                 results = {'errmsg': '面单:{} 不存在, 请检查录入面单号'.format(db)}
                 logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
-                return Response(
-                    data=results, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            with transaction.atomic():
-                for db in dbs:
-                    shippingdbObj = ShippingDB.objects.get(db_number=db)
-                    shippingdbObj.status = '已出库'
-                    shippingdbObj.delivery_no = delivery_no
-                    shippingdbObj.delivery_time = arrow.now().format(
-                        'YYYY-MM-DD HH:mm:ss')
-                    shippingdbObj.save(update_fields=[
-                        'status', 'delivery_no', 'delivery_time'
-                    ])
-                    for o in shippingdbObj.order.filter(
-                            status__in=['待发货', '已采购']):
-                        if '已采购' in o.status:
-                            results = {
-                                'errmsg':
-                                '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
-                                    db, o.orderid, o.purchaseorder.orderid)
-                            }
-                            logger.debug('出库调试-异常-2, Errmsg: %s',
-                                         results['errmsg'])
-                            raise IntegrityError
-                        o.status = '已发货'
-                        o.save(update_fields=['status'])
-                        stockObj = Stock.objects.get(
-                            product__jancode=o.jancode, inventory=o.inventory)
+            if results:
+                raise APIException(results)
 
-                        stockORObj = StockOutRecord(
-                            orderid=o.orderid,
-                            quantity=o.quantity,
-                            inventory=o.inventory,
-                            product=stockObj.product,
-                            out_date=shippingdbObj.delivery_time,
-                            before_stock_quantity=stockObj.quantity,
-                            before_stock_inflight=stockObj.inflight,
-                            before_stock_preallocation=stockObj.preallocation,
-                        )
-                        stockORObj.save()
+        with transaction.atomic():
+            for db in dbs:
+                shippingdbObj = ShippingDB.objects.get(db_number=db)
+                shippingdbObj.status = '已出库'
+                shippingdbObj.delivery_no = delivery_no
+                shippingdbObj.delivery_time = arrow.now().format(
+                    'YYYY-MM-DD HH:mm:ss')
+                shippingdbObj.save(
+                    update_fields=['status', 'delivery_no', 'delivery_time'])
+                for o in shippingdbObj.order.filter(status__in=['待发货', '已采购']):
+                    if '已采购' in o.status:
+                        results = {
+                            'errmsg':
+                            '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
+                                db, o.orderid, o.purchaseorder.orderid)
+                        }
+                        logger.debug('出库调试-异常-2, Errmsg: %s',
+                                     results['errmsg'])
+                        raise APIException(results)
+                    o.status = '已发货'
+                    o.save(update_fields=['status'])
+                    stockObj = Stock.objects.get(
+                        product__jancode=o.jancode, inventory=o.inventory)
 
-                        stockObj.quantity = F('quantity') - o.quantity
-                        stockObj.preallocation = F('preallocation') - o.quantity
-                        stockObj.save()
-                        stockObj.refresh_from_db()
-                        logger.info(
-                            '面单[%s]=>Order:[%s]出库成功, 出库商品:[%s], 数量:[%d]. 出库完成后库存情况Q[%d]:I[%d]:P[%d]',
-                            db, o.orderid, o.jancode, o.quantity,
-                            stockObj.quantity, stockObj.inflight,
-                            stockObj.preallocation)
+                    stockORObj = StockOutRecord(
+                        orderid=o.orderid,
+                        quantity=o.quantity,
+                        inventory=o.inventory,
+                        product=stockObj.product,
+                        out_date=shippingdbObj.delivery_time,
+                        before_stock_quantity=stockObj.quantity,
+                        before_stock_inflight=stockObj.inflight,
+                        before_stock_preallocation=stockObj.preallocation,
+                    )
+                    stockORObj.save()
+
+                    stockObj.quantity = F('quantity') - o.quantity
+                    stockObj.preallocation = F('preallocation') - o.quantity
+                    stockObj.save()
+                    stockObj.refresh_from_db()
+                    logger.info(
+                        '面单[%s]=>Order:[%s]出库成功, 出库商品:[%s], 数量:[%d]. 出库完成后库存情况Q[%d]:I[%d]:P[%d]',
+                        db, o.orderid, o.jancode, o.quantity,
+                        stockObj.quantity, stockObj.inflight,
+                        stockObj.preallocation)
             return Response(status=status.HTTP_200_OK)
-        except Exception:
-            logger.exception('出库异常')
-            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 拼邮订单和第三方保税订单出库操作
@@ -357,9 +348,7 @@ class OrderOut(views.APIView):
                 stockObj.save()
                 return Response(status=status.HTTP_200_OK)
             else:
-                results = {'errmsg': '订单已发货'}
-                return Response(
-                    data=results, status=status.HTTP_400_BAD_REQUEST)
+                raise APIException({'errmsg': '订单已发货'})
 
 
 def doClear(qty, poObj, poiObj, opType):
@@ -773,47 +762,43 @@ class PurchaseOrderClear(views.APIView):
         logger.debug('PurchaseOrderClear入库调试: 用户输入 - {}'.format(request.data))
         poObj = PurchaseOrder.objects.get(id=id)  # 采购单
 
-        errmsg = None
-        try:
-            with transaction.atomic():
-                # stock in
-                for poi in pois:
-                    poiObj = poObj.purchaseorderitem.get(
-                        product__jancode=poi['jancode'])
-                    if poi['qty'] is None or poiObj.status not in [
-                            '在途中', '转运中'
-                    ]:
-                        continue
-                    qty = int(poi['qty'])
-                    if qty < 0:
-                        errmsg = {'errmsg': '产品[%s]入库数量错误' % (poi['jancode'])}
-                        raise InputError(None, None)
+        with transaction.atomic():
+            # stock in
+            for poi in pois:
+                poiObj = poObj.purchaseorderitem.get(
+                    product__jancode=poi['jancode'])
+                if poi['qty'] is None or poiObj.status not in ['在途中', '转运中']:
+                    continue
+                qty = int(poi['qty'])
+                if qty < 0:
+                    raise APIException({
+                        'errmsg':
+                        '产品[%s]入库数量错误' % (poi['jancode'])
+                    })
 
-                    # 如果是广州仓库:
-                    # 1. 标记订单明细状态
-                    # 2. 采购单状态(入库中/转运中)
-                    # 3. 入东京仓, 增加预分配(preallocation)
-                    if poObj.inventory.name == '广州' and poiObj.status == '在途中':
-                        inStockTemp(poObj, poiObj, qty)  # 广州采购单暂存东京
-                    else:
-                        inStock(poObj, poiObj, qty)
+                # 如果是广州仓库:
+                # 1. 标记订单明细状态
+                # 2. 采购单状态(入库中/转运中)
+                # 3. 入东京仓, 增加预分配(preallocation)
+                if poObj.inventory.name == '广州' and poiObj.status == '在途中':
+                    inStockTemp(poObj, poiObj, qty)  # 广州采购单暂存东京
+                else:
+                    inStock(poObj, poiObj, qty)
 
-                count = poObj.purchaseorderitem.filter(
-                    status__in=['已入库', '东京仓', '转运中']).count()
-                all = poObj.purchaseorderitem.count(
-                )  # 不能和用户提交的采购明细条数比较, 用户可能在其他页面增加了采购明细, 却不刷新提交页面
-                if count > 0:
-                    if count != all:
-                        poObj.status = '入库中'
-                    else:
-                        poObj.status = '转运中' if inventory_id == 3 else '已入库'
+            count = poObj.purchaseorderitem.filter(
+                status__in=['已入库', '东京仓', '转运中']).count()
+            all = poObj.purchaseorderitem.count(
+            )  # 不能和用户提交的采购明细条数比较, 用户可能在其他页面增加了采购明细, 却不刷新提交页面
+            if count > 0:
+                if count != all:
+                    poObj.status = '入库中'
+                else:
+                    poObj.status = '转运中' if inventory_id == 3 else '已入库'
 
-                    poObj.save(update_fields=[
-                        'status',
-                    ])
+                poObj.save(update_fields=[
+                    'status',
+                ])
 
-                return Response(status=status.HTTP_200_OK)
-        except InputError:
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)

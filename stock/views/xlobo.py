@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db import IntegrityError, connection, transaction
 from django.db.models import F
 from rest_framework import status, views
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
 from stock.models import (Inventory, Order, Product, PurchaseOrderItem,
@@ -50,9 +51,9 @@ logger = logging.getLogger(__name__)
 # 个订单状态是否正常
 def checkOrderStatus(loop, sess, ords, disable_checkOrderDelivery=False):
     ordObj = Order.objects.get(id=ords[0]['id'])
+    errmsg = None
     if ordObj.shippingdb:
-        errmsg = {'errmsg': '订单已出面单, 请及时刷新页面'}
-        return errmsg
+        raise APIException({'errmsg': '订单已出面单, 请及时刷新页面'})
     if '洋码头' in ords[0]['channel_name']:
         skey = YMTKEY[ords[0]['seller_name']]
         ymtapi = ymatouapi.YmatouAPI(sess, skey['appid'], skey['appsecret'],
@@ -63,16 +64,16 @@ def checkOrderStatus(loop, sess, ords, disable_checkOrderDelivery=False):
                 ymtapi.getOrderInfo(ords[0]['orderid']))
             # result = loop.run_until_complete(ymtapi.getOrderInfo('127086025'))
             if result['content']['order_info']['order_status'] in [12, 13, 14]:
-                errmsg = {'errmsg': '订单已关闭, 请到码头后台确认'}
-                return errmsg
+                errmsg = '订单已关闭, 请到码头后台确认'
             if not disable_checkOrderDelivery:
                 if result['content']['order_info']['order_status'] in [3, 4]:
-                    errmsg = {'errmsg': '订单已发货, 请到码头后台确认'}
-                    return errmsg
+                    errmsg = '订单已发货, 请到码头后台确认'
             for oi in result['content']['order_info']['order_items_info']:
                 if oi['refund_status'] == 0:
-                    errmsg = {'errmsg': '订单退款审核中, 请到码头后台确认'}
-                    return errmsg
+                    errmsg = '订单退款审核中, 请到码头后台确认'
+                    break
+            if errmsg:
+                raise APIException({'errmsg': errmsg})
         return None
 
 
@@ -86,9 +87,9 @@ def deliveryYMTOrder(loop, sess, ord, db_number):
     if '0000' in r.get('code') and r.get('content'):
         info = r['content']['results']
         if not info or info[0]['exec_success']:
-            return None
+            return '已发货'
         else:
-            return info[0]['msg']
+            raise APIException({'errmsg': info[0]['msg']})
 
 
 def checkUserOtherOrder(ords):
@@ -100,8 +101,7 @@ def checkUserOtherOrder(ords):
         shippingdb__isnull=True,
         status__in=['待处理', '待采购', '需面单', '已采购', '需介入'])
     if len(check_ords) != len(ords):
-        errmsg = {'errmsg': '该用户有其他订单, 请检查.'}
-        return errmsg
+        raise APIException({'errmsg': '该用户有其他订单, 请检查.'})
     return None
 
 
@@ -109,8 +109,7 @@ def checkInputOrder(ords):
     t = set([(o['inventory'], o['shipping'], o['receiver_name'],
               o['receiver_address'], o['receiver_mobile']) for o in ords])
     if len(t) > 1:
-        errmsg = {'errmsg': '订单信息不一致, 请检查.'}
-        return errmsg
+        raise APIException({'errmsg': '订单信息不一致, 请检查.'})
     return None
 
 
@@ -132,8 +131,7 @@ class XloboCreateNoVerification(views.APIView):
         totalAmount = sum(
             [float(i['price']) * float(i['quantity']) for i in ords])
         if totalAmount > 2000:
-            errmsg = {'errmsg': '订单金额超2000不能发贝海.'}
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            raise APIException({'errmsg': '订单金额超2000不能发贝海.'})
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -141,19 +139,10 @@ class XloboCreateNoVerification(views.APIView):
         sess = aiohttp.ClientSession(
             loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False))
 
-        checkResult = checkInputOrder(ords)
-        if checkResult:
-            return Response(
-                data=checkResult, status=status.HTTP_400_BAD_REQUEST)
-        ordStatus = checkOrderStatus(loop, sess, ords)
-        if ordStatus:
-            return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
-
+        checkInputOrder(ords)
+        checkOrderStatus(loop, sess, ords)
         if not disable_check:
-            otherOrder = checkUserOtherOrder(ords)
-            if otherOrder:
-                return Response(
-                    data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
+            checkUserOtherOrder(ords)
 
         # create db number
         # construct api msg
@@ -208,8 +197,10 @@ class XloboCreateNoVerification(views.APIView):
         result = loop.run_until_complete(xloboapi.createNoVerification(data))
         logger.debug('XloboCreateNoVerification: %s', result)
         if result['ErrorCount'] > 0:
-            errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            raise APIException({
+                'errmsg':
+                result['ErrorInfoList'][0]['ErrorDescription'],
+            })
         loop.close()
         # if result['ErrorCount']:
         #     return Response(data=result, status=status.HTTP_400_BAD_REQUEST)
@@ -254,31 +245,21 @@ class XloboCreateFBXBill(views.APIView):
             'Higo': 10,
             '其他渠道': 7
         }
+        totalAmount = sum(
+            [float(i['price']) * float(i['quantity']) for i in ords])
+        if totalAmount > 2000:
+            raise APIException({'errmsg': '订单金额超2000不能发贝海.'})
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(
             loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False))
 
-        totalAmount = sum(
-            [float(i['price']) * float(i['quantity']) for i in ords])
-        if totalAmount > 2000:
-            errmsg = {'errmsg': '订单金额超2000不能发贝海.'}
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-
-        checkResult = checkInputOrder(ords)
-        if checkResult:
-            return Response(
-                data=checkResult, status=status.HTTP_400_BAD_REQUEST)
-        ordStatus = checkOrderStatus(loop, sess, ords)
-        if ordStatus:
-            return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
-
+        checkInputOrder(ords)
+        checkOrderStatus(loop, sess, ords)
         if not disable_check:
-            otherOrder = checkUserOtherOrder(ords)
-            if otherOrder:
-                return Response(
-                    data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
+            checkUserOtherOrder(ords)
 
         # construct api msg
         channel_name = ords[0]['channel_name']
@@ -329,8 +310,10 @@ class XloboCreateFBXBill(views.APIView):
         result = loop.run_until_complete(xloboapi.createFBXBill(data))
         logger.debug('XloboCreateFBXBill: %s', result)
         if result['ErrorCount'] > 0:
-            errmsg = {'errmsg': result['ErrorInfoList'][0]['ErrorDescription']}
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            raise APIException({
+                'errmsg':
+                result['ErrorInfoList'][0]['ErrorDescription'],
+            })
         loop.close()
         # if result['ErrorCount']:
         #     return Response(data=result, status=status.HTTP_400_BAD_REQUEST)
@@ -376,20 +359,10 @@ class CreateJapanEMS(views.APIView):
         loop = asyncio.get_event_loop()
         sess = aiohttp.ClientSession(loop=loop)
 
-        checkResult = checkInputOrder(ords)
-        if checkResult:
-            return Response(
-                data=checkResult, status=status.HTTP_400_BAD_REQUEST)
-        ordStatus = checkOrderStatus(loop, sess, ords)
-
-        if ordStatus:
-            return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
-
+        checkInputOrder(ords)
+        checkOrderStatus(loop, sess, ords)
         if not disable_check:
-            otherOrder = checkUserOtherOrder(ords)
-            if otherOrder:
-                return Response(
-                    data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
+            checkUserOtherOrder(ords)
 
         # create ems number
         # sendType
@@ -500,26 +473,14 @@ class ManualAllocateDBNumber(views.APIView):
         sess = aiohttp.ClientSession(
             loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False))
 
-        checkResult = checkInputOrder(ords)
-        if checkResult:
-            return Response(
-                data=checkResult, status=status.HTTP_400_BAD_REQUEST)
-
-        ordStatus = checkOrderStatus(loop, sess, ords,
-                                     disable_checkOrderDelivery)
-        if ordStatus:
-            return Response(data=ordStatus, status=status.HTTP_400_BAD_REQUEST)
-
+        checkInputOrder(ords)
+        checkOrderStatus(loop, sess, ords, disable_checkOrderDelivery)
         if not disable_check:
-            otherOrder = checkUserOtherOrder(ords)
-            if otherOrder:
-                return Response(
-                    data=otherOrder, status=status.HTTP_400_BAD_REQUEST)
+            checkUserOtherOrder(ords)
 
         db_number = request.data['Comment']
         if not db_number:
-            errmsg = {'errmsg': '面单号不能为空.'}
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            raise APIException({'errmsg': '面单号不能为空.'})
         channel_name = ords[0]['channel_name']
         order_piad_time = ords[0]['piad_time']
         # delivery_type = ords[0]['delivery_type']
@@ -529,13 +490,7 @@ class ManualAllocateDBNumber(views.APIView):
         if disable_channel_delivery:
             delivery_status = '已发货'
         elif ords[0]['channel_name'] == '洋码头':
-            result = deliveryYMTOrder(loop, sess, ords[0], db_number)
-            if result:
-                errmsg = {'errmsg': result}
-                return Response(
-                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                delivery_status = '已发货'
+            delivery_status = deliveryYMTOrder(loop, sess, ords[0], db_number)
 
         with transaction.atomic():
             orderStatus = None
@@ -544,29 +499,30 @@ class ManualAllocateDBNumber(views.APIView):
                 shippingdbObj = ShippingDB.objects.get(db_number=db_number)
                 for o in ords:
                     if '拼邮' not in o['shipping_name']:
-                        errmsg = {'errmsg': '非拼邮订单, 面单号被重复使用, 请仔细检查确认'}
-                        return Response(
-                            data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                        raise APIException({
+                            'errmsg':
+                            '非拼邮订单, 面单号被重复使用, 请仔细检查确认',
+                        })
                     elif '拼邮' in o['shipping_name'] and '洋码头' in o['channel_name'] and '拼邮' not in o['delivery_type']:
                         if shippingdbObj.channel_name == '京东' and shippingdbObj.status == '已出库':
                             pass
                         else:
-                            errmsg = {'errmsg': '该订单为直邮转拼邮发货, 需使用直邮面单号发货'}
-                            return Response(
-                                data=errmsg,
-                                status=status.HTTP_400_BAD_REQUEST)
+                            raise APIException({
+                                'errmsg':
+                                '该订单为直邮转拼邮发货, 需使用直邮面单号发货',
+                            })
                     else:
                         if shippingdbObj.status != '已出库':
-                            errmsg = {'errmsg': '使用了直邮面单, 但面单尚未出库, 请仔细检查确认'}
-                            return Response(
-                                data=errmsg,
-                                status=status.HTTP_400_BAD_REQUEST)
+                            raise APIException({
+                                'errmsg':
+                                '使用了直邮面单, 但面单尚未出库, 请仔细检查确认',
+                            })
                         c = shippingdbObj.order.count()
                         if c > 500:
-                            errmsg = {'errmsg': '该国际单号被重复使用次数过多, 请换新单号发货'}
-                            return Response(
-                                data=errmsg,
-                                status=status.HTTP_400_BAD_REQUEST)
+                            raise APIException({
+                                'errmsg':
+                                '该国际单号被重复使用次数过多, 请换新单号发货',
+                            })
             except ShippingDB.DoesNotExist:
                 shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
                 inventoryObj = Inventory.objects.get(id=ords[0]['inventory'])
@@ -723,8 +679,7 @@ class XloboGetPDF(views.APIView):
                         print_status='身份证异常')
                     idmis.append(db_number)
                 msg.append(db_number + ':' + i['ErrorDescription'])
-            errmsg = {'errmsg': '|'.join(msg), 'idmis': idmis}
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            raise APIException({'errmsg': '|'.join(msg), 'idmis': idmis})
 
         result = result['Result']
         for i, b in enumerate(result):

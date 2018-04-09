@@ -4,6 +4,7 @@ import arrow.arrow
 from django.db import IntegrityError, connection, transaction
 from django.db.models import F, Sum
 from rest_framework import status, views
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
 from stock.models import (IncomeRecord, Inventory, Order, Product,
@@ -184,9 +185,10 @@ def computeOrderStatus(purchaseQuantity, ord, stockPreallocation,
                     continue
 
             if purchaseorder is None:
-                logger.error('订单%s关联采购单异常, 库存数据需修复',
-                             ord.id)  # 有一种变态可能, 多个采购单满足
-                raise IntegrityError()
+                errmsg = '订单{}产品{}关联采购单异常, 库存数据需修复'.format(
+                    ord.orderid, ord.jancode)
+                logger.error(errmsg)  # 有一种变态可能, 多个采购单满足
+                raise APIException({'errmsg': errmsg})
         else:
             status = '待发货' if ord.shippingdb else '需面单'
     logger.info('订单[%s]:[%s]状态计算, 当前库存[%d],预分配[%d],计算差值[%d]; 返回结果[%s][%d][%s]',
@@ -267,20 +269,16 @@ class OrderAllocate(views.APIView):
                 productObj = Product.objects.get(jancode=j)
                 prodObjs[j] = productObj
             except Product.DoesNotExist:
-                results = {'errmsg': '商品库中无[{}], 请先创建产品资料'.format(j)}
-                return Response(
-                    data=results, status=status.HTTP_400_BAD_REQUEST)
+                raise APIException({'errmsg': '商品库中无[{}], 请先创建产品资料'.format(j)})
 
         try:
-            errmsg = {}
             with transaction.atomic():
                 # 轨迹订单处理: 这里需要先判断是否特殊运输方式: 轨迹
                 uex_number = None
                 shippingdbObj = None
                 if relate_shipping.name == '轨迹':
                     if orders[0].channel_name == '洋码头':
-                        errmsg = {'errmsg': '洋码头订单不能走轨迹发货'}
-                        raise IntegrityError
+                        raise APIException({'errmsg': '洋码头订单不能走轨迹发货'})
                     uextrackObj = UexTrack.objects.filter(
                         allocate_time__isnull=True)[0]
                     uex_number = uextrackObj.uex_number
@@ -319,11 +317,10 @@ class OrderAllocate(views.APIView):
                             'preallocation') + dborder.quantity  # 分配订单需要占库存
                         dborder.inventory = relate_inventory
                     else:
-                        errmsg = {
+                        raise APIException({
                             'errmsg':
                             '订单:[%s]状态异常, 请通知技术解决' % (dborder.orderid, ),
-                        }
-                        raise IntegrityError
+                        })
 
                     # 计算订单状态
                     stockObj.save()
@@ -384,11 +381,10 @@ class OrderAllocate(views.APIView):
                     # if rollbackstock:
                     #     rollbackstock.save()
                 return Response(status=status.HTTP_200_OK)
-        except (IntegrityError, IndexError) as e:
-            if type(e).__name__ == 'IndexError':
-                errmsg = {'errmsg': 'Uex单号已经分配完成, 请增加Uex号段'}
+        except IndexError as e:
+            errmsg = {'errmsg': 'Uex单号已经分配完成, 请增加Uex号段'}
             logger.exception(errmsg)
-            return Response(data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+            raise APIException(errmsg)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -455,7 +451,8 @@ class OrderMarkConflict(views.APIView):
                 i.pop('shippingdb_delivery_time')
                 # i.pop('shippingdb')
                 if i['shippingdb']:
-                    i['shippingdb'] = ShippingDB.objects.get(id=i['shippingdb'])
+                    i['shippingdb'] = ShippingDB.objects.get(
+                        id=i['shippingdb'])
                 i['status'] = '需介入'
                 i['shipping'] = shipping
                 i['inventory'] = inventory
@@ -499,10 +496,9 @@ class OrderConflict(views.APIView):
                     except Stock.DoesNotExist:  # 如果第一次分配到该仓库, 主动在该仓库新建产品记录
                         if not Product.objects.filter(
                                 jancode=data['jancode']).exists():
-                            errmsg = {'errmsg': '商品库中无该商品, 请先创建产品资料'}
-                            return Response(
-                                data=errmsg,
-                                status=status.HTTP_400_BAD_REQUEST)
+                            raise APIException({
+                                'errmsg': '商品库中无该商品, 请先创建产品资料'
+                            })
                         stockObj = Stock(
                             product=Product.objects.get(
                                 jancode=data['jancode']),
@@ -699,9 +695,7 @@ class OrderDelete(views.APIView):
             elif '已删除' in orderObj.status:
                 pass
             else:  # 不可删除, 已经分配DB单号, 需要先删除DB单号, 或者已经发货, 无法删除
-                errmsg = {'errmsg': '订单已分配面单, 无法删除'}
-                return Response(
-                    data=errmsg, status=status.HTTP_400_BAD_REQUEST)
+                raise APIException({'errmsg': '订单已分配面单, 无法删除'})
 
             logger.info('订单[%s]:[%s]删除成功', orderObj.id, orderObj.jancode)
             return Response(status=status.HTTP_200_OK)

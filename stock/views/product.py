@@ -2,6 +2,7 @@ import logging
 
 from django.db import transaction
 from rest_framework import status, views
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
 from stock.models import Order, Product
@@ -31,8 +32,6 @@ class ProductUpdateJancode(views.APIView):
                 return Response(status=status.HTTP_200_OK)
             else:
                 logger.exception(productSerializer.errors)
-                return Response(
-                    data={'errmsg': str(productSerializer.errors)},
-                    status=status.HTTP_400_BAD_REQUEST)
+                raise APIException({'errmsg': str(productSerializer.errors)})
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
