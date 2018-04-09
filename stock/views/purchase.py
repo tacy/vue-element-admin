@@ -1,14 +1,14 @@
-import logging
 import re
+import logging
 
 import arrow.arrow
 from django.db import IntegrityError, connection, transaction
-from django.db.models import F, Sum
+from django.db.models import F
 from rest_framework import status, views
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
-from .order import computeOrderStatus, revokeStock
-from stock.exceptions import InputError
+from .order import revokeStock
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
                           PurchaseOrderItem, Stock, Supplier, TransformDB)
 
@@ -66,10 +66,9 @@ def createPO(orderid, inventory, supplier, items, createtime):
         patternStr = r'\d{3}-\d{7}-' if supplierObj.name == 'Amazon' else r'\d{6}-\d{8}-'
         checkFormat = re.search(patternStr, orderid)
         if not checkFormat:
-            return {
-                'errtype': 'InputError',
+            raise APIException({
                 'errmsg': '注文番号[{}]采购渠道选择错误'.format(orderid),
-            }
+            })
     try:
         poObj = PurchaseOrder.objects.get(
             orderid=orderid,
@@ -77,10 +76,10 @@ def createPO(orderid, inventory, supplier, items, createtime):
             inventory=inventoryObj,
             status__in=['在途中', '入库中', '已入库', '转运中'])
         if '在途中' not in poObj.status:
-            return {
-                'errtype': 'InputError',
-                'errmsg': '注文编号{}已经存在, 且状态非在途. 请更换注文编号'.format(orderid),
-            }
+            raise APIException({
+                'errmsg':
+                '注文编号{}已经存在, 且状态非在途. 请更换注文编号'.format(orderid),
+            })
     except PurchaseOrder.DoesNotExist:
         payment = None
         if supplierObj.name in ['东京仓', '调整库存']:
@@ -98,17 +97,16 @@ def createPO(orderid, inventory, supplier, items, createtime):
     for i in items:
         # add purchase item
         if i['quantity'] < 1:
-            return {
-                'errtype': 'InputError',
-                'errmsg': '商品{}采购数量必须大于1)'.format(i['jancode'])
-            }
+            raise APIException({
+                'errmsg': '商品{}采购数量必须大于1)'.format(i['jancode']),
+            })
         try:
             productObj = Product.objects.get(jancode=i['jancode'])
         except Product.DoesNotExist:
-            return {
-                'errtype': 'InputError',
-                'errmsg': '商品库中无该商品%s, 请先创建产品资料' % (i['jancode'], )
-            }
+            raise APIException({
+                'errmsg':
+                '商品库中无该商品%s, 请先创建产品资料' % (i['jancode'], )
+            })
 
         poitemObj = PurchaseOrderItem(
             product=productObj,
@@ -180,7 +178,6 @@ class OrderPurchase(views.APIView):
         data = request.data.get('data')
         # queryTime = request.data.get('queryTime')
         inventory = request.data.get('inventory')
-        results = {}
         try:
             with transaction.atomic():
                 createtime = arrow.now()
@@ -196,20 +193,18 @@ class OrderPurchase(views.APIView):
                             and i['quantity'] > i['tokyo_stock']) or (
                                 po_id in pos
                                 and pos[po_id]['supplier'] != i['supplier']):
-                        results = {
+                        raise APIException({
                             'errmsg':
                             '请检查商品{}输入. (注意, 从东京仓采购, 采购数量不能超过库存)'.format(
-                                i['jancode'])
-                        }
-                        raise InputError(None, None)
+                                i['jancode']),
+                        })
                     ords = i['ords'].split(',')
                     for o in ords:
                         if Order.objects.get(id=o).status != '待采购':
-                            results = {
+                            raise APIException({
                                 'errmsg':
                                 '请检查商品{}对应订单, 存在重复采购行为)'.format(i['jancode'])
-                            }
-                            raise InputError(None, None)
+                            })
                     item = {
                         'jancode': i['jancode'],
                         'quantity': i['quantity'],
@@ -224,17 +219,16 @@ class OrderPurchase(views.APIView):
                             'items': [item]
                         }
                 for k, v in pos.items():
-                    results = createPO(k, v['inventory'], v['supplier'],
-                                       v['items'], createtime)
-                    if results:
-                        raise InputError(None, None)
-        except (IntegrityError, InputError) as e:
+                    createPO(
+                        k,
+                        v['inventory'],
+                        v['supplier'],
+                        v['items'],
+                        createtime,
+                    )
+        except IntegrityError as e:
             logger.exception('保存采购单异常')
-            if e.args and e.args[0] == 1062:
-                return Response(
-                    data={'errmsg': '同一产品需合并录入'},
-                    status=status.HTTP_400_BAD_REQUEST)
-            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
+            raise APIException({'errmsg': '同一产品需合并录入'})
 
         return Response(status=status.HTTP_201_CREATED)
 
@@ -275,36 +269,29 @@ class NoOrderPurchase(views.APIView):
                         inventory=Inventory.objects.get(name='东京'))
                     realstock = stockObj.quantity + stockObj.inflight - stockObj.preallocation
                     if i['quantity'] > realstock:
-                        return Response(
-                            data={
-                                'errmsg':
-                                '产品[%s]采购数量超出东京仓库存数量' % (i['jancode'])
-                            },
-                            status=status.HTTP_400_BAD_REQUEST)
+                        raise APIException({
+                            'errmsg':
+                            '产品[%s]采购数量超出东京仓库存数量' % (i['jancode']),
+                        })
                 except Stock.DoesNotExist:
-                    return Response(
-                        data={'errmsg': '产品[%s]在东京仓没有入库记录' % (i['jancode'])},
-                        status=status.HTTP_400_BAD_REQUEST)
+                    raise APIException({
+                        'errmsg':
+                        '产品[%s]在东京仓没有入库记录' % (i['jancode']),
+                    })
         try:
             with transaction.atomic():
                 createtime = arrow.now()
                 # create purchaseorder
 
-                results = createPO(
+                createPO(
                     data['orderid'],
                     inventory,
                     supplier,
                     data['items'],
                     createtime,
                 )
-                if results:
-                    raise InputError(None, None)
-        except (IntegrityError, InputError) as e:
-            if e.args and e.args[0] == 1062:
-                return Response(
-                    data={'errmsg': '同一产品需合并录入'},
-                    status=status.HTTP_400_BAD_REQUEST)
-            return Response(data=results, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as e:
+            raise APIException({'errmsg': '同一产品需合并录入'})
         return Response(status=status.HTTP_201_CREATED)
 
 
