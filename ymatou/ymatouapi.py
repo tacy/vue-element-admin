@@ -282,6 +282,7 @@ class XloboWebAPI():
     async def syncOrder(self):
         if not self.session.cookie_jar.filter_cookies('http://www.xlobo.com'):
             await self.login()
+            logger.info('登入xlobo web, 准备通过OMS同步')
         now = arrow.now().to('local')
         et = now.format('YYYY-MM-DD')
         st = now.replace(days=(-1)).format('YYYY-MM-DD')
@@ -299,6 +300,7 @@ class XloboWebAPI():
                 async with self.session.post(
                         url, json=payload, headers=h) as response:
                     await response.text()
+                    logger.info('通过OMS同步订单完成')
         except asyncio.TimeoutError as e:
             logger.exception("syncYMTOrderToXlobo")
 

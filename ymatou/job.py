@@ -8,7 +8,6 @@ from itertools import groupby
 import aiohttp
 import aiomysql
 import arrow
-import async_timeout
 
 import tiangouAPI
 import ubay
