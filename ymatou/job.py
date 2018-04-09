@@ -665,8 +665,7 @@ async def main(loop):
     xlobowebapi = ymatouapi.XloboWebAPI(sessXloboWeb)
     task.append(
         asyncio.ensure_future(
-            periodic.start(xlobowebapi.syncOrder, interval['impordtoxlobo'],
-                           sessXloboWeb)))
+            periodic.start(xlobowebapi.syncOrder, interval['impordtoxlobo'])))
 
     # sync third party to xlobo
     sessTpo = aiohttp.ClientSession(loop=loop)
