@@ -66,7 +66,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES':
-    ('rest_framework.permissions.IsAuthenticated', ),  # AllowAny
+    ('rest_framework.permissions.IsAuthenticated',
+     'stock.core.IsIdempotent'),  # AllowAny
     'DEFAULT_PAGINATION_CLASS':
     # 'rest_framework.pagination.PageNumberPagination',
     'stock.core.StockPagination',
@@ -77,7 +78,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     'EXCEPTION_HANDLER':
-    'lelewu.urls.custom_exception_handler',
+    'stock.core.customExceptionHandler',
 }
 
 TEMPLATES = [
@@ -117,6 +118,13 @@ DATABASES = {
             'init_command':
             'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED'
         }
+    }
+}
+
+# Cache
+CACHE = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
 
