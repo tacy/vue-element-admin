@@ -333,7 +333,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible=false">取 消</el-button>
-        <el-button type="primary" @click="deleteOrder()">确 定</el-button>
+        <el-button ref="delord" v-disableswitch="{time:'10000'}" type="primary" @click="deleteOrder()">确 定</el-button>
       </div>
     </el-dialog>
     <el-dialog title="标记订单" :visible.sync="dialogMarkVisible">
@@ -696,6 +696,8 @@
            duration: 2000
          });
          this.dialogFormVisible = false
+       }).catch(() => {
+         this.$refs.delord.$el.disabled = false
        })
      }
    }

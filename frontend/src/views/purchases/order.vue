@@ -136,7 +136,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible=false">取 消</el-button>
-        <el-button type="primary" @click="deletePurchaseOrder()">确 定</el-button>
+        <el-button v-disableswitch="{time:'10000'}" ref="delpo" type="primary" @click="deletePurchaseOrder()">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -391,6 +391,8 @@
            }
          }
          this.dialogFormVisible = false
+       }).catch(() => {
+         this.$refs.delpo.$el.disabled = false
        })
      }
    }

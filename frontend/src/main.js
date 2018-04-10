@@ -95,6 +95,19 @@ if (process.env === 'production') {
   };
 }
 
+Vue.directive('disableswitch', {
+  inserted(el, binding) {
+    el.addEventListener('click', e => {
+      if (!el.disabled) {
+	 el.disabled = true;
+	 const timer = setTimeout(() => {
+	   el.disabled = false;
+	 }, binding.value.time);
+      }
+    });
+  }
+});
+
 new Vue({
   el: '#app',
   router,
