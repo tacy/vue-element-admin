@@ -1,6 +1,5 @@
-import base64
+import hashlib
 import logging
-import pickle
 
 from django.core.cache import cache
 from rest_framework import permissions
@@ -23,7 +22,8 @@ class IsIdempotent(permissions.BasePermission):
         if request.method not in ['POST', 'PUT']:
             return True
         s = request.path + request.user.username + str(request.data)
-        key = base64.b64encode(pickle.dumps(s))[:128]
+        # key = base64.b64encode(pickle.dumps(s))[:128]
+        key = hashlib.md5(s.encode('utf-8')).hexdigest().upper()
         is_idempotent = bool(cache.add(key, 'yes', 60))
         if not is_idempotent:
             logger.info(
