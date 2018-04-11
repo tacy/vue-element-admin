@@ -77,7 +77,12 @@
           <span>{{scope.row.receiver_name}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="地址" width="200px">
+      <el-table-column align="center" label="电话" width="120px">
+        <template scope="scope">
+          <span>{{scope.row.receiver_mobile}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" label="地址" width="120px" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.receiver_address}}</span>
         </template>
@@ -92,12 +97,12 @@
           <span>{{scope.row.quantity}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="商品名" width="200px">
+      <el-table-column align="center" label="商品名" width="180px" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.product_title}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="规格" width="180px">
+      <el-table-column align="center" label="规格" width="120px" show-overflow-tooltip>
         <template scope="scope">
           <span>{{scope.row.sku_properties_name}}</span>
         </template>

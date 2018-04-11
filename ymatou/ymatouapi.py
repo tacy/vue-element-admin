@@ -311,11 +311,12 @@ if __name__ == '__main__':
     appsecret = 'xdP5yraJQdpypKZNQ0M0zqE35dcrEWox'
     authcode = 'Ul1BpFlBHdLR6EnEv75RV6QeradgjdBk'
     with aiohttp.ClientSession(loop=loop) as sess:
-        api = XloboWebAPI(sess)
-        # ct = '2018-04-03 10:00:00'
-        # et = '2018-04-03 11:00:00'
-        # state = 'Shipping,Processing'
-        r = loop.run_until_complete(api.syncOrder())
+        # api = XloboWebAPI(sess)
+        # # ct = '2018-04-03 10:00:00'
+        # # et = '2018-04-03 11:00:00'
+        # # state = 'Shipping,Processing'
+        api = YmatouAPI(sess, appid, appsecret, authcode)
+        r = loop.run_until_complete(api.getOrderInfo('133212596'))
         print(r)
         # r = loop.run_until_complete(tgOApi.shippingOrder('1', '1', '1'))
         # print(r)
