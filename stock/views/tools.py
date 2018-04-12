@@ -144,7 +144,7 @@ class ExportPrint(views.APIView):
         for o in ords:
             # orderObjs = Order.objects.filter(orderid=o['orderid'])
             # oObj = orderObjs[0]
-            if '轨迹' not in o['shipping.name'] or '待发货' not in o['status'] or not o['shippingdb']:
+            if '轨迹' not in o['shipping_name'] or '待发货' not in o['status'] or not o['shippingdb']:
                 errmsg = {'errmsg': '订单:%s物流方式非轨迹或非待发货状态' % (o['orderid'])}
                 return Response(
                     data=errmsg, status=status.HTTP_400_BAD_REQUEST)
