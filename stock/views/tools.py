@@ -162,8 +162,8 @@ class ExportPrint(views.APIView):
             excel_data.append([
                 o['orderid'], o['receiver_name'], o['receiver_mobile'],
                 o['receiver_mobile'], o['receiver_address'],
-                o['product_title'], o['seller_name'], '13922442299', '', '',
-                '', '', ''
+                o['product_title'], o['seller_name'], '13922442299', '',
+                o['db_number'], '', '', ''
             ])
         # if excel_data:
         #     wb = Workbook(write_only=True)
