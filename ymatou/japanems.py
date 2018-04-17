@@ -49,7 +49,8 @@ def createJapanEMS(orderInfo,
                    sendType,
                    transType=None,
                    storagePath=None,
-                   country='CN'):
+                   country='CN',
+                   taxIncluded=False):
     # sendType
     #    EMS(物品): 1 / 国际e包裹: 4 / 国际邮包: 5
     # transType
@@ -70,7 +71,8 @@ def createJapanEMS(orderInfo,
     price = random.randint(14000, 15000)
     if sendType == 4:
         price = random.randint(5500, 6000)
-
+    if taxIncluded:
+        price = random.randint(3500, 4500)
     # 1. 做单
     payload = {
         'method:onlineS': '',

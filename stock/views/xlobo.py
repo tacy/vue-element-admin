@@ -378,7 +378,11 @@ class CreateJapanEMS(views.APIView):
         sendType = shippingInfo[ords[0]['shipping_name']][0]
         transType = shippingInfo[ords[0]['shipping_name']][1]
         ems_number = japanems.createJapanEMS(
-            ords[0], sendType, transType, country=country)
+            ords[0],
+            sendType,
+            transType,
+            country=country,
+            taxIncluded=tax_included_channel)
 
         with transaction.atomic():
             shippingObj = Shipping.objects.get(id=ords[0]['shipping'])
@@ -432,7 +436,8 @@ class CreateTransformDB(views.APIView):
                 'jancode': pois[0]['jancode'],
                 'orderid': pois[0]['orderid'],
             }
-            db_number = japanems.createJapanEMS(ord, sendType, transType)
+            db_number = japanems.createJapanEMS(
+                ord, sendType, transType, taxIncluded=True)
 
         with transaction.atomic():
             inventoryObj = Inventory.objects.get(id=4)
