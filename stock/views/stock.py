@@ -272,11 +272,12 @@ class StockOut(views.APIView):
                     'YYYY-MM-DD HH:mm:ss')
                 shippingdbObj.save(
                     update_fields=['status', 'delivery_no', 'delivery_time'])
-                for o in shippingdbObj.order.filter(status__in=['待发货', '已采购']):
-                    if '已采购' in o.status:
+                for o in shippingdbObj.order.filter(
+                        status__in=['待发货', '已采购', '待采购']):
+                    if o.status in ['已采购', '待采购']:
                         results = {
                             'errmsg':
-                            '面单{}对应的订单:{}, 采购在途, 采购单号:{}, 请确认'.format(
+                            '面单{}对应的订单:{}, 待采购/采购在途, 采购单号:{}, 请确认'.format(
                                 db, o.orderid, o.purchaseorder.orderid)
                         }
                         logger.debug('出库调试-异常-2, Errmsg: %s',
@@ -763,7 +764,9 @@ class PurchaseOrderClear(views.APIView):
             for poi in pois:
                 poiObj = poObj.purchaseorderitem.get(
                     product__jancode=poi['jancode'])
-                if poi['qty'] is None or poi['qty']=='' or poiObj.status not in ['在途中', '转运中']:
+                if poi['qty'] is None or poi['qty'] == '' or poiObj.status not in [
+                        '在途中', '转运中'
+                ]:
                     continue
                 qty = int(poi['qty'])
                 if qty < 0:
