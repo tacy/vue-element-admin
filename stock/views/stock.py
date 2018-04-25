@@ -273,12 +273,14 @@ class StockOut(views.APIView):
                 shippingdbObj.save(
                     update_fields=['status', 'delivery_no', 'delivery_time'])
                 for o in shippingdbObj.order.filter(
-                        status__in=['待发货', '已采购', '待采购']):
-                    if o.status in ['已采购', '待采购']:
+                        status__in=['待发货', '已采购', '待采购', '待处理', '需介入']):
+                    if o.status != '待发货':
                         results = {
                             'errmsg':
-                            '面单{}对应的订单:{}, 待采购/采购在途, 采购单号:{}, 请确认'.format(
-                                db, o.orderid, o.purchaseorder.orderid)
+                            '面单{}对应的订单:{}, 状态不处于待发货状态, 请确认'.format(
+                                db,
+                                o.orderid,
+                            )
                         }
                         logger.debug('出库调试-异常-2, Errmsg: %s',
                                      results['errmsg'])
