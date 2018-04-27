@@ -39,9 +39,11 @@ def customExceptionHandler(exc, context):
 
     # Now add the HTTP status code to the response.
     if response is not None:
-        response.data['status_code'] = response.status_code
         if not response.data.get('errmsg'):
-            response.data['errmsg'] = response.data['detail']
-            del (response.data['detail'])
-
+            if response.data.get('detail'):
+                response.data['errmsg'] = response.data['detail']
+                del (response.data['detail'])
+            else:
+                response.data['errmsg'] = str(response.data)
+        response.data['status_code'] = response.status_code
     return response
