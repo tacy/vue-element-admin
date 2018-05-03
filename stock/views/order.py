@@ -165,7 +165,9 @@ class ImportAgentOrder(views.APIView):
         ids = {}
         with transaction.atomic():
             for o in orders:
-                print(o, rows, cols)
+                # print(o, rows, cols)
+                if not o['seller_name']:
+                    break
                 if o['seller_name'] != username:
                     raise APIException({'errmsg': '用户不能导入不属于自己的订单'})
                 if len(o['receiver_address'].split(',')) != 4:
@@ -173,8 +175,6 @@ class ImportAgentOrder(views.APIView):
                         'errmsg':
                         '收件人地址格式异常. 范例:"XX省,XX市,XX区,具体地址"'
                     })
-                if not o['seller_name']:
-                    break
                 if o['receiver_mobile'] in ids:
                     o['orderid'] = ids['receiver_mobile']
                 else:
