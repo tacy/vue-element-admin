@@ -26,6 +26,7 @@ const ordersShipping = _import('orders/shipping');
 const ordersNeedExport = _import('orders/needexport');
 const ordersUexTrack = _import('orders/uextrack');
 const afterSale = _import('orders/aftersale');
+const importAgent = _import('orders/importagent');
 
 /* purchase */
 const purchasesorder = _import('purchases/order');
@@ -118,7 +119,11 @@ export const asyncRouterMap = [
     name: '订单',
     icon: 'zujian',
     children: [
-      { path: 'query', component: ordersQuery, name: '查订单' },
+      { path: 'query',
+        component: ordersQuery,
+        name: '查订单',
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
+      },
       {
         path: 'allocate',
         component: ordersAllocate,
@@ -161,7 +166,12 @@ export const asyncRouterMap = [
         name: '轨迹单',
         meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
       },
-      { path: 'aftersale', component: afterSale, name: '售后单' }
+      { path: 'aftersale',
+        component: afterSale,
+        name: '售后单',
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
+      },
+      { path: 'importagent', component: importAgent, name: '代理订单' }
     ]
   },
   {

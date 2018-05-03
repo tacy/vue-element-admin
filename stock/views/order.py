@@ -1,10 +1,14 @@
 import logging
+import random
+import string
 
 import arrow.arrow
-from django.db import IntegrityError, connection, transaction
+from django.db import connection, transaction
 from django.db.models import F, Sum
+from openpyxl.reader.excel import load_workbook
 from rest_framework import status, views
 from rest_framework.exceptions import APIException
+from rest_framework.parsers import (FormParser, MultiPartParser)
 from rest_framework.response import Response
 
 from stock.models import (IncomeRecord, Inventory, Order, Product,
@@ -92,6 +96,8 @@ class OrderTPRCreate(views.APIView):
         data = request.data
         t = arrow.now()
         piad_time = t.format('YYYY-MM-DD HH:mm:ss')
+        if len(data['receiver_address'].split(',')) != 4:
+            raise APIException({'errmsg': '收件人地址格式异常. 范例:"XX省,XX市,XX区,具体地址"'})
         # orderid = 'T' + t.format('YYMMDD') + ''.join(
         #     random.choices(string.digits, k=2))
         with transaction.atomic():
@@ -128,6 +134,61 @@ class OrderTPRCreate(views.APIView):
                     income_type='订单',
                 )
                 incomeRecordObj.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+# 代转运订单导入
+class ImportAgentOrder(views.APIView):
+    parser_classes = (FormParser, MultiPartParser)
+
+    # header: {seller_name/1, product_title/2,jancode/3,price/4,quantity/5,receiver_name/6,receiver_mobile/7, receiver_address/8,receiver_zip/9,receiver_idcard/10}
+    def post(self, request, format=None):
+        fileObj = request.data['file']
+        username = request.user.username
+        t = arrow.now()
+        piad_time = t.format('YYYY-MM-DD HH:mm:ss')
+
+        wb = load_workbook(filename=fileObj)
+        # sheet = wb.get_sheet_by_name('AgentOrder')
+        sheet = wb.active
+        rows = sheet.max_row
+        cols = sheet.max_column
+
+        def item(i, j):
+            return (sheet.cell(row=1, column=j).value, sheet.cell(
+                row=i, column=j).value)
+
+        orders = (dict(item(i, j) for j in range(1, cols + 1))
+                  for i in range(2, rows + 1))
+        inventoryObj = Inventory.objects.get(name='代理')
+        shippingObj = Shipping.objects.get(name='直邮电商')
+        ids = {}
+        with transaction.atomic():
+            for o in orders:
+                print(o, rows, cols)
+                if o['seller_name'] != username:
+                    raise APIException({'errmsg': '用户不能导入不属于自己的订单'})
+                if len(o['receiver_address'].split(',')) != 4:
+                    raise APIException({
+                        'errmsg':
+                        '收件人地址格式异常. 范例:"XX省,XX市,XX区,具体地址"'
+                    })
+                if not o['seller_name']:
+                    break
+                if o['receiver_mobile'] in ids:
+                    o['orderid'] = ids['receiver_mobile']
+                else:
+                    o['orderid'] = 'A' + t.format('YYMMDDHH') + ''.join(
+                        random.choices(string.digits, k=2))
+                    ids[o['receiver_mobile']] = o['orderid']
+                o['status'] = '需面单'
+                o['shipping'] = shippingObj
+                o['inventory'] = inventoryObj
+                o['payment'] = o['price'] * o['quantity']
+                o['channel_name'] = o['seller_name']
+                o['piad_time'] = piad_time
+                orderObj = Order(**o)
+                orderObj.save()
         return Response(status=status.HTTP_200_OK)
 
 
@@ -641,7 +702,7 @@ class OrderDelete(views.APIView):
 
         orderObj = Order.objects.get(id=data['id'])
         with transaction.atomic():
-            if '待处理' in orderObj.status:  # 直接标记删除
+            if '待处理' in orderObj.status or orderObj.inventory.name == '代理':  # 直接标记删除
                 orderObj.status = '已删除'
                 orderObj.conflict_feedback = data['conflict_feedback']
                 orderObj.save()

@@ -336,3 +336,11 @@ export function fetchOrderAlert(query) {
     params: query
   });
 }
+
+export function importAgentOrder(data) {
+  return fetch({
+    url: '/order/importagentorder/',
+    method: 'post',
+    data
+  });
+}
