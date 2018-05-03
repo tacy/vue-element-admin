@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+from corsheaders import defaults
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,6 +30,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '35.201.236.119', '104.155.216.44', '
 # add by tacy
 # APPEND_SLASH = False
 CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_HEADERS = defaults.default_headers + ('Content-Disposition', )
 # CSRF_COOKIE_SECURE = True
 
 # Application definition

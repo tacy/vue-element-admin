@@ -287,6 +287,10 @@ class StockOut(views.APIView):
                         raise APIException(results)
                     o.status = '已发货'
                     o.save(update_fields=['status'])
+
+                    if o.inventory.name == '代理':  # 代理转运发货订单, 无需操作库存
+                        continue
+
                     stockObj = Stock.objects.get(
                         product__jancode=o.jancode, inventory=o.inventory)
 
