@@ -8,12 +8,12 @@ from django.db.models import F, Sum
 from openpyxl.reader.excel import load_workbook
 from rest_framework import status, views
 from rest_framework.exceptions import APIException
-from rest_framework.parsers import (FormParser, MultiPartParser)
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from stock.models import (IncomeRecord, Inventory, Order, Product,
                           PurchaseOrder, PurchaseOrderItem, Shipping,
-                          ShippingDB, Stock, UexTrack)
+                          ShippingDB, Stock, TransformDB, UexTrack)
 
 logger = logging.getLogger(__name__)
 
@@ -762,6 +762,28 @@ class OrderDelete(views.APIView):
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrderSorting(views.APIView):
+    def get(self, request, format=None):
+        db_number = request.query_params.get('db_number')
+
+        try:
+            dbObj = ShippingDB.objects.get(db_number=db_number, status='待处理')
+            sql = 'select p.name, p.specification, o.jancode, o.quantity, s.location, o.seller_memo from stock_order o inner join stock_product p on o.jancode=p.jancode inner join stock_stock s on s.product_id=p.id where o.shippingdb_id=%s and s.inventory_id=%s'
+        except ShippingDB.DoesNotExist:
+            try:
+                dbObj = TransformDB.objects.get(db_number=db_number)
+                sql = 'select p.name,p.specification, p.jancode, poi.quantity,s.location,"" from stock_purchaseorderitem poi inner join stock_product p on poi.product_id=p.id inner join stock_stock s on s.product_id=p.id where poi.status="转运中" and poi.transformdb_id=%s and s.inventory_id=%s'
+            except TransformDB.DoesNotExist:
+                raise APIException({
+                    'errmsg':
+                    '不存在的面单号[{}], 请确认.'.format(db_number)
+                })
+        with connection.cursor() as c:
+            c.execute(sql, (dbObj.id, dbObj.inventory.id))
+            ordsData = c.cursor.fetchall()
+            return Response(status=status.HTTP_200_OK, data=ordsData)
 
 
 class OrderAlert(views.APIView):

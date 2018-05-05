@@ -232,7 +232,7 @@ class ExportUexTrack(views.APIView):
                 t3 = t2.shift(seconds=random.randint(12600, 14400))
                 t4 = t3.shift(seconds=random.randint(14400, 18000))
                 t5 = t4.replace(hour=0).shift(
-                    days=+2, seconds=random.randint(36000, 39600))
+                    days=+1, seconds=random.randint(36000, 39600))
                 trace_time.append((idx, '已获得出境许可',
                                    t1.format('YYYY-MM-DD HH:mm:ss'), o[1]))
                 trace_time.append((idx + length, '航班已起飞，离开日本东京',

@@ -25,7 +25,7 @@ SECRET_KEY = 't%w7p-95ksso!8_9rs)5ig&#-b6(7!7wy&gc2c3bg8_^b0u&=_'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '35.201.236.119', '104.155.216.44', 'www.joyjoyhouse.co.jp']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '35.201.236.119', 'www.joyjoyhouse.co.jp']
 
 # add by tacy
 # APPEND_SLASH = False

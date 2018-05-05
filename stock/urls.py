@@ -21,7 +21,7 @@ from .views import (
     IncomeRecordList, CreateIncomeRecord, TransformRecordList,
     TransformRecordDetail, OrderAlert, PurchaseOrderAlert,
     AnalyzeOrderAndPurchase, OrderAnalyzeList, PurchaseAnalyzeList, AnalyzeHot,
-    TransformDBDelete, ImportAgentOrder)
+    TransformDBDelete, ImportAgentOrder, OrderSorting)
 
 urlpatterns = {
     url(r'^login', views.obtain_auth_token),
@@ -54,6 +54,7 @@ urlpatterns = {
     url(r'^order/(?P<pk>[0-9]+)/$', OrderDetail.as_view(), name="OrderDetail"),
     url(r'^order/alert/$', OrderAlert.as_view(), name="AlertOrder"),
     url(r'^order/importagentorder/$', ImportAgentOrder.as_view(), name="ImportAgentOrder"),
+    url(r'^order/sorting/$', OrderSorting.as_view(), name="orderSorting"),
     url(r'^stock/$', StockList.as_view(), name="createStock"),
     url(r'^stock/(?P<pk>[0-9]+)/$', StockDetail.as_view(), name="StockDetail"),
     url(r'^shipping/$', ShippingList.as_view(), name="createShipping"),
