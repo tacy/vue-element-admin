@@ -679,7 +679,7 @@ class XloboGetPDF(views.APIView):
             idmis = []
             for i in info:
                 db_number = i['Identity']
-                if i['ErrorCode'] == 'xlobo.bill.param_not_upload_id':
+                if i['ErrorCode'] == 'xlobo.valid.error':
                     ShippingDB.objects.filter(db_number=db_number).update(
                         print_status='身份证异常')
                     idmis.append(db_number)
