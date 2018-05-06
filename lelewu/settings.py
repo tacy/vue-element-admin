@@ -115,7 +115,7 @@ DATABASES = {
         'PASSWORD': 'asd12288',
         'HOST': '127.0.0.1',
         'PORT': '3306',
-        'ATOMIC_REQUESTS': True,
+        'ATOMIC_REQUESTS': False,
         'OPTIONS': {
             'init_command':
             'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED'
