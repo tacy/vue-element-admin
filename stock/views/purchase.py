@@ -1,5 +1,5 @@
-import re
 import logging
+import re
 
 import arrow.arrow
 from django.db import IntegrityError, connection, transaction
@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from .order import revokeStock
 from stock.models import (Inventory, Order, Product, PurchaseOrder,
                           PurchaseOrderItem, Stock, Supplier, TransformDB)
+from ymatou.utils import dictfetchall
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +26,6 @@ class OrderPurchaseList(views.APIView):
         sql = "select p.jancode, p.name product_name, p.purchase_link1, p.purchase_link2, p.purchase_link3, p.specification sku_properties_name, min(piad_time) piad_time, max(o.price) product_price, sum(o.need_purchase) qty, group_concat(o.id) ords from stock_product p inner join stock_order o on o.jancode=p.jancode where o.status='待采购' and o.inventory_id=%s group by jancode order by o.id"
         sql2 = "select quantity+inflight-preallocation tokyo_stock from stock_stock where inventory_id='4' and product_id=(select id from stock_product where jancode=%s)"
         sql3 = "select jancode from stock_order where seller_name='天狗' and status='待采购' and jancode=%s"
-
-        def dictfetchall(cursor):
-            "Return all rows from a cursor as a dict"
-            columns = [col[0] for col in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
         inventory = request.query_params.get('inventory')
         with connection.cursor() as c:

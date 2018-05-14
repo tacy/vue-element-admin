@@ -139,6 +139,8 @@ class ShippingDB(models.Model):
     print_ts = models.CharField(max_length=16, null=True, default='')
     xlobo_sign = models.CharField(max_length=8, null=True)  # 已签收
     pre_sale = models.CharField(max_length=4, null=True, default='现货')
+    weight = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    sorting = models.CharField(max_length=8, null=True)  # 待处理/已分拣
 
     class Meta:
         ordering = ['order_piad_time']
@@ -157,6 +159,8 @@ class TransformDB(models.Model):
     inventory = models.ForeignKey(
         Inventory, related_name='transformdb', blank=True)
     memo = models.CharField(max_length=128, null=True)
+    weight = models.DecimalField(max_digits=7, null=True, decimal_places=2)
+    sorting = models.CharField(max_length=8, null=True)  # 待处理/已分拣
 
 
 class PurchaseOrder(models.Model):

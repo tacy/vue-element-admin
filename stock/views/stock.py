@@ -4,7 +4,7 @@ import logging
 
 import aiohttp
 import arrow.arrow
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import F, Sum
 from rest_framework import status, views
 from rest_framework.exceptions import APIException
@@ -17,6 +17,7 @@ from stock.models import (Inventory, Order, Product, PurchaseDivergence,
                           PurchaseOrder, PurchaseOrderItem, Shipping,
                           ShippingDB, Stock, StockInRecord, StockOutRecord)
 from ymatou import uex, utils
+from ymatou.utils import dictfetchall
 
 uex_user = '2830020@qq.com'
 uex_passwd = '20162017'
@@ -217,6 +218,7 @@ class StockOut(views.APIView):
     # 3. 扣减库存, 并记录出库stockoutrecord
     def post(self, request, format=None):
         delivery_no = request.data['delivery_no']
+        weight = request.data.get('weight', '')
         dbs = request.data['db_numbers'].split('\n')
         dbstatus_uncheck = request.data['dbstatus_uncheck']
         logger.debug('出库调试, 用户输入:%s', dbs)
@@ -270,8 +272,11 @@ class StockOut(views.APIView):
                 shippingdbObj.delivery_no = delivery_no
                 shippingdbObj.delivery_time = arrow.now().format(
                     'YYYY-MM-DD HH:mm:ss')
-                shippingdbObj.save(
-                    update_fields=['status', 'delivery_no', 'delivery_time'])
+                if weight:
+                    shippingdbObj.weight = weight
+                shippingdbObj.save(update_fields=[
+                    'status', 'delivery_no', 'delivery_time', 'weight'
+                ])
                 for o in shippingdbObj.order.filter(
                         status__in=['待发货', '已采购', '待采购', '待处理', '需介入']):
                     if o.status != '待发货':
@@ -443,7 +448,7 @@ def doClear(qty, poObj, poiObj, opType):
         #         break
 
 
-def inStock(poObj, poiObj, qty):
+def inStock(poObj, poiObj, qty, location=None):
     #  商品入库操作
     #  考虑入库数量, 考虑实际入库数量和采购数量有出入
     #  1. 等于采购数量, 直接标记关联该采购项的订单为待发货或需面单
@@ -475,6 +480,8 @@ def inStock(poObj, poiObj, qty):
     # 入库
     stockObj.quantity = F('quantity') + qty
     stockObj.inflight = F('inflight') - poiObj.quantity
+    if location:
+        stockObj.location = location
     stockObj.save()
     stockObj.refresh_from_db()
 
@@ -720,13 +727,19 @@ class PurchaseOrderItemStockIn(views.APIView):
         with transaction.atomic():
             poiObj = PurchaseOrderItem.objects.get(id=data['id'])
             poObj = poiObj.purchaseorder
+            if data['qty']:
+                data['qty'] = int(data['qty'])
             if data['qty'] and data['qty'] <= 0:
                 raise InputError(None, None)
 
             if poObj.inventory.name == '广州' and poiObj.status == '在途中':
                 inStockTemp(poObj, poiObj, data['qty'])  # 广州采购单商品暂存东京仓
             elif poiObj.status in ['在途中', '转运中']:
-                inStock(poObj, poiObj, data['qty'])
+                inStock(
+                    poObj,
+                    poiObj,
+                    data['qty'],
+                    location=data.get('location', None))
 
             count = poObj.purchaseorderitem.filter(
                 status__in=['已入库', '东京仓', '转运中']).count()
@@ -747,6 +760,20 @@ class PurchaseOrderItemStockIn(views.APIView):
                     'status',
                 ])
             return Response(status=status.HTTP_200_OK)
+
+    def get(self, request, format=None):
+        searchType = request.query_params.get('search_type')
+        searchKey = request.query_params.get('search_key')
+        s_base = 'select poi.id, p.name, i.name inventory_name, ss.name supplier_name, p.specification, p.jancode,poi.quantity, s.location from stock_purchaseorderitem poi inner join stock_product p on poi.product_id=p.id inner join stock_stock s on s.product_id=p.id inner join stock_purchaseorder po on poi.purchaseorder_id=po.id inner join stock_inventory i on i.id=po.inventory_id inner join stock_supplier ss on ss.id=po.supplier_id where poi.status="在途中" and s.inventory_id=po.inventory_id and '
+        if searchType == 'jancode':
+            sql = s_base + 'jancode=' + searchKey
+        else:
+            sql = s_base + 'lower(p.specification) like lower("%' + searchKey + '%")'
+        with connection.cursor() as c:
+            c.execute(sql)
+            results = dictfetchall(c)
+            return Response(
+                data={'result': results}, status=status.HTTP_200_OK)
 
 
 # 清采购单(采购单入库)
