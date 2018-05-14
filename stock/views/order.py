@@ -1,7 +1,9 @@
+import asyncio
 import logging
 import random
 import string
 
+import aiohttp
 import arrow.arrow
 from django.db import connection, transaction
 from django.db.models import F, Sum
@@ -11,10 +13,13 @@ from rest_framework.exceptions import APIException
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from ymatou import utils
 from stock.models import (IncomeRecord, Inventory, Order, Product,
                           PurchaseOrder, PurchaseOrderItem, Shipping,
                           ShippingDB, Stock, TransformDB, UexTrack)
+from xlobo import getXloboAPI
+from stock import checkXloboDBStatus
+from ymatou import utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -759,7 +764,7 @@ class OrderSorting(views.APIView):
         db_number = request.query_params.get('db_number')
 
         try:
-            dbObj = ShippingDB.objects.get(db_number=db_number, status='待处理')
+            dbObj = ShippingDB.objects.get(db_number=db_number)
             sql = 'select p.name, p.specification, o.jancode, o.quantity, s.location, o.seller_memo from stock_order o inner join stock_product p on o.jancode=p.jancode inner join stock_stock s on s.product_id=p.id where o.shippingdb_id=%s and s.inventory_id=%s'
         except ShippingDB.DoesNotExist:
             try:
@@ -770,6 +775,15 @@ class OrderSorting(views.APIView):
                     'errmsg':
                     '不存在的面单号[{}], 请确认.'.format(db_number)
                 })
+        if 'DB' in db_number:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop = asyncio.get_event_loop()
+            sess = aiohttp.ClientSession(loop=loop)
+            xloboapi = getXloboAPI(sess)
+            results = checkXloboDBStatus(loop, xloboapi, db_number)
+            if results:
+                raise APIException(results)
         with connection.cursor() as c:
             c.execute(sql, (dbObj.id, dbObj.inventory.id))
             ordsData = utils.dictfetchall(c)
