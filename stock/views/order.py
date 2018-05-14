@@ -775,6 +775,8 @@ class OrderSorting(views.APIView):
                     'errmsg':
                     '不存在的面单号[{}], 请确认.'.format(db_number)
                 })
+        if dbObj.status != '待处理':
+            raise APIException({'errmsg': '面单状态异常[{}]'.format(dbObj.status)})
         if 'DB' in db_number:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
