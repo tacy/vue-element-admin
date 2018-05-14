@@ -211,6 +211,22 @@ class UexStockOut(views.APIView):
         return Response(data=result, status=status.HTTP_200_OK)
 
 
+def checkXloboDBStatus(loop, xloboapi, db):
+    msg_param = {'BillCodes': [db]}
+    result = loop.run_until_complete(xloboapi.getStatus(msg_param))
+    if not result:
+        results = {'errmsg': '面单:{} 状态查询失败, 请稍后重试'.format(db)}
+    elif result['ErrorCount'] != 0:
+        results = {'errmsg': '面单:{} 状态查询失败, 查询结果: {}'.format(db, result)}
+    elif len(result['Result'][0]['BillStatusList']) >= 2:
+        t = result['Result'][0]['BillStatusList'][1]['StartTime']
+        if arrow.now().format('YYYY-MM-DD') > t[:10]:
+            results = {'errmsg': '面单:{} 贝海显示已签收'.format(db)}
+    if results:
+        logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
+    return results
+
+
 # 订单发货
 class StockOut(views.APIView):
     # 1. 标记db面单状态, 设置运单号(delivery_no);
@@ -242,23 +258,7 @@ class StockOut(views.APIView):
                         results = {'errmsg': '面单:{} 重复录入或重复打包, 请检查'.format(db)}
                     logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
                 elif 'DB' in db and not dbstatus_uncheck:  # 如果是贝海, 检查是否忘记出库了(贝海已经签收,忘了在系统操作出库)
-                    msg_param = {'BillCodes': [db]}
-                    result = loop.run_until_complete(
-                        xloboapi.getStatus(msg_param))
-                    if not result:
-                        results = {'errmsg': '面单:{} 状态查询失败, 请稍后重试'.format(db)}
-                    elif result['ErrorCount'] != 0:
-                        results = {
-                            'errmsg': '面单:{} 状态查询失败, 查询结果: {}'.format(
-                                db, result)
-                        }
-                    elif len(result['Result'][0]['BillStatusList']) >= 2:
-                        t = result['Result'][0]['BillStatusList'][1][
-                            'StartTime']
-                        if arrow.now().format('YYYY-MM-DD') > t[:10]:
-                            results = {'errmsg': '面单:{} 贝海显示已签收'.format(db)}
-                    if results:
-                        logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
+                    results = checkXloboDBStatus(loop, xloboapi, db)
             except ShippingDB.DoesNotExist:
                 results = {'errmsg': '面单:{} 不存在, 请检查录入面单号'.format(db)}
                 logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
