@@ -16,8 +16,8 @@ from rest_framework.response import Response
 from stock.models import (IncomeRecord, Inventory, Order, Product,
                           PurchaseOrder, PurchaseOrderItem, Shipping,
                           ShippingDB, Stock, TransformDB, UexTrack)
-from xlobo import getXloboAPI
-from stock import checkXloboDBStatus
+from .xlobo import getXloboAPI
+from .stock import checkXloboDBStatus
 from ymatou import utils
 
 logger = logging.getLogger(__name__)
