@@ -49,6 +49,7 @@ def getXloboAPI(sess):
 def checkXloboDBStatus(loop, xloboapi, db):
     msg_param = {'BillCodes': [db]}
     result = loop.run_until_complete(xloboapi.getStatus(msg_param))
+    results = None
     if not result:
         results = {'errmsg': '面单:{} 状态查询失败, 请稍后重试'.format(db)}
     elif result['ErrorCount'] != 0:
