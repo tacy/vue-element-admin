@@ -14,6 +14,7 @@ from django.db.models import F
 from rest_framework import status, views
 from rest_framework.exceptions import APIException
 from rest_framework.response import Response
+from .tools import getXloboAPI
 
 from stock.models import (Inventory, Order, Product, PurchaseOrderItem,
                           Shipping, ShippingDB, Stock, TransformDB)
@@ -111,10 +112,6 @@ def checkInputOrder(ords):
     if len(t) > 1:
         raise APIException({'errmsg': '订单信息不一致, 请检查.'})
     return None
-
-
-def getXloboAPI(sess):
-    return ymatouapi.XloboAPI(sess, access_token, client_secret, client_id)
 
 
 def getJapanEMSStorageLocal():

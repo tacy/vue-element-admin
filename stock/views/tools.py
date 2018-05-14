@@ -11,6 +11,7 @@ from rest_framework import status, views
 from rest_framework.response import Response
 
 from stock.models import Order
+from ymatou import ymatouapi
 
 YMTKEY = {
     '东京彩虹桥': {
@@ -39,6 +40,26 @@ uex_passwd = '20162017'
 # client_id = '68993573-E38D-4A8A-A263-055C401F9369'
 
 logger = logging.getLogger(__name__)
+
+
+def getXloboAPI(sess):
+    return ymatouapi.XloboAPI(sess, access_token, client_secret, client_id)
+
+
+def checkXloboDBStatus(loop, xloboapi, db):
+    msg_param = {'BillCodes': [db]}
+    result = loop.run_until_complete(xloboapi.getStatus(msg_param))
+    if not result:
+        results = {'errmsg': '面单:{} 状态查询失败, 请稍后重试'.format(db)}
+    elif result['ErrorCount'] != 0:
+        results = {'errmsg': '面单:{} 状态查询失败, 查询结果: {}'.format(db, result)}
+    elif len(result['Result'][0]['BillStatusList']) >= 2:
+        t = result['Result'][0]['BillStatusList'][1]['StartTime']
+        if arrow.now().format('YYYY-MM-DD') > t[:10]:
+            results = {'errmsg': '面单:{} 贝海显示已签收'.format(db)}
+    if results:
+        logger.error('出库调试-异常, Errmsg: %s', results['errmsg'])
+    return results
 
 
 class ExportBondedOrder(views.APIView):
