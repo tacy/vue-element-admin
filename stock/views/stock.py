@@ -751,7 +751,7 @@ class PurchaseOrderItemStockIn(views.APIView):
         searchKey = request.query_params.get('search_key')
         s_base = 'select poi.id, p.name, i.name inventory_name, ss.name supplier_name, p.specification, p.jancode,poi.quantity, s.location from stock_purchaseorderitem poi inner join stock_product p on poi.product_id=p.id inner join stock_stock s on s.product_id=p.id inner join stock_purchaseorder po on poi.purchaseorder_id=po.id inner join stock_inventory i on i.id=po.inventory_id inner join stock_supplier ss on ss.id=po.supplier_id where poi.status="在途中" and s.inventory_id=po.inventory_id and '
         if searchType == 'jancode':
-            sql = s_base + 'jancode=' + searchKey
+            sql = s_base + 'p.jancode=' + searchKey
         else:
             sql = s_base + 'lower(p.specification) like lower("%' + searchKey + '%")'
         with connection.cursor() as c:
