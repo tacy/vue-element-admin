@@ -199,3 +199,9 @@ class mailSuite:
         s = smtplib.SMTP(host='smtp-relay.gmail.com', port=587)
         s.send_message(msg)
         s.quit()
+
+
+def dictfetchall(cursor):
+    "Return all rows from a cursor as a dict"
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]

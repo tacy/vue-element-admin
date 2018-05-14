@@ -11,10 +11,10 @@ from rest_framework.exceptions import APIException
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from ymatou import utils
 from stock.models import (IncomeRecord, Inventory, Order, Product,
                           PurchaseOrder, PurchaseOrderItem, Shipping,
                           ShippingDB, Stock, TransformDB, UexTrack)
-
 logger = logging.getLogger(__name__)
 
 
@@ -30,15 +30,10 @@ class OrderItemGet(views.APIView):
             'on o.jancode=s.jancode and o.inventory_id=s.inventory_id and o.shippingdb_id=%s '
             'inner join stock_shippingdb sdb on o.shippingdb_id=sdb.id')
 
-        def dictfetchall(cursor):
-            "Return all rows from a cursor as a dict"
-            columns = [col[0] for col in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()]
-
         db_number = request.query_params.get('shippingdb_id')
         with connection.cursor() as c:
             c.execute(sql, (db_number, ))
-            results = dictfetchall(c)
+            results = utils.dictfetchall(c)
             data = {
                 'results': results,
             }
@@ -50,14 +45,9 @@ class CategoryGet(views.APIView):
     def get(self, request, format=None):
         sql = 'select b.category_id category_id, b.category_cn_name category_cn_name, a.category_id category_parent_id, a.category_cn_name category_parent_cn_name, a.category_version category_version from stock_category a join stock_category b on (a.category_id=b.category_parent_id)'
 
-        def dictfetchall(cursor):
-            "Return all rows from a cursor as a dict"
-            columns = [col[0] for col in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()]
-
         with connection.cursor() as c:
             c.execute(sql)
-            results = dictfetchall(c)
+            results = utils.dictfetchall(c)
             relationData = {}
             for i in results:
                 dictkey = i['category_parent_id'].zfill(5)
@@ -782,8 +772,24 @@ class OrderSorting(views.APIView):
                 })
         with connection.cursor() as c:
             c.execute(sql, (dbObj.id, dbObj.inventory.id))
-            ordsData = c.cursor.fetchall()
+            ordsData = utils.dictfetchall(c)
             return Response(status=status.HTTP_200_OK, data=ordsData)
+
+    def post(self, request, format=None):
+        db_number = request.data['db_number']
+
+        dbObj = None
+        try:
+            dbObj = ShippingDB.objects.get(db_number=db_number)
+            if dbObj.status != '待处理':
+                raise APIException({'errmsg': '面单状态异常, 请仔细确认'})
+        except ShippingDB.DoesNotExist:
+            dbObj = TransformDB.objects.get(db_number=db_number)
+            if dbObj.status != '待处理':
+                raise APIException({'errmsg': '面单状态异常, 请仔细确认'})
+        dbObj.sorting = '已分拣'
+        dbObj.save()
+        return Response(status=status.HTTP_200_OK)
 
 
 class OrderAlert(views.APIView):

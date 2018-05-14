@@ -122,7 +122,7 @@ export const asyncRouterMap = [
       { path: 'query',
         component: ordersQuery,
         name: '查订单',
-        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'tokyo', 'normal-big'] }
       },
       {
         path: 'allocate',
@@ -169,7 +169,7 @@ export const asyncRouterMap = [
       { path: 'aftersale',
         component: afterSale,
         name: '售后单',
-        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'normal-big'] }
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'tokyo', 'normal-big'] }
       },
       { path: 'importagent', component: importAgent, name: '代理订单' }
     ]
@@ -231,7 +231,12 @@ export const asyncRouterMap = [
     name: '仓库',
     icon: 'zujian',
     children: [
-      { path: 'query', component: stocksquery, name: '查库存' }
+      {
+        path: 'query',
+        component: stocksquery,
+        name: '查库存',
+        meta: { role: ['supergz', 'supertokyo', 'super', 'normal', 'tokyo', 'normal-big'] }
+      }
     ]
   },
   {
